@@ -14,7 +14,7 @@ namespace Sogas
 
     bool CEngine::Init()
     {
-        std::cout << "Initializing Engine ... \n";
+        STRACE("Initializing Engine ... ");
 
         RenderModule = new CRenderModule("render");
 

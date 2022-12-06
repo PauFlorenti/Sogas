@@ -23,3 +23,4 @@ using json = nlohmann::json;
 
 // application
 #include "defines.h"
+#include "logger.h"

@@ -7,7 +7,7 @@ namespace Sogas
     bool GameEntry()
     {
         if(!CApplication::Get()->Init())
-            std::cout << "Failed to initiate application.\n";
+            SFATAL("Failed to initiate application.");
 
         CApplication::Get()->Run();
 

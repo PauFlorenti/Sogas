@@ -17,7 +17,7 @@ namespace Sogas
         InitInstance();
 
         if(!CEngine::Get()->Init()){
-            std::cout << "Engine failed to init.\n";
+            SERROR("Engine failed to init.");
             return false;
         }
 
@@ -27,16 +27,16 @@ namespace Sogas
     void CApplication::InitInstance()
     {
         // Open Window ...
-        std::cout << "Initializing application instance ...\n";
-        std::cout << "\tInitializing GLFW ... \n";
+        STRACE("Initializing application instance ...");
+        STRACE("\tInitializing GLFW ... ");
         glfwInit();
-        std::cout << "\tGLFW initialized.\n";
+        STRACE("\tGLFW initialized.");
 
-        std::cout << "\tCreating a GLFW window ...\n";
+        STRACE("\tCreating a GLFW window ...");
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         window = glfwCreateWindow(640, 480, "SogasEngine", nullptr, nullptr);
-        std::cout << "\tGLFW window created.\n";
-        std::cout << "Application instance initialized.\n\n";
+        STRACE("\tGLFW window created.");
+        STRACE("Application instance initialized.\n");
     }
 
     void CApplication::Run()
@@ -49,10 +49,10 @@ namespace Sogas
 
     void CApplication::Shutdown()
     {
-        std::cout << "Shutting down ...\n";
-        std::cout << "Terminating GLFW ...\n";
+        STRACE("Shutting down ... ");
+        STRACE("Terminating GLFW ... ");
         glfwDestroyWindow(window);
         glfwTerminate();
-        std::cout << "GLFW terminated.\n";
+        STRACE("GLFW terminated. ");
     }
 }

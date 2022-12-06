@@ -12,7 +12,5 @@ if(MSVC)
         "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:msvcrt")
 endif()
 
-#add_definitions(-wd4668)
-
 add_subdirectory(sogasengine)
 add_subdirectory(Sandbox)

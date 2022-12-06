@@ -152,13 +152,13 @@ namespace Vk
         std::vector<VkPhysicalDevice> PhysicalDevices(PhysicalDeviceCount);
         vkEnumeratePhysicalDevices(Instance, &PhysicalDeviceCount, PhysicalDevices.data());
 
-        std::cout << "Available Physical Devices ...\n";
+        STRACE("Available Physical Devices ...");
 
         for(const auto gpu : PhysicalDevices)
         {
             VkPhysicalDeviceProperties properties;
             vkGetPhysicalDeviceProperties(gpu, &properties);
-            std::cout << "\tDevice Name: " << properties.deviceName << "\tVendor ID: " << properties.vendorID << "\n";
+            STRACE("\tDevice Name: %s\tVendor ID: %i", properties.deviceName, properties.vendorID);
         }
 
         std::cout << "\t--\t--\t--\n\n";
@@ -211,17 +211,17 @@ namespace Vk
 
     bool CRender::Init()
     {
-        std::cout << "Initializing Vulkan renderer ... \n";
+        STRACE("Initializing Vulkan renderer ... ");
 
         if(!CreateInstance())
         {
-            std::cout << "\tFailed to create Vulkan Instance!\n";
+            STRACE("\tFailed to create Vulkan Instance!");
             return false;
         }
 
         if(!CreateDevice())
         {
-            std::cout << "\tFailed to create Vulkan Logical Device!\n";
+            STRACE("\tFailed to create Vulkan Logical Device!");
             return false;
         }
 
@@ -230,7 +230,7 @@ namespace Vk
         CreateDescriptorPools();
         CreateDescriptorSets();
 
-        std::cout << "Finished Initializing Vulkan renderer.\n\n";
+        STRACE("Finished Initializing Vulkan renderer.\n");
 
         return true;
     }
@@ -282,16 +282,16 @@ namespace Vk
 
     void CRender::Shutdown()
     {
-        std::cout << "Shutting down Vulkan renderer ...\n";
+        STRACE("Shutting down Vulkan renderer ...");
 
-        std::cout << "\tDestroying Uniform buffers ...\n";
+        STRACE("\tDestroying Uniform buffers ...");
         for( u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
             vkDestroyBuffer( Device, UniformBuffers.at(i), nullptr );
             vkFreeMemory( Device, UniformBufferMemory.at(i), nullptr );
         }
 
-        std::cout << "\tDestroying Sync objects ...\n";
+        STRACE("\tDestroying Sync objects ...");
         for(u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
             vkDestroyFence(Device, InFlightFence.at(i), nullptr);
@@ -299,27 +299,27 @@ namespace Vk
             vkDestroySemaphore(Device, ImageAvailableSemaphore.at(i), nullptr);
         }
 
-        std::cout << "\tDestroying Command Pool ...\n";
+        STRACE("\tDestroying Command Pool ...");
         vkDestroyCommandPool(Device, CommandPool, nullptr);
 
-        std::cout << "\tDestroying Framebuffer ...\n";
+        STRACE("\tDestroying Framebuffer ...");
         for(auto& framebuffer : SwapchainFramebuffers)
         {
             vkDestroyFramebuffer(Device, framebuffer, nullptr);
         }
 
-        std::cout << "\tDestroying Graphics pipeline ...\n";
+        STRACE("\tDestroying Graphics pipeline ...");
         vkDestroyPipeline(Device, Pipeline, nullptr);
-        std::cout << "\tDestroying Render Pass ...\n";
+        STRACE("\tDestroying Render Pass ...");
         vkDestroyRenderPass(Device, RenderPass, nullptr);
-        std::cout << "\tDestroying Graphics pipeline layout ...\n";
+        STRACE("\tDestroying Graphics pipeline layout ...");
         vkDestroyPipelineLayout(Device, PipelineLayout, nullptr);
-        std::cout << "\tDestroying Descriptor Pool ...\n";
+        STRACE("\tDestroying Descriptor Pool ...");
         vkDestroyDescriptorPool( Device, DescriptorPool, nullptr );
-        std::cout << "\tDestroying Descriptor set layout ...\n";
+        STRACE("\tDestroying Descriptor set layout ...");
         vkDestroyDescriptorSetLayout( Device, DescriptorSetLayout, nullptr );
 
-        std::cout << "\tDestroying all images and image views ...\n";
+        STRACE("\tDestroying all images and image views ...");
         for(auto& imageView : SwapchainImageViews)
         {
             vkDestroyImageView(Device, imageView, nullptr);
@@ -329,17 +329,17 @@ namespace Vk
             vkDestroyImage(Device, image, nullptr);
         }
         vkDestroySwapchainKHR(Device, Swapchain, nullptr);
-        std::cout << "\tDestroying Vulkan logical device ...\n";
+        STRACE("\tDestroying Vulkan logical device ...");
         vkDestroyDevice(Device, nullptr);
-        std::cout << "\tLogical device destroyed.\n";
+        STRACE("\tLogical device destroyed.");
         if(validationLayersEnabled)
             DestroyDebugUtilsMessengerEXT(Instance, DebugMessenger, nullptr);
-        std::cout << "\tDestroying Surface ...\n";
+        STRACE("\tDestroying Surface ...");
         vkDestroySurfaceKHR(Instance, Surface, nullptr);
-        std::cout << "\tDestroying instance ...\n";
+        STRACE("\tDestroying instance ...");
         vkDestroyInstance(Instance, nullptr);
-        std::cout << "\tInstance destroyed.\n";
-        std::cout << "Vulkan renderer has shut down.\n\n";
+        STRACE("\tInstance destroyed.");
+        STRACE("Vulkan renderer has shut down.\n");
     }
 
     bool CRender::CreateMesh(CMesh* mesh, std::vector<Vertex> vertices, PrimitiveTopology topology)
@@ -450,8 +450,8 @@ namespace Vk
     bool CRender::CreateInstance()
     {
         
-        std::cout << "\tCreating the Vulkan Instance ...\n";
-
+        STRACE("\tCreating the Vulkan Instance ...");
+        
         VkApplicationInfo applicationInfo = { VK_STRUCTURE_TYPE_APPLICATION_INFO };
         applicationInfo.pApplicationName    = "Sogas app hardcoded";
         applicationInfo.applicationVersion  = VK_MAKE_VERSION(0, 1, 0);
@@ -462,7 +462,7 @@ namespace Vk
         // Checking for validation layer suppport
         if (validationLayersEnabled && !CheckValidationLayersSupport())
         {
-            std::cout << "\tRequired validation layers requested not found.\n";
+            SERROR("\tRequired validation layers requested not found.");
         }
 
         // Enumerate all available extensions ...
@@ -471,10 +471,10 @@ namespace Vk
         std::vector<VkExtensionProperties> availableExtensions(extensionCount);
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availableExtensions.data());
 
-        std::cout << "-- Available instance extensions --\n";
+        STRACE("-- Available instance extensions --");
         for(VkExtensionProperties extension : availableExtensions)
         {
-            std::cout << "\t" << extension.extensionName << "\n";
+            STRACE("\t%s", extension.extensionName);
         }
         std::cout << "\t-- \t -- \t -- \n";
 
@@ -502,7 +502,7 @@ namespace Vk
                 case(VK_ERROR_LAYER_NOT_PRESENT):
                 case(VK_ERROR_EXTENSION_NOT_PRESENT):
                 case(VK_ERROR_INCOMPATIBLE_DRIVER):
-                    std::cout << "\tError creating the Vulkan Instance\n";
+                    SERROR("\tError creating the Vulkan Instance");
                     break;
                 default:
                     break;
@@ -510,7 +510,7 @@ namespace Vk
             return false;
         }
 
-        std::cout << "\tSuccessfully created a Vulkan Instance.\n";
+        STRACE("\tSuccessfully created a Vulkan Instance.");
 
         SetupDebugMessenger();
         
@@ -519,10 +519,10 @@ namespace Vk
 
     bool CRender::CreateDevice()
     {
-        std::cout << "\tCreating vulkan window surface handle ...\n";
+        STRACE("\tCreating vulkan window surface handle ...");
         if (glfwCreateWindowSurface(Instance, CApplication::Get()->GetWindow(), nullptr, &Surface) != VK_SUCCESS)
         {
-            std::cout << "\tFailed to create VkSurface.\n";
+            SERROR("\tFailed to create VkSurface.");
             return false;
         }
 
@@ -566,15 +566,15 @@ namespace Vk
         VkResult ok = vkCreateDevice(Gpu, &deviceCreateInfo, nullptr, &Device);
         if(ok != VK_SUCCESS)
         {
-            std::cout << "\tFailed to create logical device.\n";
+            SERROR("\tFailed to create logical device.");
             return false;
         }
 
-        std::cout << "\tRetrieving queue handles ...\n";
+        STRACE("\tRetrieving queue handles ...");
         vkGetDeviceQueue(Device, GraphicsFamily, 0, &GraphicsQueue);
         vkGetDeviceQueue(Device, PresentFamily, 0, &PresentQueue);
 
-        std::cout << "\tCreating vulkan swapchain ...\n";
+        STRACE("\tCreating vulkan swapchain ...");
         VkSurfaceCapabilitiesKHR surfaceCapabilities;
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(Gpu, Surface, &surfaceCapabilities);
 
@@ -582,7 +582,7 @@ namespace Vk
         vkGetPhysicalDeviceSurfaceFormatsKHR(Gpu, Surface, &formatCount, nullptr);
         if(formatCount == 0)
         {
-            std::cout << "\tNo surface formats found\n";
+            SERROR("\tNo surface formats found");
             return false;
         }
 
@@ -609,7 +609,7 @@ namespace Vk
 
         if(presentModeCount == 0)
         {
-            std::cout << "\tNo present modes available.\n";
+            SERROR("\tNo present modes available.");
             return false;
         }
 
@@ -678,7 +678,7 @@ namespace Vk
 
         if(vkCreateSwapchainKHR(Device, &swapchainCreateInfo, nullptr, &Swapchain) != VK_SUCCESS)
         {
-            std::cout << "\tFailed to create swapchain!\n";
+            SFATAL("\tFailed to create swapchain!");
             return false;
         }
 
@@ -687,7 +687,7 @@ namespace Vk
         SwapchainImages.resize(swapchainImageCount);
         vkGetSwapchainImagesKHR(Device, Swapchain, &swapchainImageCount, SwapchainImages.data());
 
-        std::cout << "\tCreating swapchain image views.\n";
+        STRACE("\tCreating swapchain image views.");
         SwapchainImageViews.resize(swapchainImageCount);
         for(u32 i = 0; i < swapchainImageCount; i++)
         {
@@ -711,7 +711,7 @@ namespace Vk
                 return false;
             }
         }
-        std::cout << "\tSwapchain image views created.\n";
+        STRACE("\tSwapchain image views created.");
 
         CreateDescriptorSetLayout();
         CreateGraphicsPipeline();
@@ -720,7 +720,7 @@ namespace Vk
         CreateCommandBuffer();
         CreateSyncObjects();
 
-        std::cout << "\tLogical device created!\n";
+        STRACE("\tLogical device created!");
 
         return true;
     }
@@ -793,14 +793,14 @@ namespace Vk
 
     void CRender::CreateGraphicsPipeline()
     {
-        std::cout << "\tReading compiled shaders ...\n";
+        STRACE("\tReading compiled shaders ...");
         auto VertexShader = ReadFile("../../../sogasengine/private/shaders/bin/triangle.vert.spv");
         auto FragmentShader = ReadFile("../../../sogasengine/private/shaders/bin/triangle.frag.spv");
 
-        std::cout << "\tCreating Shader Modules ...\n";
+        STRACE("\tCreating Shader Modules ...");
         VkShaderModule VertexShaderModule = CreateShaderModule(VertexShader);
         VkShaderModule FragmentShaderModule = CreateShaderModule(FragmentShader);
-        std::cout << "\tShader Modules created.\n";
+        STRACE("\tShader Modules created.");
 
         VkPipelineShaderStageCreateInfo VertexShaderStageCreateInfo = {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO};
         VertexShaderStageCreateInfo.stage   = VK_SHADER_STAGE_VERTEX_BIT;
@@ -898,10 +898,10 @@ namespace Vk
             throw std::runtime_error("Failed to create pipeline layout.");
         }
 
-        std::cout << "\tCreating Render Pass ...\n";
+        STRACE("\tCreating Render Pass ...");
         CreateRenderPass();
 
-        std::cout << "\tCreating Graphics pipeline ...\n";
+        STRACE("\tCreating Graphics pipeline ...");
         VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo = {VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
         graphicsPipelineCreateInfo.stageCount           = 2;
         graphicsPipelineCreateInfo.pStages              = ShaderStages;
@@ -922,9 +922,9 @@ namespace Vk
             throw std::runtime_error("Failed to create graphics pipeline.");
         }
 
-        std::cout << "\tGraphics pipeline created.\n";
+        STRACE("\tGraphics pipeline created.");
 
-        std::cout << "\tCleaning shade modules used ...\n";
+        STRACE("\tCleaning shade modules used ...");
         vkDestroyShaderModule(Device, VertexShaderModule, nullptr);
         vkDestroyShaderModule(Device, FragmentShaderModule, nullptr);
     }
@@ -974,7 +974,7 @@ namespace Vk
 
     void CRender::CreateFramebuffers()
     {
-        std::cout << "\tCreating framebuffers ...\n";
+        STRACE("\tCreating framebuffers ...");
         SwapchainFramebuffers.resize(SwapchainImageViews.size());
 
         for(size_t i = 0; i < SwapchainImageViews.size(); i++)
@@ -1000,7 +1000,7 @@ namespace Vk
 
     void CRender::CreateCommandPool()
     {
-        std::cout << "\tCreating Command Pool ...\n";
+        STRACE("\tCreating Command Pool ...");
         VkCommandPoolCreateInfo createInfo = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
         createInfo.queueFamilyIndex = GraphicsFamily;
         createInfo.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -1013,7 +1013,7 @@ namespace Vk
 
     void CRender::CreateCommandBuffer()
     {
-        std::cout << "\tAllocating Command Buffers ...\n";
+        STRACE("\tAllocating Command Buffers ...");
         CommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
         VkCommandBufferAllocateInfo allocInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
         allocInfo.commandPool           = CommandPool;
@@ -1165,7 +1165,7 @@ namespace Vk
 
     void CRender::CreateSyncObjects()
     {
-        std::cout << "\tCreating Sync objects ...\n";
+        STRACE("\tCreating Sync objects ...");
 
         ImageAvailableSemaphore.resize(MAX_FRAMES_IN_FLIGHT);
         RenderFinishedSemaphore.resize(MAX_FRAMES_IN_FLIGHT);
