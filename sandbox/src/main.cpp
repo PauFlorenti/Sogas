@@ -8,5 +8,6 @@ int main()
     SWARNING("This is a test %d right %s?", 45, "Pau");
     SDEBUG("This is a test %d right %s?", 45, "Pau");
     STRACE("This is a test %d right %s?", 45, "Pau");
+
     return Sogas::GameEntry();
 }

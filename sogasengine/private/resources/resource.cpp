@@ -32,7 +32,7 @@ namespace Sogas
         }
 
         IResourceType* resourceType = type->second;
-        assert(resourceType);
+        SASSERT(resourceType);
 
         // Load resource.
         IResource* newResource = resourceType->Create( name );

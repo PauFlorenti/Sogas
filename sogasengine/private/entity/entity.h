@@ -13,7 +13,7 @@ namespace Sogas
 
         CHandle Get(u32 ComponentType) const 
         {
-            assert(ComponentType < CHandle::MaxTypes);
+            SASSERT_MSG( ComponentType < CHandle::MaxTypes, "Not a valid type." );
             return Components[ComponentType];
         }
 

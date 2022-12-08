@@ -23,7 +23,7 @@ namespace Sogas
     private:
         bool DoStart()
         {
-            assert(!bIsActive);
+            SASSERT( bIsActive == false );
             if(bIsActive) return false;
 
             const bool ok = Start();
@@ -34,7 +34,7 @@ namespace Sogas
 
         void DoStop()
         {
-            assert(bIsActive);
+            SASSERT(bIsActive);
             if(!bIsActive) return;
                 Stop();
             bIsActive = false;

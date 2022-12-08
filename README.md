@@ -7,13 +7,30 @@ Not in priority order.
 
 ## ITEMS
 ---
+
+### ORGANIZATION
 - [ ] Organize project into private includes and private sources.
 
+
+### ARCHITECTURE
 - [-] Logger
     - [x] Print different hazard levels: Verbose, Trace, Info, Warning, Error, Fatal
     - [x] Print each different level in a color: Grey, Blue, Green, Yellow, Red, Red
+    - [ ] Use logger to handle errors and fatals
+    - [x] Create own assert function.
+
+- [ ] Support multiple OS. Maybe own code instead of GLFW
+    - [ ] Windows
+    - [ ] Linux
+    - [ ] MacOS
+
+- [ ] Handle Input
+    - [ ] Keyboard
+    - [ ] Mouse
+    - [ ] Remote controller
 
 - [ ] Read external data (Meshes, textures, json files ...) from inside build or create file path finder.
+Finder should be handled by resouce manager.
 - [ ] Handle resource files with a Resource interface and a factory methode.
     - [ ] Load meshes
         - [ ] .obj files
@@ -33,6 +50,7 @@ Not in priority order.
         - [ ] Point Light
     - [ ] Render component with AABB and Sphere bounding. 
 
+### GRAPHICS
 - [ ] Render
     - [ ] Properly Initialize Vulkan
         - [ ] Validate physical device given certain criteria.

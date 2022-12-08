@@ -147,7 +147,7 @@ namespace Sogas
         {
             const std::string& moduleName = jModule.get<std::string>();
             IModule* module = GetModule(moduleName);
-            assert(module != nullptr);
+            SASSERT((module != nullptr));
             if(module)
             {
                 UpdateModules.push_back(module);
@@ -158,7 +158,7 @@ namespace Sogas
         {
             const std::string& moduleName = jModule.get<std::string>();
             IModule* module = GetModule(moduleName);
-            assert(module != nullptr);
+            SASSERT( module != nullptr );
             if(module)
             {
                 RenderModules.push_back(module);

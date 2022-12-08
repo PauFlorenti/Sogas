@@ -38,9 +38,9 @@ namespace Sogas
         template < typename Type >
         const Type* As()
         {
-            assert( Type != nullptr );
+            SASSERT( Type != nullptr );
             Type* ResourceType = GetResourceType<Type>();
-            assert( ResourceType == Type );
+            SASSERT( ResourceType == Type );
             return static_cast<ResourceType>(this);
         }
 
@@ -71,28 +71,28 @@ namespace Sogas
 
         void RegisterResourceType(IResourceType* NewResourceType)
         {
-            assert(NewResourceType);
+            SASSERT(NewResourceType);
 
             for(u32 i = 0; i < NewResourceType->GetNumResourceTypeExtensions(); ++i)
             {
                 const char* extension = NewResourceType->GetExtension(i);
 
-                assert(ResourcesType.find(extension) != ResourcesType.end());
+                SASSERT((ResourcesType.find(extension) != ResourcesType.end()));
                 ResourcesType[extension] = NewResourceType;
             }
         }
 
         void RegisterResource(IResource* Resource, const std::string& Name, const IResourceType* Type)
         {
-            assert(Resource);
-            assert(!Name.empty());
-            assert(Type);
+            SASSERT(Resource);
+            SASSERT(!Name.empty());
+            SASSERT(Type);
 
             Resource->SetResourceName(Name);
             Resource->SetResourceType(Type);
 
             // Validate resource is not already registered.
-            assert(Resources.find(Name) == Resources.end());
+            SASSERT( Resources.find(Name) == Resources.end() );
             Resources[Name] = Resource;
         }
 

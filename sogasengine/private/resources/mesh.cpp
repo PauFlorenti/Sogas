@@ -7,7 +7,7 @@ namespace Sogas
 {
     bool CMesh::Create(std::vector<Vertex> vertices, PrimitiveTopology topology)
     {
-        assert(!vertices.empty());
+        SASSERT( !vertices.empty() );
         Indexed = false;
         Topology = topology;
 
@@ -16,8 +16,8 @@ namespace Sogas
 
     bool CMesh::Create(std::vector<Vertex> vertices, std::vector<u32> indices, PrimitiveTopology topology)
     {
-        assert(!vertices.empty());
-        assert(topology != PrimitiveTopology::UNDEFINED);
+        SASSERT( !vertices.empty() );
+        SASSERT( topology != PrimitiveTopology::UNDEFINED );
         Topology = topology;
 
         Indexed = true;
@@ -32,7 +32,7 @@ namespace Sogas
 
     void CMesh::Render() const
     {
-        assert(RenderId != INVALID_ID);
+        SASSERT( RenderId != INVALID_ID );
         if( Indexed )
         {
             CEngine::Get()->GetRenderModule()->DrawIndexed(std::move(indexCount), std::move(indexOffset));

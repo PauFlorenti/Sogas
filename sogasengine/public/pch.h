@@ -2,7 +2,6 @@
 
 // C++
 #include <algorithm>
-#include <assert.h> // Should be temporal and include our own assertion with logs.
 #include <fstream>
 #include <iostream>
 #include <limits>

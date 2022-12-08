@@ -344,9 +344,9 @@ namespace Vk
 
     bool CRender::CreateMesh(CMesh* mesh, std::vector<Vertex> vertices, PrimitiveTopology topology)
     {
-        assert(!vertices.empty());
-        assert( mesh->RenderId == INVALID_ID );
-        assert( topology != PrimitiveTopology::UNDEFINED );
+        SASSERT( !vertices.empty() );
+        SASSERT( mesh->RenderId == INVALID_ID );
+        SASSERT( topology != PrimitiveTopology::UNDEFINED );
 
         u32 i = 0;
         for(auto vulkanMesh : VulkanMeshesArray)
@@ -412,10 +412,10 @@ namespace Vk
 
     bool CRender::CreateMesh(CMesh* mesh, std::vector<Vertex> vertices, std::vector<u32> indices, PrimitiveTopology topology)
     {
-        assert(!vertices.empty());
-        assert(!indices.empty());
-        assert( mesh->RenderId == INVALID_ID );
-        assert( topology != PrimitiveTopology::UNDEFINED );
+        SASSERT( !vertices.empty() );
+        SASSERT( !indices.empty() );
+        SASSERT( mesh->RenderId == INVALID_ID );
+        SASSERT( topology != PrimitiveTopology::UNDEFINED );
         return true;
     }
 

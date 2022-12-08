@@ -4,8 +4,8 @@ namespace Sogas
 {
     void CHandleManager::Init(u32 maxObjects)
     {
-        assert(maxObjects < MaxTotalObjectsAllowed);
-        assert(maxObjects > 0);
+        SASSERT(maxObjects < MaxTotalObjectsAllowed);
+        SASSERT(maxObjects > 0);
 
         // Register this as the handler with the new type.
         if(Type == 0)
@@ -42,8 +42,8 @@ namespace Sogas
 
     bool CHandleManager::IsValid(CHandle h) const
     {
-        assert(h.GetType() == Type);
-        assert(h.GetExternalIndex() < GetCapacity());
+        SASSERT(h.GetType() == Type);
+        SASSERT(h.GetExternalIndex() < GetCapacity());
 
         auto& ei = ExternalToInternal[h.GetExternalIndex()];
         return ei.CurrentAge == h.GetAge();
@@ -58,7 +58,7 @@ namespace Sogas
 
             auto internalIndex = externalData.InternalIndex;
 
-            assert(nObjectsUsed > 0);
+            SASSERT((nObjectsUsed > 0));
 
             externalData.CurrentAge--;
 
@@ -69,14 +69,14 @@ namespace Sogas
             // Set owner to null.
             externalData.CurrentOwner = CHandle();
 
-            assert(LastFreeHandleExternalIndex != INVALID_ID);
+            SASSERT((LastFreeHandleExternalIndex != INVALID_ID));
             auto& lastFreeExternalData = ExternalToInternal[LastFreeHandleExternalIndex];
-            assert(lastFreeExternalData.NextExternalIndex == INVALID_ID);
+            SASSERT((lastFreeExternalData.NextExternalIndex == INVALID_ID));
 
             lastFreeExternalData.NextExternalIndex = externalIndex;
             LastFreeHandleExternalIndex = externalIndex;
 
-            assert(externalData.NextExternalIndex == INVALID_ID);
+            SASSERT((externalData.NextExternalIndex == INVALID_ID));
 
             // Move all object to the begining, so they are all compacted at the beginning.
             u32 internalIndexOfLastValidObject = nObjectsUsed - 1;
@@ -104,18 +104,18 @@ namespace Sogas
     CHandle CHandleManager::CreateHandle()
     {
         // Make sure I am valid.
-        assert(Type != 0);
+        SASSERT(Type != 0);
 
         const u32 nObjectsCapacity = GetCapacity();
 
-        assert(NextFreeHandleExternalIndex != INVALID_ID);
-        assert(nObjectsUsed < nObjectsCapacity);
+        SASSERT(NextFreeHandleExternalIndex != INVALID_ID);
+        SASSERT(nObjectsUsed < nObjectsCapacity);
         u32 externalIndex = NextFreeHandleExternalIndex;
         auto& externalData = ExternalToInternal[externalIndex];
 
         externalData.InternalIndex = nObjectsUsed;
         
-        assert(externalData.CurrentOwner == CHandle());
+        SASSERT(externalData.CurrentOwner == CHandle());
 
         InternalToExternal[externalData.InternalIndex] = externalIndex;
 
@@ -124,7 +124,7 @@ namespace Sogas
         ++nObjectsUsed;
 
         NextFreeHandleExternalIndex = externalData.NextExternalIndex;
-        assert(NextFreeHandleExternalIndex != INVALID_ID);
+        SASSERT(NextFreeHandleExternalIndex != INVALID_ID);
 
         externalData.NextExternalIndex = INVALID_ID;
 
@@ -166,7 +166,7 @@ namespace Sogas
 
     void CHandleManager::SetOwner(CHandle who, CHandle newOwner)
     {
-        assert(!who.IsValid());
+        SASSERT(!who.IsValid());
         auto& externalData = ExternalToInternal[who.GetExternalIndex()];
         externalData.CurrentOwner = newOwner;
     }
