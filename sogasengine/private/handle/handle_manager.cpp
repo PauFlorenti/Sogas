@@ -2,6 +2,13 @@
 
 namespace Sogas
 {
+    u32                                     CHandleManager::NextTypeOfHandleManager = 1;
+    CHandleManager*                         CHandleManager::AllManagers[CHandle::MaxTypes];
+    std::map<std::string, CHandleManager*>  CHandleManager::AllManagersByName;
+
+    CHandleManager* CHandleManager::PredefinedManagers[CHandle::MaxTypes];
+    u32             CHandleManager::nPredefinedManagers = 0;
+
     void CHandleManager::Init(u32 maxObjects)
     {
         SASSERT(maxObjects < MaxTotalObjectsAllowed);

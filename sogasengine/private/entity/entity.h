@@ -1,6 +1,7 @@
 #pragma once
 
 #include "components/base_component.h"
+#include "handle/handle.h"
 
 namespace Sogas
 {
@@ -9,7 +10,7 @@ namespace Sogas
         CHandle Components[CHandle::MaxTypes];
 
     public:
-        ~CHandle();
+        ~CEntity();
 
         CHandle Get(u32 ComponentType) const 
         {
@@ -20,17 +21,20 @@ namespace Sogas
         template < typename TComp >
         CHandle Get() const 
         {
-
+            auto objManager = GetObjectManager<TComp>();
+            SASSERT(objManager);
+            return Components[objManager->GetType()];
         }
 
         void DebugInMenu();
         void RenderDebug();
 
-        void Set(u32 componentType, CHadnle newComponent);
+        void Set(u32 componentType, CHandle newComponent);
         void Set(CHandle newComponent);
         void Load(const json& j);
         void OnEntityCreated();
 
         const char* GetName() const;
-    }
-}
+    };
+    
+} // Sogas

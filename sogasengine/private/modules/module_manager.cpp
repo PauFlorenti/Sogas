@@ -11,6 +11,7 @@ namespace Sogas
         if(!BootModules)
         {
             // Change to game state.
+            ChangeToGameState(BootModules);
         }
     }
 
@@ -38,8 +39,26 @@ namespace Sogas
         RegisteredModules[Module->GetName()] = Module;
     }
 
+    void CModuleManager::ChangeToGameState(const std::string& GameStateName)
+    {
+        auto it = registeredGameStates.find(GameStateName);
+
+        SASSERT_MSG(it != registeredGameStates.cend(), "Trying to change to a non existent game state");
+        
+        if(it == registeredGameStates.cend()) return;
+
+        ChangeToGameState(&(it->second));
+    }
+
+    void CModuleManager::ChangeToGameState(GameState* newGameState)
+    {
+        RequestedGameState = newGameState;
+    }
+
     void CModuleManager::Update(f32 dt)
     {
+        ChangeToRequestedGameState();
+
         for(auto module : UpdateModules)
         {
             if(module->IsActive())
@@ -115,30 +134,12 @@ namespace Sogas
         return moduleIt != RegisteredModules.end() ? moduleIt->second : nullptr;
     }
 
-    void CModuleManager::ParseModules(const std::string filename)
+    void CModuleManager::ParseModules(const std::string& filename)
     {
         UpdateModules.clear();
         RenderModules.clear();
 
-        // TODO Make a func to parse a json file.
-        json j;
-        std::ifstream ifs(filename.c_str());
-
-        if(!ifs.is_open())
-        {
-            throw std::runtime_error("Failed to open json file.");
-        }
-
-        try
-        {
-            j = json::parse(ifs);
-        }
-        catch(const std::exception& e)
-        {
-            ifs.close();
-            std::cerr << e.what() << "\n";
-            throw std::runtime_error("Failed to parse json file.");
-        }
+        auto j = LoadJson(filename);
         
         json jUpdateList = j["update"];
         json jRenderList = j["render"];
@@ -165,4 +166,24 @@ namespace Sogas
             }
         }
     }
+
+    void CModuleManager::ChangeToRequestedGameState()
+    {
+        if(RequestedGameState == nullptr || RequestedGameState == CurrentGameState)
+            return;
+
+        if(CurrentGameState)
+        {
+            StopModules(*CurrentGameState);
+            CurrentGameState = nullptr;
+        }
+
+        if(RequestedGameState)
+        {
+            StartModules(*RequestedGameState);
+            CurrentGameState = RequestedGameState;
+            RequestedGameState = nullptr;
+        }
+    }
+
 }   // Sogas

@@ -1,0 +1,6 @@
+{
+    "scenes_to_load":
+    [
+        "data/scene.json"
+    ]
+}

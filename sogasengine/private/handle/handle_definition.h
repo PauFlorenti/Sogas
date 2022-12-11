@@ -2,6 +2,13 @@
 
 namespace Sogas
 {
+
+    template<typename TObj>
+    class CObjectManager;
+
+    template<typename TObj>
+    CObjectManager<TObj>* GetObjectManager();
+
     class CHandle
     {
     public:
@@ -12,39 +19,63 @@ namespace Sogas
         static const u32 MaxTypes = 1 << nBitsType;
 
         // Empty constructor, set everything as 0.
-        CHandle() : type(0), externalIndex(0), age(0) {}
+        CHandle() : Type(0), ExternalIndex(0), Age(0) {}
 
         CHandle( u32 newType, u32 newExternalIndex, u32 newAge) :
-            type(newType), externalIndex(newExternalIndex), age(newAge)
+            Type(newType), ExternalIndex(newExternalIndex), Age(newAge)
         {}
 
+        template <typename TObj>
+        CHandle(TObj* obj)
+        {
+            auto handleManager = GetObjectManager<std::remove_const<TObj>::type>();
+            *this = handleManager->GetHandleFromAddress(obj);
+        }
+
+        template < typename TObj >
+        CHandle Create()
+        {
+            auto handleManager = GetObjectManager<TObj>();
+            *this = handleManager->CreateHandle();
+            return *this;
+        }
+        void Destroy();
+
         // Read-only getters
-        u32 GetType()               const { return type; }
-        u32 GetExternalIndex()      const { return externalIndex; }
-        u32 GetAge()                const { return age; }
+        u32 GetType()               const { return Type; }
+        u32 GetExternalIndex()      const { return ExternalIndex; }
+        u32 GetAge()                const { return Age; }
         const char* GetTypeName()   const;
+        CHandle GetOwner()          const;
 
         bool IsValid() const;
 
+        void SetOwner(CHandle newOwner);
+
+        void RenderDebug();
+        void DebugInMenu();
+        void Load(const json& j);
+        void OnEntityCreated();
+
         bool operator==(CHandle h) const { 
-            return h.type == type 
-                && h.externalIndex == externalIndex 
-                && h.age == age; }
+            return h.Type == Type 
+                && h.ExternalIndex == ExternalIndex 
+                && h.Age == Age; }
 
         bool operator!=(CHandle h) const {
             return !(*this == h);
         }
 
         bool operator<(CHandle h) const {
-            return h.type == type
-                && h.externalIndex == externalIndex
-                && h.age < age;
+            return h.Type == Type
+                && h.ExternalIndex == ExternalIndex
+                && h.Age < Age;
         }
 
         bool operator>(CHandle h) const {
-            return h.type == type
-                && h.externalIndex == externalIndex
-                && h.age > age;
+            return h.Type == Type
+                && h.ExternalIndex == ExternalIndex
+                && h.Age > Age;
         }
 
         bool operator<=(CHandle h) const {
@@ -55,10 +86,17 @@ namespace Sogas
             return operator==(h) && operator>(h);
         }
 
+        template < typename TObj >
+        operator TObj* () const 
+        {
+            auto handleManager = GetObjectManager< std::remove_const<TObj>::type >();
+            return handleManager->GetAddressFromHandle(*this);
+        }
+
     private:
-        u32 type : nBitsType;
-        u32 externalIndex : nBitsIndex;
-        u32 age : nBitsAge;
+        u32 Type : nBitsType;
+        u32 ExternalIndex : nBitsIndex;
+        u32 Age : nBitsAge;
     };
 
 } // Sogas

@@ -243,17 +243,8 @@ namespace Vk
     {
         if( PrepareFrame() )
         {
-            // ResourceManager.RenderAll(SOLID, camera);
+            
 
-            UpdateUniformBuffer();
-
-            vkCmdBindDescriptorSets( 
-                CommandBuffers.at(FrameIndex), 
-                VK_PIPELINE_BIND_POINT_GRAPHICS, 
-                PipelineLayout, 
-                0, 1, 
-                &DescriptorSets.at(FrameIndex), 
-                0, nullptr);
 
             vkCmdSetPrimitiveTopology(CommandBuffers.at(FrameIndex), VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
 
@@ -445,6 +436,28 @@ namespace Vk
     void CRender::DrawIndexed(const u32 indexCount, const u32 indexOffset)
     {
         vkCmdDrawIndexed(CommandBuffers.at(FrameIndex), indexCount, 1, indexOffset, 0, 0);
+    }
+
+    void CRender::ActivateObject(const glm::mat4& model, const glm::vec4& /*color*/)
+    {
+        vkCmdPushConstants(
+            CommandBuffers.at(FrameIndex), 
+            PipelineLayout, 
+            VK_SHADER_STAGE_VERTEX_BIT, 
+            0, sizeof(glm::mat4), &model);
+    }
+
+    void CRender::ActivateCamera()
+    {
+        UpdateUniformBuffer();
+
+        vkCmdBindDescriptorSets( 
+            CommandBuffers.at(FrameIndex), 
+            VK_PIPELINE_BIND_POINT_GRAPHICS, 
+            PipelineLayout, 
+            0, 1, 
+            &DescriptorSets.at(FrameIndex), 
+            0, nullptr);
     }
 
     bool CRender::CreateInstance()

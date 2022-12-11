@@ -1,5 +1,6 @@
 #include "engine.h"
 
+#include "modules/module_boot.h"
 #include "render/module_render.h"
 #include "resources/primitives.h"
 
@@ -15,10 +16,12 @@ namespace Sogas
     bool CEngine::Init()
     {
         STRACE("Initializing Engine ... ");
+        static CModuleBoot boot("boot");
 
         RenderModule = new CRenderModule("render");
 
         ModuleManager.RegisterServiceModule(RenderModule);
+        ModuleManager.RegisterGameModule(&boot);
 
         ModuleManager.Boot();
 

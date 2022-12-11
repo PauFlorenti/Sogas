@@ -1,6 +1,6 @@
 
 #include "render/module_render.h"
-
+#include "render/render_manager.h"
 #include "render/vulkan/render.h"
 
 namespace Sogas
@@ -38,7 +38,16 @@ namespace Sogas
 
     void CRenderModule::DoFrame()
     {
-        Renderer->DrawFrame();
+        if(Renderer->PrepareFrame())
+        {
+            // Activate main camera
+            Renderer->ActivateCamera();
+
+            // Render all solid objects
+            RenderManager.RenderAll(CHandle(), DrawChannel::SOLID);
+            //Renderer->DrawFrame();
+            Renderer->EndFrame();
+        }
     }
 
     bool CRenderModule::CreateMesh(CMesh* mesh, std::vector<Vertex> vertices, PrimitiveTopology topology)
@@ -59,6 +68,11 @@ namespace Sogas
     void CRenderModule::DrawIndexed(const u32 indexCount, const u32 indexOffset)
     {
         Renderer->DrawIndexed(indexCount, indexOffset);
+    }
+
+    void CRenderModule::ActivateObject(const glm::mat4& model, const glm::vec4& color)
+    {
+        Renderer->ActivateObject(model, color);
     }
 
 } // Sogas

@@ -52,7 +52,10 @@ namespace Sogas
         {}
 
         CHandleManager(const CHandleManager&) = delete;
-        ~CHandleManager();
+        ~CHandleManager(){};
+
+        static CHandleManager*  PredefinedManagers[CHandle::MaxTypes];
+        static u32              nPredefinedManagers;
 
         virtual void Init(u32 maxObjects);
         bool IsValid(CHandle h) const;

@@ -18,6 +18,7 @@ Not in priority order.
     - [x] Print each different level in a color: Grey, Blue, Green, Yellow, Red, Red
     - [ ] Use logger to handle errors and fatals
     - [x] Create own assert function.
+    - [ ] Assertion messages should accept variables to the message.
 
 - [ ] Support multiple OS. Maybe own code instead of GLFW
     - [ ] Windows

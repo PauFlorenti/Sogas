@@ -20,19 +20,26 @@ namespace Sogas
         void RegisterServiceModule(IModule* Module);
         void RegisterGameModule(IModule* Module);
 
+        void ChangeToGameState(const std::string& GameStateName);
+        void ChangeToGameState(GameState* newGameState);
+
         IModule* GetModule(const std::string& ModuleName);
 
     private:
         void StartModules(VModules& Modules);
         void StopModules(VModules& Modules);
 
-        void ParseModules(const std::string filename);
+        void ParseModules(const std::string& filename);
+
+        void ChangeToRequestedGameState();
 
         VModules Services;
         VModules UpdateModules;
         VModules RenderModules;
 
         GameState* BootModules = nullptr;
+        GameState* CurrentGameState = nullptr;
+        GameState* RequestedGameState = nullptr;
 
         std::map<std::string, IModule*> RegisteredModules;
         std::map<std::string, GameState> registeredGameStates;

@@ -6,7 +6,7 @@ namespace Sogas
     {
         void DebugInMenu() {};
         void RenderDebug() {};
-        void Load() {};
+        void Load(const json& /*j*/) {};
         void Update(f32 /*dt*/) {};
         void OnEntityCreated() {};
     };

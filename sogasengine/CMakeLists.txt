@@ -45,4 +45,4 @@ target_link_libraries(${PROJECT_NAME}
         GLFW/lib/glfw3)
 
 target_precompile_headers(${PROJECT_NAME} 
-    PUBLIC public/pch.h)
+    PUBLIC public/pch.h PRIVATE private/sgs_pch.h)

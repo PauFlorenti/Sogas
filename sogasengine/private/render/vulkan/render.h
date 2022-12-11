@@ -17,6 +17,8 @@ namespace Vk
 
         bool Init();
         void Update(f32 /*dt*/);
+        bool PrepareFrame();
+        void EndFrame();
         void DrawFrame();
         void Shutdown();
 
@@ -26,6 +28,8 @@ namespace Vk
         void Bind( const u32 renderId, PrimitiveTopology topology );
         void Draw(const u32 vertexCount, const u32 vertexOffset);
         void DrawIndexed(const u32 indexCount, const u32 indexOffset);
+        void ActivateObject(const glm::mat4& model, const glm::vec4& color);
+        void ActivateCamera();
 
     private:
         VkInstance Instance = VK_NULL_HANDLE;
@@ -72,6 +76,8 @@ namespace Vk
         VkDescriptorPool DescriptorPool             = VK_NULL_HANDLE;
         std::vector<VkDescriptorSet> DescriptorSets;
 
+        CHandle MainCamera;
+
         bool CreateInstance();
         void SetupDebugMessenger();
         void PickPhysicalDevice();
@@ -90,8 +96,6 @@ namespace Vk
         void CreateDescriptorPools();
         void CreateDescriptorSets();
         void UpdateUniformBuffer();
-        bool PrepareFrame();
-        void EndFrame();
         void Submit();
         u32 FindMemoryType(u32 typeFilter, VkMemoryPropertyFlags propertyFlags);
 

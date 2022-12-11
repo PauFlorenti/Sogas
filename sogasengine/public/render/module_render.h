@@ -22,6 +22,7 @@ namespace Sogas
         void Bind(const u32 renderId, PrimitiveTopology topology);
         void Draw(const u32 vertexCount, const u32 vertexOffset);
         void DrawIndexed(const u32 indexCount, const u32 indexOffset);
+        void ActivateObject(const glm::mat4& model, const glm::vec4& color);
 
     private:
         std::unique_ptr<Sogas::Vk::CRender> Renderer;
