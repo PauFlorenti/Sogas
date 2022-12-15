@@ -38,7 +38,14 @@ void LogMessage(LogLevel level, const char* message, ...)
     WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), buffer, (DWORD)length, nWritten, NULL);
 }
 
-void ReportAssert(const char* expr, const char* message, const char* file, i32 line)
+void ReportAssert(const char* expr, const char* message, const char* file, i32 line, ...)
 {
-    LogMessage(LOG_LEVEL_FATAL, "Assertion failed: '%s'.\n Message: '%s', in file '%s', line '%d'.", expr, message, file, line);
+    va_list args;
+    va_start(args, message);
+    char buffer[LOG_BUFFER_SIZE];
+    memset(buffer, 0, LOG_BUFFER_SIZE);
+    vsnprintf(buffer, sizeof(buffer), message, args);
+    va_end(args);
+
+    LogMessage(LOG_LEVEL_FATAL, "Assertion failed: '%s'.\n Message: '%s', in file '%s', line '%d'.", expr, buffer, file, line);
 }

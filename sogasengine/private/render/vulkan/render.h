@@ -23,13 +23,16 @@ namespace Vk
         void Shutdown();
 
         // API calls ...
-        bool CreateMesh(CMesh* mesh, std::vector<Vertex> vertices, PrimitiveTopology topology);
-        bool CreateMesh(CMesh* mesh, std::vector<Vertex> vertices, std::vector<u32> indices, PrimitiveTopology topology);
-        void Bind( const u32 renderId, PrimitiveTopology topology );
+        bool CreateMesh(CMesh* mesh, const std::vector<Vertex>& vertices, PrimitiveTopology topology);
+        bool CreateMesh(CMesh* mesh, const std::vector<Vertex>& vertices, const std::vector<u32>& indices, PrimitiveTopology topology);
+        void Bind( const u32 renderId, PrimitiveTopology topology, const bool indexed );
         void Draw(const u32 vertexCount, const u32 vertexOffset);
         void DrawIndexed(const u32 indexCount, const u32 indexOffset);
         void ActivateObject(const glm::mat4& model, const glm::vec4& color);
         void ActivateCamera();
+        void CreateTexture(){};
+        void DestroyTexture(){};
+        
 
     private:
         VkInstance Instance = VK_NULL_HANDLE;

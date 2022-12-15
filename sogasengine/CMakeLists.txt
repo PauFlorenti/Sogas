@@ -46,3 +46,8 @@ target_link_libraries(${PROJECT_NAME}
 
 target_precompile_headers(${PROJECT_NAME} 
     PUBLIC public/pch.h PRIVATE private/sgs_pch.h)
+
+file(COPY data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/..)
+file(GLOB SHADERS private/shaders/bin/*.spv)
+message(${SHADERS})
+file(COPY ${SHADERS} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/../data/shaders)

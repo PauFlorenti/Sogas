@@ -2,9 +2,9 @@
 
 namespace Sogas
 {
-    bool CModuleEntities::Start() 
+    bool CEntityModule::Start() 
     { 
-        json j = LoadJson("../../../sandbox/data/components.json");
+        json j = LoadJson("../../data/components.json");
 
         std::map<std::string, u32> ComponentSizes = j["sizes"];
         i32 defaultSize = ComponentSizes["default"];
@@ -38,19 +38,19 @@ namespace Sogas
         return true; 
     }
 
-    void CModuleEntities::Stop()
+    void CEntityModule::Stop()
     {
 
     }
 
-    void CModuleEntities::Update(f32 /*dt*/) {} 
-    void CModuleEntities::Render() {}
-    void CModuleEntities::RenderDebug() {}
-    void CModuleEntities::RenderInMenu() {}
-    void CModuleEntities::RenderUI() {}
-    void CModuleEntities::RenderUIDebug() {}
+    void CEntityModule::Update(f32 /*dt*/) {} 
+    void CEntityModule::Render() {}
+    void CEntityModule::RenderDebug() {}
+    void CEntityModule::RenderInMenu() {}
+    void CEntityModule::RenderUI() {}
+    void CEntityModule::RenderUIDebug() {}
 
-    void CModuleEntities::LoadListOfManagers(const json& j, std::vector<CHandleManager*>& managers)
+    void CEntityModule::LoadListOfManagers(const json& j, std::vector<CHandleManager*>& managers)
     {
         managers.clear();
 

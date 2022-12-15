@@ -23,7 +23,7 @@ enum LogLevel
 
 void LogMessage(LogLevel level, const char* message, ...);
 
-void ReportAssert(const char* expr, const char* message, const char* file, i32 line);
+void ReportAssert(const char* expr, const char* message, const char* file, i32 line, ...);
 
 #define SFATAL(message, ...) LogMessage(LOG_LEVEL_FATAL, message, ##__VA_ARGS__);
 #define SERROR(message, ...) LogMessage(LOG_LEVEL_ERROR, message, ##__VA_ARGS__);
@@ -40,4 +40,4 @@ void ReportAssert(const char* expr, const char* message, const char* file, i32 l
 #endif
 
 #define SASSERT(expr) if(expr) {} else { ReportAssert(#expr, "", __FILE__, __LINE__); debugBreak(); }
-#define SASSERT_MSG(expr, message) if(expr) {} else { ReportAssert(#expr, message, __FILE__, __LINE__); debugBreak(); }
+#define SASSERT_MSG(expr, message, ...) if(expr) {} else { ReportAssert(#expr, message, __FILE__, __LINE__, ##__VA_ARGS__); debugBreak(); }

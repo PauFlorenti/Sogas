@@ -40,7 +40,7 @@ Finder should be handled by resouce manager.
     - [ ] Load textures
 
 - [ ] Entity Component System
-    - [ ] Entity class
+    - [x] Entity class
     - [ ] Transform component - GLM or own math class??
     - [ ] Camera component.
     - [ ] Render component.
@@ -53,6 +53,9 @@ Finder should be handled by resouce manager.
 
 ### GRAPHICS
 - [ ] Render
+    - [ ] Create a proper Renderer interface to communicate with multiple devices.
+
+### VULKAN
     - [ ] Properly Initialize Vulkan
         - [ ] Validate physical device given certain criteria.
         - [ ] Validate logical device creation given certain features and extension needed.

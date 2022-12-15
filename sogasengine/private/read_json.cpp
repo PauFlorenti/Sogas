@@ -109,8 +109,8 @@ namespace Sogas
     {
         json j;
         std::ifstream ifs(filename.c_str());
+        SASSERT_MSG(ifs.is_open(), "Failed to open json file '%s'.", filename.c_str());
 
-        SASSERT_MSG(ifs.is_open(), "Failed to open json file.");
         try
         {
             j = json::parse(ifs);

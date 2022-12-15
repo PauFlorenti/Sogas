@@ -6,12 +6,13 @@ namespace Sogas
     void CModuleManager::Boot()
     {
         // Read from configuration file the boot modules.
-        ParseModules("../../../sogasengine/private/modules.json");
+        ParseModules("../../data/modules.json");
+        ParseGameStates("../../data/gamestates.json");
 
-        if(!BootModules)
+        if(!BootGameState.empty())
         {
             // Change to game state.
-            ChangeToGameState(BootModules);
+            ChangeToGameState(BootGameState);
         }
     }
 
@@ -39,13 +40,18 @@ namespace Sogas
         RegisteredModules[Module->GetName()] = Module;
     }
 
+    void CModuleManager::RegisterGameState(const std::string& name, const VModules& modules)
+    {
+        RegisteredGameStates[name] = modules;
+    }
+
     void CModuleManager::ChangeToGameState(const std::string& GameStateName)
     {
-        auto it = registeredGameStates.find(GameStateName);
+        auto it = RegisteredGameStates.find(GameStateName);
 
-        SASSERT_MSG(it != registeredGameStates.cend(), "Trying to change to a non existent game state");
+        SASSERT_MSG(it != RegisteredGameStates.cend(), "Trying to change to a non existent game state");
         
-        if(it == registeredGameStates.cend()) return;
+        if(it == RegisteredGameStates.cend()) return;
 
         ChangeToGameState(&(it->second));
     }
@@ -164,6 +170,34 @@ namespace Sogas
             {
                 RenderModules.push_back(module);
             }
+        }
+    }
+
+    void CModuleManager::ParseGameStates(const std::string& filename)
+    {
+        RegisteredGameStates.clear();
+
+        json j = LoadJson(filename);
+
+        BootGameState = j["boot"].get<std::string>();
+
+        json jGameStateList = j["gamestates"];
+
+        SASSERT(jGameStateList.size() > 0);
+
+        for(auto jGameState : jGameStateList.items())
+        {
+            const std::string& jGameStateName = jGameState.key();
+
+            GameState gs;
+            for(auto jModule : jGameState.value())
+            {
+                const std::string& ModuleName = jModule.get<std::string>();
+                IModule* module = GetModule(ModuleName);
+                gs.push_back(module);
+            }
+
+            RegisterGameState(jGameStateName, gs);
         }
     }
 

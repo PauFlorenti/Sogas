@@ -4,6 +4,7 @@
 
 namespace Sogas
 {
+    class CEntityModule;
     class CRenderModule;
 
     class CEngine
@@ -28,6 +29,7 @@ namespace Sogas
     private:
         static CEngine* engine;
         CRenderModule* RenderModule = nullptr;
+        CEntityModule* EntityModule = nullptr;
         CModuleManager ModuleManager;
 
         void update(const f32 dt);

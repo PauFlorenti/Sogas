@@ -1,0 +1,7 @@
+{
+  "boot": "playing",
+  "gamestates":
+  {
+    "playing": ["boot"]
+  }
+}

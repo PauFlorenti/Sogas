@@ -6,9 +6,11 @@ namespace Sogas
 
     static void PaserScene(const std::string filename)
     {
-        //json j = LoadJson(filename);
+        json j = LoadJson(filename);
 
         SASSERT(j.is_array());
+
+        std::vector<CEntity*> entities_loaded;
 
         for(u32 i = 0; i < j.size(); ++i)
         {
@@ -24,13 +26,21 @@ namespace Sogas
 
                 CEntity* entity = entity_handle;
                 entity->Load(jentity);
+                entities_loaded.push_back(entity);
+            }
+        }
+
+        if(entities_loaded.size() >= 1){
+            for(auto ent : entities_loaded)
+            {
+                ent->OnEntityCreated();
             }
         }
     }
 
     bool CModuleBoot::Start()
     {
-        json j = LoadJson("../../../sogasengine/private/boot.json");
+        json j = LoadJson("../../data/boot.json");
         auto scenes = j["scenes_to_load"].get<std::vector<std::string>>();
         for(auto s : scenes)
         {

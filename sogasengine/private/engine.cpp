@@ -1,8 +1,10 @@
 #include "engine.h"
 
 #include "modules/module_boot.h"
+#include "modules/module_entities.h"
 #include "render/module_render.h"
 #include "resources/primitives.h"
+#include "resources/resource.h"
 
 namespace Sogas
 {
@@ -18,9 +20,13 @@ namespace Sogas
         STRACE("Initializing Engine ... ");
         static CModuleBoot boot("boot");
 
+        CResourceManager::Get()->RegisterResourceType(GetResourceType<CMesh>());
+
         RenderModule = new CRenderModule("render");
+        EntityModule = new CEntityModule("entities");
 
         ModuleManager.RegisterServiceModule(RenderModule);
+        ModuleManager.RegisterServiceModule(EntityModule);
         ModuleManager.RegisterGameModule(&boot);
 
         ModuleManager.Boot();

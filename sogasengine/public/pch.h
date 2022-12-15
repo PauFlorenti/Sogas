@@ -8,6 +8,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 // external
@@ -21,6 +22,9 @@ using json = nlohmann::json;
 //#include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 //#include <glm/gtx/quaternion.hpp>
+
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
 #pragma warning (default : 4201 )
 
 // application

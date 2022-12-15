@@ -104,22 +104,14 @@ namespace Vk
     static std::vector<char> ReadFile(const std::string& filename)
     {
         std::ifstream file(filename, std::ios::ate | std::ios::binary);
-
-        if(!file)
-        {
-            throw std::runtime_error("No file!");
-        }
-
-        if(!file.is_open())
-        {
-            throw std::runtime_error("Failed to open file!");
-        }
+        SASSERT_MSG(file, "No file provided with name '%s'", filename.c_str());
+        SASSERT_MSG(file.is_open(), "Failed to open file '%s'", filename.c_str());
 
         size_t fileSize = (size_t) file.tellg();
         std::vector<char> buffer(fileSize);
         file.seekg(0);
         file.read(buffer.data(), fileSize);
-        file.close(); 
+        file.close();
 
         return buffer;
     }
@@ -333,14 +325,14 @@ namespace Vk
         STRACE("Vulkan renderer has shut down.\n");
     }
 
-    bool CRender::CreateMesh(CMesh* mesh, std::vector<Vertex> vertices, PrimitiveTopology topology)
+    bool CRender::CreateMesh(CMesh* mesh, const std::vector<Vertex>& vertices, PrimitiveTopology topology)
     {
         SASSERT( !vertices.empty() );
         SASSERT( mesh->RenderId == INVALID_ID );
         SASSERT( topology != PrimitiveTopology::UNDEFINED );
 
         u32 i = 0;
-        for(auto vulkanMesh : VulkanMeshesArray)
+        for(auto& vulkanMesh : VulkanMeshesArray)
         {
             if(vulkanMesh.id != INVALID_ID)
             {
@@ -361,35 +353,33 @@ namespace Vk
             mesh->vertexCount = vertexCount;
             mesh->vertexOffset = 0;
 
-            u32 flags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-
-            VkBufferCreateInfo bufferCreateInfo = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
-            bufferCreateInfo.size           = totalBufferSize;
-            bufferCreateInfo.sharingMode    = VK_SHARING_MODE_EXCLUSIVE;
-            bufferCreateInfo.usage          = flags;
-
-            if( vkCreateBuffer(Device, &bufferCreateInfo, nullptr, &vulkanMesh.vertexBuffer ) != VK_SUCCESS)
+            // VERTEX BUFFER 
             {
-                throw std::runtime_error("Failed to create vertex buffer.");
-            }
+                VkBuffer stagingBuffer;
+                VkDeviceMemory stagingBufferMemory;
 
-            VkMemoryRequirements bufferMemoryRequirements;
-            vkGetBufferMemoryRequirements( Device, vulkanMesh.vertexBuffer, &bufferMemoryRequirements );
+                CreateBuffer(
+                    totalBufferSize,
+                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                    stagingBuffer, stagingBufferMemory
+                );
 
-            i32 index = FindMemoryType( bufferMemoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+                void* data;
+                vkMapMemory(Device, stagingBufferMemory, 0, totalBufferSize, 0, &data);
+                memcpy(data, triangleVertices.data(), static_cast<size_t>(totalBufferSize));
+                vkUnmapMemory(Device, stagingBufferMemory);
+                
+                CreateBuffer( 
+                    totalBufferSize, 
+                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
+                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                    vulkanMesh.vertexBuffer, vulkanMesh.vertexBufferMemory);
 
-            VkMemoryAllocateInfo memoryAllocateInfo = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
-            memoryAllocateInfo.memoryTypeIndex  = index;
-            memoryAllocateInfo.allocationSize   = bufferMemoryRequirements.size;
+                CopyBuffer( stagingBuffer, vulkanMesh.vertexBuffer, totalBufferSize );
 
-            if( vkAllocateMemory( Device, &memoryAllocateInfo, nullptr, &vulkanMesh.vertexBufferMemory ) != VK_SUCCESS)
-            {
-                throw std::runtime_error("Failed to allocate vertex buffer memory.");
-            }
-
-            if( vkBindBufferMemory( Device, vulkanMesh.vertexBuffer, vulkanMesh.vertexBufferMemory, 0) != VK_SUCCESS)
-            {
-                throw std::runtime_error("Failed to bind vertex buffer memory!");
+                vkDestroyBuffer( Device, stagingBuffer, nullptr );
+                vkFreeMemory( Device, stagingBufferMemory, nullptr );
             }
 
             break;
@@ -401,16 +391,107 @@ namespace Vk
         return true;
     }
 
-    bool CRender::CreateMesh(CMesh* mesh, std::vector<Vertex> vertices, std::vector<u32> indices, PrimitiveTopology topology)
+    bool CRender::CreateMesh(CMesh* mesh, const std::vector<Vertex>& vertices, const std::vector<u32>& indices, PrimitiveTopology topology)
     {
         SASSERT( !vertices.empty() );
         SASSERT( !indices.empty() );
         SASSERT( mesh->RenderId == INVALID_ID );
         SASSERT( topology != PrimitiveTopology::UNDEFINED );
+
+        u32 i = 0;
+        for(auto& vulkanMesh : VulkanMeshesArray)
+        {
+            if(vulkanMesh.id != INVALID_ID)
+            {
+                i++;
+                continue;
+            }
+
+            u32 vertexCount     = static_cast<u32>(vertices.size());
+            u32 vertexSize      = sizeof(VulkanVertex);
+            u32 totalBufferSize = vertexCount * vertexSize;
+
+            vulkanMesh.id           = i;
+            vulkanMesh.vertexCount  = vertexCount;
+            vulkanMesh.vertexSize   = vertexSize;
+            vulkanMesh.vertexOffset = 0;
+
+            mesh->RenderId      = i;
+            mesh->vertexCount   = vertexCount;
+            mesh->vertexOffset  = 0;
+            mesh->indexCount    = static_cast<u32>(indices.size());
+            mesh->indexOffset   = 0;
+
+            // VERTEX BUFFER 
+            {
+                VkBuffer stagingBuffer;
+                VkDeviceMemory stagingBufferMemory;
+
+                CreateBuffer(
+                    totalBufferSize,
+                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                    stagingBuffer, stagingBufferMemory
+                );
+
+                void* data;
+                vkMapMemory(Device, stagingBufferMemory, 0, totalBufferSize, 0, &data);
+                memcpy(data, triangleVertices.data(), static_cast<size_t>(totalBufferSize));
+                vkUnmapMemory(Device, stagingBufferMemory);
+                
+                CreateBuffer( 
+                    totalBufferSize, 
+                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
+                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                    vulkanMesh.vertexBuffer, vulkanMesh.vertexBufferMemory);
+
+                CopyBuffer( stagingBuffer, vulkanMesh.vertexBuffer, totalBufferSize );
+
+                vkDestroyBuffer( Device, stagingBuffer, nullptr );
+                vkFreeMemory( Device, stagingBufferMemory, nullptr );
+            }
+
+            // INDEX BUFFER
+            {
+                VkBuffer stagingBuffer;
+                VkDeviceMemory stagingBufferMemory;
+                u32 bufferSize = static_cast<u32>(indices.size() * sizeof(u32));
+
+                CreateBuffer(
+                    bufferSize,
+                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                    stagingBuffer, stagingBufferMemory
+                );
+
+                void* data;
+                vkMapMemory(Device, stagingBufferMemory, 0, bufferSize, 0, &data);
+                memcpy(data, indices.data(), bufferSize);
+                vkUnmapMemory(Device, stagingBufferMemory);
+
+                CreateBuffer(
+                    bufferSize,
+                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                    vulkanMesh.indexBuffer, vulkanMesh.indexBufferMemory
+                );
+
+                CopyBuffer(stagingBuffer, vulkanMesh.indexBuffer, bufferSize);
+
+                vkDestroyBuffer(Device, stagingBuffer, nullptr);
+                vkFreeMemory(Device, stagingBufferMemory, nullptr);
+            }
+
+            break;
+        }
+
+        if( i == 10 )
+            return false;
+
         return true;
     }
 
-    void CRender::Bind( const u32 renderId, PrimitiveTopology topology )
+    void CRender::Bind( const u32 renderId, PrimitiveTopology topology, const bool indexed )
     {
         VkCommandBuffer& cmd = CommandBuffers.at(FrameIndex);
         for(const auto mesh : VulkanMeshesArray)
@@ -422,6 +503,10 @@ namespace Vk
                     vkCmdSetPrimitiveTopology( cmd, VK_PRIMITIVE_TOPOLOGY_LINE_LIST );
                 else if ( topology == PrimitiveTopology::TRIANGLELIST )
                     vkCmdSetPrimitiveTopology( cmd, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST );
+
+                if(indexed)
+                    vkCmdBindIndexBuffer(cmd, mesh.indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
                 vkCmdBindVertexBuffers( cmd, 0, 1, &mesh.vertexBuffer, &offset);
                 break;
             }
@@ -807,8 +892,10 @@ namespace Vk
     void CRender::CreateGraphicsPipeline()
     {
         STRACE("\tReading compiled shaders ...");
-        auto VertexShader = ReadFile("../../../sogasengine/private/shaders/bin/triangle.vert.spv");
-        auto FragmentShader = ReadFile("../../../sogasengine/private/shaders/bin/triangle.frag.spv");
+        auto VertexShader = ReadFile("../../data/shaders/triangle.vert.spv");
+        SASSERT(!VertexShader.empty());
+        auto FragmentShader = ReadFile("../../data/shaders/triangle.frag.spv");
+        SASSERT(!FragmentShader.empty());
 
         STRACE("\tCreating Shader Modules ...");
         VkShaderModule VertexShaderModule = CreateShaderModule(VertexShader);

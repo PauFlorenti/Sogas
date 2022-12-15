@@ -17,11 +17,12 @@ namespace Sogas
             CEntity* e = CHandle(this).GetOwner();  \
             if(!e)                                  \
                 return CHandle();                   \
-            return e->GetType();                    \
+            return e->Get<TComp>();                 \
         }                                           \
                                                     \
         CEntity* GetEntity() {                      \
             CEntity* e = CHandle(this).GetOwner();  \
+            return e;                               \
         }                                           \
 
 } // Sogas

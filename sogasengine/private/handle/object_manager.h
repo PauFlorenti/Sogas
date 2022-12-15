@@ -68,6 +68,7 @@ namespace Sogas
 
         void Init(u32 MaxObjects) override
         {
+            CHandleManager::Init(MaxObjects);
             AllocatedMemory.resize(MaxObjects * sizeof(TObj));
             Objects = static_cast<TObj*>((void*)AllocatedMemory.data());
         }
@@ -89,8 +90,12 @@ namespace Sogas
             if(!handle.GetType())
                 return nullptr;
 
-            SASSERT_MSG(handle.GetType() != GetType(), "Not valid type");
-            SASSERT(handle.GetType() == GetType());
+            if (handle.GetType() != GetType())
+            {
+                SERROR("Requested to convert handle of type '%s' to a class of type '%s'.", 
+                    CHandleManager::GetByType(handle.GetType())->GetName(), GetName());
+                return nullptr;
+            }
 
             const auto& externalData = ExternalToInternal[handle.GetExternalIndex()];
 

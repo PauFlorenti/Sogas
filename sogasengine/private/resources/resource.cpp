@@ -2,7 +2,7 @@
 
 namespace Sogas
 {
-    static CResourceManager* ResourceManager = nullptr;
+    CResourceManager* CResourceManager::ResourceManager = nullptr;
 
     const IResource* CResourceManager::GetResource( const std::string& name )
     {

@@ -5,7 +5,7 @@
 
 namespace Sogas
 {
-    class CMesh : IResource
+    class CMesh : public IResource
     {
     public:
         bool Create(std::vector<Vertex> vertices, PrimitiveTopology topology);

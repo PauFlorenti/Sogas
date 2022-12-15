@@ -60,12 +60,14 @@ namespace Sogas
 
             // Check if visible by culling test.
 
-            TCompTransform* transform = key->Transform;
-            SASSERT(transform);
+            //TCompTransform* transform = key->Transform;
+            //SASSERT(transform);
             glm::vec4 color = glm::vec4(1.0f);
 
+            glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
             // Activate model and color
-            CEngine::Get()->GetRenderModule()->ActivateObject(transform->AsMatrix(), color);
+            CEngine::Get()->GetRenderModule()->ActivateObject(model /*transform->AsMatrix()*/, color);
 
             // Activate material
 
@@ -81,6 +83,14 @@ namespace Sogas
         }
 
         DrawCallsPerChannel[channel] = nDrawCalls;
+    }
+
+    void CRenderManager::DeleteKeysFromOwner(CHandle owner)
+    {
+        auto it = std::remove_if(keys.begin(), keys.end(), [owner](const Key& k){
+            return k.Owner == owner;
+        });
+        keys.erase(it, keys.end());
     }
 
 } // Sogas

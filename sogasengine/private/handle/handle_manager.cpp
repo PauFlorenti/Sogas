@@ -173,7 +173,7 @@ namespace Sogas
 
     void CHandleManager::SetOwner(CHandle who, CHandle newOwner)
     {
-        SASSERT(!who.IsValid());
+        SASSERT(who.IsValid());
         auto& externalData = ExternalToInternal[who.GetExternalIndex()];
         externalData.CurrentOwner = newOwner;
     }

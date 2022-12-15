@@ -22,3 +22,7 @@ target_include_directories(${PROJECT_NAME}
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}/sogasengine/public
         ${CMAKE_SOURCE_DIR}/sogasengine/external)
+
+file(COPY data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/..)
+
+set_target_properties(Sandbox PROPERTIES LINK_FLAGS "/WHOLEARCHIVE:sogasengine")

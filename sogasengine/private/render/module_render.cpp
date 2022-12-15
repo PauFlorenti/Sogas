@@ -50,14 +50,26 @@ namespace Sogas
         }
     }
 
-    bool CRenderModule::CreateMesh(CMesh* mesh, std::vector<Vertex> vertices, PrimitiveTopology topology)
+    bool CRenderModule::CreateMesh(
+        CMesh* mesh, 
+        const std::vector<Vertex>& vertices, 
+        PrimitiveTopology topology)
     {
         return Renderer->CreateMesh(mesh, vertices, topology);
     }
 
-    void CRenderModule::Bind(const u32 renderId, PrimitiveTopology topology)
+    bool CRenderModule::CreateMesh(
+        CMesh* mesh, 
+        const std::vector<Vertex>& vertices, 
+        const std::vector<u32>& indices, 
+        PrimitiveTopology topology)
     {
-        Renderer->Bind(renderId, topology);
+        return Renderer->CreateMesh(mesh, vertices, indices, topology);
+    }
+
+    void CRenderModule::Bind(const u32 renderId, PrimitiveTopology topology, const bool indexed)
+    {
+        Renderer->Bind(renderId, topology, indexed);
     }
 
     void CRenderModule::Draw(const u32 vertexCount, const u32 vertexOffset)

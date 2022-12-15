@@ -21,8 +21,12 @@ namespace Sogas
 
     class IResource
     {
+    protected:
+        std::string Name; // filename
+        std::string FullPath; // Full path of the file
+        const IResourceType* Type = nullptr;
+
     public:
-        IResource(){};
         ~IResource(){};
 
         const std::string GetNameFile() const { return Name; }
@@ -35,31 +39,25 @@ namespace Sogas
 
         const IResourceType* GetType() const { return Type; };
 
-        template < typename Type >
-        const Type* As()
+        template < typename TargetType >
+        const TargetType* As() const
         {
             SASSERT( Type != nullptr );
-            Type* ResourceType = GetResourceType<Type>();
-            SASSERT( ResourceType == Type );
-            return static_cast<ResourceType>(this);
+            const IResourceType* target_type = GetResourceType<TargetType>();
+            SASSERT( target_type == Type );
+            return static_cast<const TargetType*>(this);
         }
-
-    protected:
-        std::string Name; // filename
-        std::string FullPath; // Full path of the file
-
-        const IResourceType* Type = nullptr;
     };
 
     class CResourceManager
     {
     public:
-        CResourceManager* Get() {
-            if(!Manager)
+        static CResourceManager* Get() {
+            if(!ResourceManager)
             {
-                Manager = new CResourceManager();
+                ResourceManager = new CResourceManager();
             }
-            return Manager;
+            return ResourceManager;
         }
 
         bool Exists(const std::string& name)
@@ -77,7 +75,7 @@ namespace Sogas
             {
                 const char* extension = NewResourceType->GetExtension(i);
 
-                SASSERT((ResourcesType.find(extension) != ResourcesType.end()));
+                SASSERT((ResourcesType.find(extension) == ResourcesType.end()));
                 ResourcesType[extension] = NewResourceType;
             }
         }
@@ -97,7 +95,7 @@ namespace Sogas
         }
 
     private:
-        static CResourceManager* Manager;
+        static CResourceManager* ResourceManager;
 
         std::map<std::string, IResource*> Resources;
         std::map<std::string, IResourceType*> ResourcesType;

@@ -8,6 +8,7 @@ namespace Sogas
     bool CMesh::Create(std::vector<Vertex> vertices, PrimitiveTopology topology)
     {
         SASSERT( !vertices.empty() );
+        SASSERT( topology != PrimitiveTopology::UNDEFINED );
         Indexed = false;
         Topology = topology;
 
@@ -18,16 +19,15 @@ namespace Sogas
     {
         SASSERT( !vertices.empty() );
         SASSERT( topology != PrimitiveTopology::UNDEFINED );
-        Topology = topology;
+        Topology    = topology;
+        Indexed     = true;
 
-        Indexed = true;
-
-        return true;
+        return CEngine::Get()->GetRenderModule()->CreateMesh(this, vertices, indices, topology);
     }
 
     void CMesh::Activate() const
     {
-        CEngine::Get()->GetRenderModule()->Bind(RenderId, Topology);
+        CEngine::Get()->GetRenderModule()->Bind(RenderId, Topology, Indexed);
     }
 
     void CMesh::Render() const

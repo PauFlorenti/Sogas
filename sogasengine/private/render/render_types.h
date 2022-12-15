@@ -17,6 +17,10 @@ namespace Sogas
     {
         glm::vec3 Position;
         glm::vec4 Color;
+
+        bool operator==(const Vertex& other) const {
+            return Position == other.Position && Color == other.Color;
+        }
     };
 
     enum DrawChannel

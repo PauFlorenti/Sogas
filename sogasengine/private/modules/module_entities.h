@@ -6,11 +6,11 @@
 namespace Sogas
 {
 
-    class CModuleEntities : public IModule
+    class CEntityModule : public IModule
     {
     public:
 
-        CModuleEntities(const std::string& name) : IModule(name) {}
+        CEntityModule(const std::string& name) : IModule(name) {}
 
         bool Start() override;
         void Stop() override;
