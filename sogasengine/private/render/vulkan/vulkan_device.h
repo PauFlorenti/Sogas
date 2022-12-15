@@ -2,6 +2,7 @@
 
 #include "render/render_types.h"
 #include "resources/mesh.h"
+
 #include <vulkan/vulkan.h>
 
 #define MAX_FRAMES_IN_FLIGHT 2
@@ -9,11 +10,11 @@
 namespace Sogas {
 namespace Vk
 {
-    class CRender
+    class VulkanDevice
     {
     public:
-        CRender();
-        ~CRender(){};
+        VulkanDevice();
+        ~VulkanDevice(){};
 
         bool Init();
         void Update(f32 /*dt*/);

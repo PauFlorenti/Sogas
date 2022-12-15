@@ -1,4 +1,5 @@
-#include "render.h"
+
+#include "vulkan_device.h"
 
 #include "GLFW/glfw3.h"
 #define GLFW_EXPOSE_NATIVE_WIN32
@@ -116,7 +117,7 @@ namespace Vk
         return buffer;
     }
 
-    u32 CRender::FindMemoryType(u32 typeFilter, VkMemoryPropertyFlags propertyFlags)
+    u32 VulkanDevice::FindMemoryType(u32 typeFilter, VkMemoryPropertyFlags propertyFlags)
     {
         VkPhysicalDeviceMemoryProperties memoryProperties;
         vkGetPhysicalDeviceMemoryProperties(Gpu, &memoryProperties);
@@ -131,7 +132,7 @@ namespace Vk
         throw std::runtime_error("Failed to find suitable memory type");
     }
 
-    void CRender::PickPhysicalDevice()
+    void VulkanDevice::PickPhysicalDevice()
     {
         u32 PhysicalDeviceCount = 0;
         vkEnumeratePhysicalDevices(Instance, &PhysicalDeviceCount, nullptr);
@@ -186,7 +187,7 @@ namespace Vk
         }
     }
 
-    CRender::CRender()
+    VulkanDevice::VulkanDevice()
     {
         for( auto mesh : VulkanMeshesArray )
         {
@@ -201,7 +202,7 @@ namespace Vk
         Triangle.indexOffset    = 0;
     }
 
-    bool CRender::Init()
+    bool VulkanDevice::Init()
     {
         STRACE("Initializing Vulkan renderer ... ");
 
@@ -227,11 +228,11 @@ namespace Vk
         return true;
     }
 
-    void CRender::Update(f32 /*dt*/)
+    void VulkanDevice::Update(f32 /*dt*/)
     {
     }
 
-    void CRender::DrawFrame()
+    void VulkanDevice::DrawFrame()
     {
         if( PrepareFrame() )
         {
@@ -263,7 +264,7 @@ namespace Vk
         }
     }
 
-    void CRender::Shutdown()
+    void VulkanDevice::Shutdown()
     {
         STRACE("Shutting down Vulkan renderer ...");
 
@@ -325,7 +326,7 @@ namespace Vk
         STRACE("Vulkan renderer has shut down.\n");
     }
 
-    bool CRender::CreateMesh(CMesh* mesh, const std::vector<Vertex>& vertices, PrimitiveTopology topology)
+    bool VulkanDevice::CreateMesh(CMesh* mesh, const std::vector<Vertex>& vertices, PrimitiveTopology topology)
     {
         SASSERT( !vertices.empty() );
         SASSERT( mesh->RenderId == INVALID_ID );
@@ -391,7 +392,7 @@ namespace Vk
         return true;
     }
 
-    bool CRender::CreateMesh(CMesh* mesh, const std::vector<Vertex>& vertices, const std::vector<u32>& indices, PrimitiveTopology topology)
+    bool VulkanDevice::CreateMesh(CMesh* mesh, const std::vector<Vertex>& vertices, const std::vector<u32>& indices, PrimitiveTopology topology)
     {
         SASSERT( !vertices.empty() );
         SASSERT( !indices.empty() );
@@ -491,7 +492,7 @@ namespace Vk
         return true;
     }
 
-    void CRender::Bind( const u32 renderId, PrimitiveTopology topology, const bool indexed )
+    void VulkanDevice::Bind( const u32 renderId, PrimitiveTopology topology, const bool indexed )
     {
         VkCommandBuffer& cmd = CommandBuffers.at(FrameIndex);
         for(const auto mesh : VulkanMeshesArray)
@@ -513,17 +514,17 @@ namespace Vk
         }
     }
 
-    void CRender::Draw(const u32 vertexCount, const u32 vertexOffset)
+    void VulkanDevice::Draw(const u32 vertexCount, const u32 vertexOffset)
     {
         vkCmdDraw(CommandBuffers.at(FrameIndex), vertexCount, 1, vertexOffset, 0);
     }
 
-    void CRender::DrawIndexed(const u32 indexCount, const u32 indexOffset)
+    void VulkanDevice::DrawIndexed(const u32 indexCount, const u32 indexOffset)
     {
         vkCmdDrawIndexed(CommandBuffers.at(FrameIndex), indexCount, 1, indexOffset, 0, 0);
     }
 
-    void CRender::ActivateObject(const glm::mat4& model, const glm::vec4& /*color*/)
+    void VulkanDevice::ActivateObject(const glm::mat4& model, const glm::vec4& /*color*/)
     {
         vkCmdPushConstants(
             CommandBuffers.at(FrameIndex), 
@@ -532,7 +533,7 @@ namespace Vk
             0, sizeof(glm::mat4), &model);
     }
 
-    void CRender::ActivateCamera()
+    void VulkanDevice::ActivateCamera()
     {
         UpdateUniformBuffer();
 
@@ -545,7 +546,7 @@ namespace Vk
             0, nullptr);
     }
 
-    bool CRender::CreateInstance()
+    bool VulkanDevice::CreateInstance()
     {
         
         STRACE("\tCreating the Vulkan Instance ...");
@@ -615,7 +616,7 @@ namespace Vk
         return true;
     }
 
-    bool CRender::CreateDevice()
+    bool VulkanDevice::CreateDevice()
     {
         STRACE("\tCreating vulkan window surface handle ...");
         if (glfwCreateWindowSurface(Instance, CApplication::Get()->GetWindow(), nullptr, &Surface) != VK_SUCCESS)
@@ -823,7 +824,7 @@ namespace Vk
         return true;
     }
 
-    bool CRender::CheckValidationLayersSupport()
+    bool VulkanDevice::CheckValidationLayersSupport()
     {
         u32 layerCount = 0;
         vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -850,7 +851,7 @@ namespace Vk
         return true;
     }
 
-    void CRender::SetupDebugMessenger()
+    void VulkanDevice::SetupDebugMessenger()
     {
         if (!validationLayersEnabled)
             return;
@@ -870,7 +871,7 @@ namespace Vk
         }
     }
 
-    void CRender::CreateDescriptorSetLayout()
+    void VulkanDevice::CreateDescriptorSetLayout()
     {
         VkDescriptorSetLayoutBinding descriptorSetLayoutBinding{};
         descriptorSetLayoutBinding.binding              = 0;
@@ -889,7 +890,7 @@ namespace Vk
         }
     }
 
-    void CRender::CreateGraphicsPipeline()
+    void VulkanDevice::CreateGraphicsPipeline()
     {
         STRACE("\tReading compiled shaders ...");
         auto VertexShader = ReadFile("../../data/shaders/triangle.vert.spv");
@@ -1029,7 +1030,7 @@ namespace Vk
         vkDestroyShaderModule(Device, FragmentShaderModule, nullptr);
     }
 
-    void CRender::CreateRenderPass()
+    void VulkanDevice::CreateRenderPass()
     {
         VkAttachmentDescription colorAttachment{};
         colorAttachment.initialLayout   = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -1072,7 +1073,7 @@ namespace Vk
         }       
     }
 
-    void CRender::CreateFramebuffers()
+    void VulkanDevice::CreateFramebuffers()
     {
         STRACE("\tCreating framebuffers ...");
         SwapchainFramebuffers.resize(SwapchainImageViews.size());
@@ -1098,7 +1099,7 @@ namespace Vk
         }
     }
 
-    void CRender::CreateCommandPool()
+    void VulkanDevice::CreateCommandPool()
     {
         STRACE("\tCreating Command Pool ...");
         VkCommandPoolCreateInfo createInfo = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
@@ -1111,7 +1112,7 @@ namespace Vk
         }
     }
 
-    void CRender::CreateCommandBuffer()
+    void VulkanDevice::CreateCommandBuffer()
     {
         STRACE("\tAllocating Command Buffers ...");
         CommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
@@ -1126,7 +1127,7 @@ namespace Vk
         }
     }
 
-    void CRender::CreateVertexBuffer()
+    void VulkanDevice::CreateVertexBuffer()
     {
         // VERTEX BUFFER 
         {
@@ -1190,7 +1191,7 @@ namespace Vk
         }
     }
 
-    void CRender::CreateUniformBuffer()
+    void VulkanDevice::CreateUniformBuffer()
     {
         VkDeviceSize bufferSize = sizeof(ConstantsCamera);
 
@@ -1211,7 +1212,7 @@ namespace Vk
         }
     }
 
-    void CRender::CreateDescriptorPools()
+    void VulkanDevice::CreateDescriptorPools()
     {
         VkDescriptorPoolSize poolSize = {};
         poolSize.type               = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1228,7 +1229,7 @@ namespace Vk
         }
     }
 
-    void CRender::CreateDescriptorSets()
+    void VulkanDevice::CreateDescriptorSets()
     {
         std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, DescriptorSetLayout);
 
@@ -1263,7 +1264,7 @@ namespace Vk
 
     }
 
-    void CRender::CreateSyncObjects()
+    void VulkanDevice::CreateSyncObjects()
     {
         STRACE("\tCreating Sync objects ...");
 
@@ -1291,7 +1292,7 @@ namespace Vk
         }
     }
 
-    void CRender::UpdateUniformBuffer()
+    void VulkanDevice::UpdateUniformBuffer()
     {
         ConstantsCamera ubo;
         ubo.camera_view             = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -1302,7 +1303,7 @@ namespace Vk
         memcpy( UniformBuffersMapped.at(FrameIndex), &ubo, sizeof(ubo) );
     }
 
-    bool CRender::PrepareFrame()
+    bool VulkanDevice::PrepareFrame()
     {
         if( vkAcquireNextImageKHR(Device, Swapchain, UINT64_MAX, ImageAvailableSemaphore.at(FrameIndex), VK_NULL_HANDLE, &ImageIndex) != VK_SUCCESS)
         {
@@ -1361,7 +1362,7 @@ namespace Vk
         return true;
     }
 
-    void CRender::EndFrame()
+    void VulkanDevice::EndFrame()
     {
         vkCmdEndRenderPass(CommandBuffers.at(FrameIndex));
 
@@ -1376,7 +1377,7 @@ namespace Vk
         FrameIndex = (FrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 
-    void CRender::Submit()
+    void VulkanDevice::Submit()
     {
         VkPipelineStageFlags waitStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
@@ -1407,7 +1408,7 @@ namespace Vk
         }
     }
 
-    VkShaderModule CRender::CreateShaderModule(const std::vector<char>& code)
+    VkShaderModule VulkanDevice::CreateShaderModule(const std::vector<char>& code)
     {
         VkShaderModuleCreateInfo createInfo = {VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
         createInfo.codeSize = code.size();
@@ -1421,7 +1422,7 @@ namespace Vk
         return shaderModule;
     }
 
-    void CRender::CreateBuffer(
+    void VulkanDevice::CreateBuffer(
         VkDeviceSize size, 
         VkBufferUsageFlags usageFlags, 
         VkMemoryPropertyFlags memoryPropertyFlags, 
@@ -1453,7 +1454,7 @@ namespace Vk
         vkBindBufferMemory( Device, buffer, bufferMemory, 0);
     }
 
-    void CRender::CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size)
+    void VulkanDevice::CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size)
     {
         VkCommandBufferAllocateInfo allocateInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
         allocateInfo.commandBufferCount = 1;

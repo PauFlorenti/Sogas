@@ -1,7 +1,7 @@
 #pragma once
 
 #include "modules/module.h"
-#include "render/vulkan/render.h"
+#include "render/vulkan/vulkan_device.h"
 
 namespace Sogas
 {
@@ -26,6 +26,6 @@ namespace Sogas
         void ActivateObject(const glm::mat4& model, const glm::vec4& color);
 
     private:
-        std::unique_ptr<Sogas::Vk::CRender> Renderer;
+        std::unique_ptr<Sogas::Vk::VulkanDevice> Renderer;
     };
 } // Sogas

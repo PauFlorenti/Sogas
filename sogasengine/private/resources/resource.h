@@ -2,7 +2,6 @@
 
 namespace Sogas
 {
-
     class IResource;
 
     class IResourceType

@@ -1,7 +1,6 @@
 
 #include "render/module_render.h"
 #include "render/render_manager.h"
-#include "render/vulkan/render.h"
 
 namespace Sogas
 {
@@ -10,7 +9,7 @@ namespace Sogas
         // Start ImGui
 
         // Start selected renderer. Vulkan only at the moment and by default.
-        Renderer = std::make_unique<Sogas::Vk::CRender>();
+        Renderer = std::make_unique<Sogas::Vk::VulkanDevice>();
         Renderer->Init();
 
         return true;
