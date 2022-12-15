@@ -31,7 +31,7 @@ void LogMessage(LogLevel level, const char* message, ...)
     FormatString(buffer, "%s%s\n", LogTypes[level], buffer);
 
     HANDLE hndl = GetStdHandle(STD_OUTPUT_HANDLE);
-    static u8 levels[5] = {64, 4, 6, 2, 1};
+    static u8 levels[5] = {64, 4, 6, 2, 15};
     SetConsoleTextAttribute(hndl, levels[level]);
     u64 length = strlen(buffer);
     LPDWORD nWritten = 0;
