@@ -1,7 +1,7 @@
 
 #include "render/module_render.h"
+#include "render/render_device.h"
 #include "render/render_manager.h"
-#include "render/vulkan/render.h"
 
 namespace Sogas
 {
@@ -10,20 +10,19 @@ namespace Sogas
         // Start ImGui
 
         // Start selected renderer. Vulkan only at the moment and by default.
-        Renderer = std::make_unique<Sogas::Vk::CRender>();
-        Renderer->Init();
+        Renderer = GPU_device::create(GraphicsAPI::Vulkan, nullptr);
+        Renderer->init();
 
         return true;
     }
 
     void CRenderModule::Stop() 
     {
-        Renderer->Shutdown();
+        Renderer->shutdown();
     }
 
-    void CRenderModule::Update(f32 dt) 
+    void CRenderModule::Update(f32 /*dt*/) 
     {
-        Renderer->Update(dt);
     }
 
     void CRenderModule::Render() 
@@ -38,15 +37,16 @@ namespace Sogas
 
     void CRenderModule::DoFrame()
     {
-        if(Renderer->PrepareFrame())
+        if(Renderer->beginFrame())
         {
             // Activate main camera
-            Renderer->ActivateCamera();
+            // ! TEMPORAL
+            Renderer->activateCamera();
 
             // Render all solid objects
             RenderManager.RenderAll(CHandle(), DrawChannel::SOLID);
             //Renderer->DrawFrame();
-            Renderer->EndFrame();
+            Renderer->endFrame();
         }
     }
 
@@ -67,24 +67,27 @@ namespace Sogas
         return Renderer->CreateMesh(mesh, vertices, indices, topology);
     }
 
-    void CRenderModule::Bind(const u32 renderId, PrimitiveTopology topology, const bool indexed)
+    void CRenderModule::Bind(const CMesh* mesh)
     {
-        Renderer->Bind(renderId, topology, indexed);
+        Renderer->bind(mesh);
+        //Renderer->Bind(renderId, topology, indexed);
     }
 
-    void CRenderModule::Draw(const u32 vertexCount, const u32 vertexOffset)
+    void CRenderModule::Draw(const CMesh* mesh)
     {
-        Renderer->Draw(vertexCount, vertexOffset);
+        Renderer->draw(mesh);
     }
 
+/*
     void CRenderModule::DrawIndexed(const u32 indexCount, const u32 indexOffset)
     {
-        Renderer->DrawIndexed(indexCount, indexOffset);
+        //Renderer->DrawIndexed(indexCount, indexOffset);
     }
+*/
 
     void CRenderModule::ActivateObject(const glm::mat4& model, const glm::vec4& color)
     {
-        Renderer->ActivateObject(model, color);
+        Renderer->activateObject(model, color);
     }
 
 } // Sogas
