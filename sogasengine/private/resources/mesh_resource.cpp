@@ -1,5 +1,4 @@
 #include "mesh.h"
-#include "resource.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tinyobjloader/tiny_obj_loader.h>
@@ -8,24 +7,13 @@ template<> struct std::hash<Sogas::Vertex>
 {
     size_t operator()(Sogas::Vertex const& vertex) const 
     {
-        return (std::hash<glm::vec3>()(vertex.Position) ^
-            (std::hash<glm::vec4>()(vertex.Color) << 1));
+        return (std::hash<glm::vec3>()(vertex.position) ^
+            (std::hash<glm::vec4>()(vertex.color) << 1));
     }
 };
 
 namespace Sogas
 {
-    const std::vector<Vertex> vs = {
-        {{-0.5f, -0.5f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
-        {{ 0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f, 1.0f}},
-        {{ 0.5f,  0.5f, 0.0f}, {0.0f, 1.0f, 0.0f, 1.0f}},
-        {{-0.5f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f, 1.0f}}
-    };
-
-    const std::vector<u32> is = {
-        0, 1, 2, 2, 3, 0
-    };
-
     class CMeshResource : public IResourceType
     {
         bool LoadMesh( CMesh* mesh, const std::string& name ) const
@@ -60,11 +48,13 @@ namespace Sogas
                 {
                     Vertex vertex = {};
 
-                    vertex.Position = {
+                    vertex.position = {
                         attrib.vertices[3 * index.vertex_index + 0],
                         attrib.vertices[3 * index.vertex_index + 1],
                         attrib.vertices[3 * index.vertex_index + 2]
                     };
+
+                    vertex.color = glm::vec4(1.0f);
 
                     if (uniqueVertices.count(vertex) == 0)
                     {
@@ -80,7 +70,7 @@ namespace Sogas
             bool ok = false;
             if (indices.size() > 0)
             {
-                ok = mesh->Create(vs, is, PrimitiveTopology::TRIANGLELIST);
+                ok = mesh->Create(vertices, indices, PrimitiveTopology::TRIANGLELIST);
             }
             else
             {

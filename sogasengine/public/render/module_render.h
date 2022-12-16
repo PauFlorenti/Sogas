@@ -20,12 +20,13 @@ namespace Sogas
 
         bool CreateMesh(CMesh* mesh, const std::vector<Vertex>& vertices, PrimitiveTopology topology);
         bool CreateMesh(CMesh* mesh, const std::vector<Vertex>& vertices, const std::vector<u32>& indices, PrimitiveTopology topology);
-        void Bind(const u32 renderId, PrimitiveTopology topology, const bool indexed);
-        void Draw(const u32 vertexCount, const u32 vertexOffset);
-        void DrawIndexed(const u32 indexCount, const u32 indexOffset);
+        void Bind(const CMesh* mesh);
+        void Draw(const CMesh* mesh);
+        //void Draw(const u32 vertexCount, const u32 vertexOffset);
+        //void DrawIndexed(const u32 indexCount, const u32 indexOffset);
         void ActivateObject(const glm::mat4& model, const glm::vec4& color);
 
     private:
-        std::unique_ptr<Sogas::Vk::VulkanDevice> Renderer;
+        std::shared_ptr<GPU_device> Renderer;
     };
 } // Sogas

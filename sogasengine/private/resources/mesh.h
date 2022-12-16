@@ -20,11 +20,13 @@ namespace Sogas
         u32 indexCount = 0;
         u32 indexOffset = 0;
 
+        void* data;
+        bool Indexed = false;
+        PrimitiveTopology Topology;
+
     private:
         u32 Id = INVALID_ID;
         std::string name;
-        bool Indexed = false;
-        PrimitiveTopology Topology;
         // AABB
         // Mesh group
     };

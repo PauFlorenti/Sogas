@@ -12,23 +12,6 @@ namespace Sogas {
 namespace Vk
 {
 
-//! SHOULD ERASE THIS
-    const std::vector<VulkanVertex> triangleVertices = {
-        {{-0.5f, -0.5f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
-        {{ 0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f, 1.0f}},
-        {{ 0.5f,  0.5f, 0.0f}, {0.0f, 1.0f, 0.0f, 1.0f}},
-        {{-0.5f,  0.5f, 0.0f}, {0.0f, 0.0f, 1.0f, 1.0f}}
-    };
-
-    const std::vector<u32> triangleIndices = {
-        0, 1, 2, 2, 3, 0
-    };
-
-   VulkanMesh Triangle;
-
-//! AND RETHINK THIS
-    VulkanMesh VulkanMeshesArray[10];
-
     const std::vector<const char*> validationLayers = {
         "VK_LAYER_KHRONOS_validation"
     };
@@ -187,22 +170,17 @@ namespace Vk
         }
     }
 
-    VulkanDevice::VulkanDevice()
+    VulkanDevice::VulkanDevice(GraphicsAPI apiType, void* /*device*/)
     {
-        for( auto mesh : VulkanMeshesArray )
-        {
-            mesh.id = INVALID_ID;
-        }
-
-        Triangle.id = 4;
-        Triangle.vertexCount    = static_cast<u32>(triangleVertices.size());
-        Triangle.vertexOffset   = 0;
-        Triangle.vertexSize     = sizeof(VulkanVertex);
-        Triangle.indexCount     = static_cast<u32>(triangleIndices.size());
-        Triangle.indexOffset    = 0;
+        api_type = apiType;
     }
 
-    bool VulkanDevice::Init()
+    VulkanDevice::~VulkanDevice()
+    {
+
+    }
+
+    bool VulkanDevice::init()
     {
         STRACE("Initializing Vulkan renderer ... ");
 
@@ -218,7 +196,6 @@ namespace Vk
             return false;
         }
 
-        CreateVertexBuffer();
         CreateUniformBuffer();
         CreateDescriptorPools();
         CreateDescriptorSets();
@@ -228,43 +205,7 @@ namespace Vk
         return true;
     }
 
-    void VulkanDevice::Update(f32 /*dt*/)
-    {
-    }
-
-    void VulkanDevice::DrawFrame()
-    {
-        if( PrepareFrame() )
-        {
-            
-
-
-            vkCmdSetPrimitiveTopology(CommandBuffers.at(FrameIndex), VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-
-            static auto startTime   = std::chrono::high_resolution_clock::now();
-            auto currentTime        = std::chrono::high_resolution_clock::now();
-            f32 time                = std::chrono::duration<f32, std::chrono::seconds::period>(currentTime - startTime).count();
-
-            glm::mat4 model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
-            vkCmdPushConstants(
-                CommandBuffers.at(FrameIndex), 
-                PipelineLayout, 
-                VK_SHADER_STAGE_VERTEX_BIT, 
-                0, sizeof(glm::mat4), &model);
-
-            VkDeviceSize offset = 0;
-            vkCmdBindVertexBuffers(CommandBuffers.at(FrameIndex), 0, 1, &Triangle.vertexBuffer, &offset);
-            vkCmdBindIndexBuffer(CommandBuffers.at(FrameIndex), Triangle.indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-
-            // vkCmdDraw(CommandBuffers.at(FrameIndex), static_cast<u32>(Triangle.vertexCount), 1, 0, 0);
-            vkCmdDrawIndexed(CommandBuffers.at(FrameIndex), Triangle.indexCount, 1, 0, 0, 0);
-
-            EndFrame();
-        }
-    }
-
-    void VulkanDevice::Shutdown()
+    void VulkanDevice::shutdown()
     {
         STRACE("Shutting down Vulkan renderer ...");
 
@@ -332,62 +273,44 @@ namespace Vk
         SASSERT( mesh->RenderId == INVALID_ID );
         SASSERT( topology != PrimitiveTopology::UNDEFINED );
 
-        u32 i = 0;
-        for(auto& vulkanMesh : VulkanMeshesArray)
+        u32 vertexCount = static_cast<u32>(vertices.size());
+        u32 vertexSize = sizeof(VulkanVertex);
+        u32 totalBufferSize = vertexCount * vertexSize;
+
+        VulkanMesh* m = new VulkanMesh();
+        m->vertexCount = vertexCount;
+        m->vertexOffset = 0;
+
+        // VERTEX BUFFER 
         {
-            if(vulkanMesh.id != INVALID_ID)
-            {
-                i++;
-                continue;
-            }
+            VkBuffer stagingBuffer;
+            VkDeviceMemory stagingBufferMemory;
 
-            u32 vertexCount = static_cast<u32>(vertices.size());
-            u32 vertexSize = sizeof(VulkanVertex);
-            u32 totalBufferSize = vertexCount * vertexSize;
+            CreateBuffer(
+                totalBufferSize,
+                VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                stagingBuffer, stagingBufferMemory
+            );
 
-            vulkanMesh.id           = i;
-            vulkanMesh.vertexCount  = vertexCount;
-            vulkanMesh.vertexSize   = vertexSize;
-            vulkanMesh.vertexOffset = 0;
+            void* data;
+            vkMapMemory(Device, stagingBufferMemory, 0, totalBufferSize, 0, &data);
+            memcpy(data, vertices.data(), static_cast<size_t>(totalBufferSize));
+            vkUnmapMemory(Device, stagingBufferMemory);
+            
+            CreateBuffer( 
+                totalBufferSize, 
+                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                m->vertexBuffer, m->vertexBufferMemory);
 
-            mesh->RenderId = i;
-            mesh->vertexCount = vertexCount;
-            mesh->vertexOffset = 0;
+            CopyBuffer( stagingBuffer, m->vertexBuffer, totalBufferSize );
 
-            // VERTEX BUFFER 
-            {
-                VkBuffer stagingBuffer;
-                VkDeviceMemory stagingBufferMemory;
-
-                CreateBuffer(
-                    totalBufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                    stagingBuffer, stagingBufferMemory
-                );
-
-                void* data;
-                vkMapMemory(Device, stagingBufferMemory, 0, totalBufferSize, 0, &data);
-                memcpy(data, triangleVertices.data(), static_cast<size_t>(totalBufferSize));
-                vkUnmapMemory(Device, stagingBufferMemory);
-                
-                CreateBuffer( 
-                    totalBufferSize, 
-                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
-                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                    vulkanMesh.vertexBuffer, vulkanMesh.vertexBufferMemory);
-
-                CopyBuffer( stagingBuffer, vulkanMesh.vertexBuffer, totalBufferSize );
-
-                vkDestroyBuffer( Device, stagingBuffer, nullptr );
-                vkFreeMemory( Device, stagingBufferMemory, nullptr );
-            }
-
-            break;
+            vkDestroyBuffer( Device, stagingBuffer, nullptr );
+            vkFreeMemory( Device, stagingBufferMemory, nullptr );
         }
 
-        if( i == 10 )
-            return false;
+        mesh->data = static_cast<void*>(m);
 
         return true;
     }
@@ -399,124 +322,111 @@ namespace Vk
         SASSERT( mesh->RenderId == INVALID_ID );
         SASSERT( topology != PrimitiveTopology::UNDEFINED );
 
-        u32 i = 0;
-        for(auto& vulkanMesh : VulkanMeshesArray)
+        u32 vertexCount = static_cast<u32>(vertices.size());
+        u32 vertexSize = sizeof(VulkanVertex);
+        u32 totalBufferSize = vertexCount * vertexSize;
+
+        VulkanMesh* m = new VulkanMesh();
+        mesh->vertexCount = vertexCount;
+        mesh->vertexOffset = 0;
+        mesh->indexCount = static_cast<u32>(indices.size());
+        mesh->indexOffset = 0;
+
+        // VERTEX BUFFER 
         {
-            if(vulkanMesh.id != INVALID_ID)
-            {
-                i++;
-                continue;
-            }
+            VkBuffer stagingBuffer;
+            VkDeviceMemory stagingBufferMemory;
 
-            u32 vertexCount     = static_cast<u32>(vertices.size());
-            u32 vertexSize      = sizeof(VulkanVertex);
-            u32 totalBufferSize = vertexCount * vertexSize;
+            CreateBuffer(
+                totalBufferSize,
+                VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                stagingBuffer, stagingBufferMemory
+            );
 
-            vulkanMesh.id           = i;
-            vulkanMesh.vertexCount  = vertexCount;
-            vulkanMesh.vertexSize   = vertexSize;
-            vulkanMesh.vertexOffset = 0;
+            void* data;
+            vkMapMemory(Device, stagingBufferMemory, 0, totalBufferSize, 0, &data);
+            memcpy(data, vertices.data(), static_cast<size_t>(totalBufferSize));
+            vkUnmapMemory(Device, stagingBufferMemory);
+            
+            CreateBuffer( 
+                totalBufferSize, 
+                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                m->vertexBuffer, m->vertexBufferMemory);
 
-            mesh->RenderId      = i;
-            mesh->vertexCount   = vertexCount;
-            mesh->vertexOffset  = 0;
-            mesh->indexCount    = static_cast<u32>(indices.size());
-            mesh->indexOffset   = 0;
+            CopyBuffer( stagingBuffer, m->vertexBuffer, totalBufferSize );
 
-            // VERTEX BUFFER 
-            {
-                VkBuffer stagingBuffer;
-                VkDeviceMemory stagingBufferMemory;
-
-                CreateBuffer(
-                    totalBufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                    stagingBuffer, stagingBufferMemory
-                );
-
-                void* data;
-                vkMapMemory(Device, stagingBufferMemory, 0, totalBufferSize, 0, &data);
-                memcpy(data, triangleVertices.data(), static_cast<size_t>(totalBufferSize));
-                vkUnmapMemory(Device, stagingBufferMemory);
-                
-                CreateBuffer( 
-                    totalBufferSize, 
-                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
-                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                    vulkanMesh.vertexBuffer, vulkanMesh.vertexBufferMemory);
-
-                CopyBuffer( stagingBuffer, vulkanMesh.vertexBuffer, totalBufferSize );
-
-                vkDestroyBuffer( Device, stagingBuffer, nullptr );
-                vkFreeMemory( Device, stagingBufferMemory, nullptr );
-            }
-
-            // INDEX BUFFER
-            {
-                VkBuffer stagingBuffer;
-                VkDeviceMemory stagingBufferMemory;
-                u32 bufferSize = static_cast<u32>(indices.size() * sizeof(u32));
-
-                CreateBuffer(
-                    bufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                    stagingBuffer, stagingBufferMemory
-                );
-
-                void* data;
-                vkMapMemory(Device, stagingBufferMemory, 0, bufferSize, 0, &data);
-                memcpy(data, indices.data(), bufferSize);
-                vkUnmapMemory(Device, stagingBufferMemory);
-
-                CreateBuffer(
-                    bufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                    vulkanMesh.indexBuffer, vulkanMesh.indexBufferMemory
-                );
-
-                CopyBuffer(stagingBuffer, vulkanMesh.indexBuffer, bufferSize);
-
-                vkDestroyBuffer(Device, stagingBuffer, nullptr);
-                vkFreeMemory(Device, stagingBufferMemory, nullptr);
-            }
-
-            break;
+            vkDestroyBuffer( Device, stagingBuffer, nullptr );
+            vkFreeMemory( Device, stagingBufferMemory, nullptr );
         }
 
-        if( i == 10 )
-            return false;
+        // INDEX BUFFER
+        {
+            VkBuffer stagingBuffer;
+            VkDeviceMemory stagingBufferMemory;
+            u32 bufferSize = static_cast<u32>(indices.size() * sizeof(u32));
+
+            CreateBuffer(
+                bufferSize,
+                VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                stagingBuffer, stagingBufferMemory
+            );
+
+            void* data;
+            vkMapMemory(Device, stagingBufferMemory, 0, bufferSize, 0, &data);
+            memcpy(data, indices.data(), bufferSize);
+            vkUnmapMemory(Device, stagingBufferMemory);
+
+            CreateBuffer(
+                bufferSize,
+                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                m->indexBuffer, m->indexBufferMemory
+            );
+
+            CopyBuffer(stagingBuffer, m->indexBuffer, bufferSize);
+
+            vkDestroyBuffer(Device, stagingBuffer, nullptr);
+            vkFreeMemory(Device, stagingBufferMemory, nullptr);
+        }
+
+        mesh->data = static_cast<void*>(m);
 
         return true;
     }
 
-    void VulkanDevice::Bind( const u32 renderId, PrimitiveTopology topology, const bool indexed )
+    void VulkanDevice::bind(const CMesh* mesh)
     {
+        SASSERT(mesh);
         VkCommandBuffer& cmd = CommandBuffers.at(FrameIndex);
-        for(const auto mesh : VulkanMeshesArray)
-        {
-            if( mesh.id == renderId )
-            {
-                VkDeviceSize offset = { 0 };
-                if( topology == PrimitiveTopology::LINELIST )
-                    vkCmdSetPrimitiveTopology( cmd, VK_PRIMITIVE_TOPOLOGY_LINE_LIST );
-                else if ( topology == PrimitiveTopology::TRIANGLELIST )
-                    vkCmdSetPrimitiveTopology( cmd, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST );
+        if (mesh->Topology == PrimitiveTopology::LINELIST)
+            vkCmdSetPrimitiveTopology(cmd, VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
+        else if (mesh->Topology == PrimitiveTopology::TRIANGLELIST)
+            vkCmdSetPrimitiveTopology(cmd, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
 
-                if(indexed)
-                    vkCmdBindIndexBuffer(cmd, mesh.indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+        VulkanMesh* m = static_cast<VulkanMesh*>(mesh->data);
+        SASSERT(m);
 
-                vkCmdBindVertexBuffers( cmd, 0, 1, &mesh.vertexBuffer, &offset);
-                break;
-            }
-        }
+        if (mesh->Indexed)
+            vkCmdBindIndexBuffer(cmd, m->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+        
+        VkDeviceSize offset = 0;
+        vkCmdBindVertexBuffers(cmd, 0, 1, &m->vertexBuffer, &offset);
+
     }
 
-    void VulkanDevice::Draw(const u32 vertexCount, const u32 vertexOffset)
+    void VulkanDevice::draw(const CMesh* mesh)
     {
-        vkCmdDraw(CommandBuffers.at(FrameIndex), vertexCount, 1, vertexOffset, 0);
+        SASSERT(mesh);
+
+        VkCommandBuffer& cmd = CommandBuffers.at(FrameIndex);
+
+        if (mesh->Indexed)
+            vkCmdDrawIndexed(cmd, mesh->indexCount, 1, mesh->indexOffset, 0, 0);
+        else
+            vkCmdDraw(cmd, mesh->vertexCount, 1, mesh->vertexOffset, 0);
     }
 
     void VulkanDevice::DrawIndexed(const u32 indexCount, const u32 indexOffset)
@@ -524,7 +434,7 @@ namespace Vk
         vkCmdDrawIndexed(CommandBuffers.at(FrameIndex), indexCount, 1, indexOffset, 0, 0);
     }
 
-    void VulkanDevice::ActivateObject(const glm::mat4& model, const glm::vec4& /*color*/)
+    void VulkanDevice::activateObject(const glm::mat4& model, const glm::vec4& /*color*/)
     {
         vkCmdPushConstants(
             CommandBuffers.at(FrameIndex), 
@@ -533,7 +443,7 @@ namespace Vk
             0, sizeof(glm::mat4), &model);
     }
 
-    void VulkanDevice::ActivateCamera()
+    void VulkanDevice::activateCamera()
     {
         UpdateUniformBuffer();
 
@@ -1127,70 +1037,6 @@ namespace Vk
         }
     }
 
-    void VulkanDevice::CreateVertexBuffer()
-    {
-        // VERTEX BUFFER 
-        {
-            VkDeviceSize bufferSize = static_cast<VkDeviceSize>(Triangle.vertexCount * Triangle.vertexSize);
-            VkBuffer stagingBuffer;
-            VkDeviceMemory stagingBufferMemory;
-
-            CreateBuffer(
-                bufferSize,
-                VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                stagingBuffer, stagingBufferMemory
-            );
-
-            void* data;
-            vkMapMemory(Device, stagingBufferMemory, 0, bufferSize, 0, &data);
-            memcpy(data, triangleVertices.data(), static_cast<size_t>(bufferSize));
-            vkUnmapMemory(Device, stagingBufferMemory);
-            
-            CreateBuffer( 
-                bufferSize, 
-                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                Triangle.vertexBuffer, Triangle.vertexBufferMemory);
-
-            CopyBuffer( stagingBuffer, Triangle.vertexBuffer, bufferSize );
-
-            vkDestroyBuffer( Device, stagingBuffer, nullptr );
-            vkFreeMemory( Device, stagingBufferMemory, nullptr );
-        }
-
-        // INDEX BUFFER
-        {
-            VkBuffer stagingBuffer;
-            VkDeviceMemory stagingBufferMemory;
-            VkDeviceSize bufferSize = static_cast<VkDeviceSize>(Triangle.indexCount * sizeof(u32));
-
-            CreateBuffer(
-                bufferSize,
-                VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                stagingBuffer, stagingBufferMemory
-            );
-
-            void* data;
-            vkMapMemory( Device, stagingBufferMemory, 0, bufferSize, 0, &data);
-            memcpy(data, triangleIndices.data(), static_cast<size_t>(bufferSize));
-            vkUnmapMemory( Device, stagingBufferMemory );
-
-            CreateBuffer(
-                bufferSize,
-                VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                Triangle.indexBuffer, Triangle.indexBufferMemory
-            );
-
-            CopyBuffer( stagingBuffer, Triangle.indexBuffer, bufferSize );
-
-            vkDestroyBuffer( Device, stagingBuffer, nullptr );
-            vkFreeMemory( Device, stagingBufferMemory, nullptr );
-        }
-    }
-
     void VulkanDevice::CreateUniformBuffer()
     {
         VkDeviceSize bufferSize = sizeof(ConstantsCamera);
@@ -1303,7 +1149,7 @@ namespace Vk
         memcpy( UniformBuffersMapped.at(FrameIndex), &ubo, sizeof(ubo) );
     }
 
-    bool VulkanDevice::PrepareFrame()
+    bool VulkanDevice::beginFrame()
     {
         if( vkAcquireNextImageKHR(Device, Swapchain, UINT64_MAX, ImageAvailableSemaphore.at(FrameIndex), VK_NULL_HANDLE, &ImageIndex) != VK_SUCCESS)
         {
@@ -1362,7 +1208,7 @@ namespace Vk
         return true;
     }
 
-    void VulkanDevice::EndFrame()
+    void VulkanDevice::endFrame()
     {
         vkCmdEndRenderPass(CommandBuffers.at(FrameIndex));
 

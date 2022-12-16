@@ -1,6 +1,6 @@
 #pragma once
 
-#include "render/render_types.h"
+#include "render/render_device.h"
 #include "resources/mesh.h"
 
 #include <vulkan/vulkan.h>
@@ -10,27 +10,29 @@
 namespace Sogas {
 namespace Vk
 {
-    class VulkanDevice
+    class VulkanDevice : public GPU_device
     {
     public:
-        VulkanDevice();
-        ~VulkanDevice(){};
+        VulkanDevice(GraphicsAPI apiType, void* device);
+        ~VulkanDevice() override;
 
-        bool Init();
-        void Update(f32 /*dt*/);
-        bool PrepareFrame();
-        void EndFrame();
-        void DrawFrame();
-        void Shutdown();
+        GraphicsAPI getApiType() const { return api_type; }
+
+        bool init() override;
+        bool beginFrame() override;
+        void submitRenderCommands() override {};
+        void endFrame() override;
+        void shutdown() override;
 
         // API calls ...
-        bool CreateMesh(CMesh* mesh, const std::vector<Vertex>& vertices, PrimitiveTopology topology);
-        bool CreateMesh(CMesh* mesh, const std::vector<Vertex>& vertices, const std::vector<u32>& indices, PrimitiveTopology topology);
-        void Bind( const u32 renderId, PrimitiveTopology topology, const bool indexed );
-        void Draw(const u32 vertexCount, const u32 vertexOffset);
+        bool CreateMesh(CMesh* mesh, const std::vector<Vertex>& vertices, PrimitiveTopology topology) override;
+        bool CreateMesh(CMesh* mesh, const std::vector<Vertex>& vertices, const std::vector<u32>& indices, PrimitiveTopology topology) override;
+        void bind(const CMesh* mesh);
+        //void Bind( const u32 renderId, PrimitiveTopology topology, const bool indexed );
+        void draw(const CMesh* mesh) override;
         void DrawIndexed(const u32 indexCount, const u32 indexOffset);
-        void ActivateObject(const glm::mat4& model, const glm::vec4& color);
-        void ActivateCamera();
+        void activateObject(const glm::mat4& model, const glm::vec4& color) override;
+        void activateCamera() override;
         void CreateTexture(){};
         void DestroyTexture(){};
         
@@ -95,7 +97,6 @@ namespace Vk
         void CreateCommandPool();
         void CreateCommandBuffer();
         void CreateSyncObjects();
-        void CreateVertexBuffer();
         void CreateUniformBuffer();
         void CreateDescriptorPools();
         void CreateDescriptorSets();

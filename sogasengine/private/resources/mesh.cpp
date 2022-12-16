@@ -26,19 +26,11 @@ namespace Sogas
 
     void CMesh::Activate() const
     {
-        CEngine::Get()->GetRenderModule()->Bind(RenderId, Topology, Indexed);
+        CEngine::Get()->GetRenderModule()->Bind(this);
     }
 
     void CMesh::Render() const
     {
-        SASSERT( RenderId != INVALID_ID );
-        if( Indexed )
-        {
-            CEngine::Get()->GetRenderModule()->DrawIndexed(std::move(indexCount), std::move(indexOffset));
-        }
-        else
-        {
-            CEngine::Get()->GetRenderModule()->Draw(std::move(vertexCount), std::move(vertexOffset));
-        }
+        CEngine::Get()->GetRenderModule()->Draw(this);
     }
 } // Sogas
