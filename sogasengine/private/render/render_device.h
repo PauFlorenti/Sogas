@@ -2,6 +2,9 @@
 
 #include "render_types.h"
 
+// !TEMP should be removed
+#include "components/camera_component.h"
+
 namespace Sogas 
 {
     class CMesh;
@@ -31,7 +34,7 @@ namespace Sogas
         virtual void bind(const CMesh* mesh) = 0;
         virtual void draw(const CMesh* mesh) = 0;
         virtual void activateObject(const glm::mat4& model, const glm::vec4& color) = 0;
-        virtual void activateCamera() = 0;
+        virtual void activateCamera(const TCompCamera* camera) = 0;
         virtual bool CreateMesh(CMesh* mesh, const std::vector<Vertex>& vertices, PrimitiveTopology topology) = 0;
         virtual bool CreateMesh(CMesh* mesh, const std::vector<Vertex>& vertices, const std::vector<u32>& indices, PrimitiveTopology topology) = 0;
         

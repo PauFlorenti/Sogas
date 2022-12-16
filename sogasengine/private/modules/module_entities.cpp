@@ -40,10 +40,18 @@ namespace Sogas
 
     void CEntityModule::Stop()
     {
-
     }
 
-    void CEntityModule::Update(f32 /*dt*/) {} 
+    void CEntityModule::Update(f32 dt) 
+    {
+        for (auto& objectManager : ObjectManagerToUpdate)
+        {
+            objectManager->UpdateAll(dt);
+
+            // TODO Handle destroy in case a entity has been destroyed.
+        }
+    }
+
     void CEntityModule::Render() {}
     void CEntityModule::RenderDebug() {}
     void CEntityModule::RenderInMenu() {}

@@ -3,6 +3,9 @@
 #include "render/render_device.h"
 #include "render/render_manager.h"
 
+// ! TEMP
+#include "components/camera_component.h"
+
 namespace Sogas
 {
     bool CRenderModule::Start () 
@@ -41,7 +44,11 @@ namespace Sogas
         {
             // Activate main camera
             // ! TEMPORAL
-            Renderer->activateCamera();
+            CEntity* camera_entity = getEntityByName("camera");
+            SASSERT(camera_entity);
+            const TCompCamera* camera = camera_entity->Get<TCompCamera>();
+            
+            Renderer->activateCamera(camera);
 
             // Render all solid objects
             RenderManager.RenderAll(CHandle(), DrawChannel::SOLID);

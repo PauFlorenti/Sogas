@@ -26,6 +26,7 @@ Not in priority order.
     - [ ] MacOS
 
 - [ ] Handle Input
+    - [ ] Create Input module
     - [ ] Keyboard
     - [ ] Mouse
     - [ ] Remote controller
@@ -34,7 +35,7 @@ Not in priority order.
 Finder should be handled by resouce manager.
 - [ ] Handle resource files with a Resource interface and a factory methode.
     - [ ] Load meshes
-        - [ ] .obj files
+        - [-] .obj files
         - [ ] .glft and .glb files
         - [ ] .fbx files
     - [ ] Load textures
@@ -54,6 +55,9 @@ Finder should be handled by resouce manager.
 ### GRAPHICS
 - [ ] Render
     - [ ] Create a proper Renderer interface to communicate with multiple devices.
+    - [ ] Create a buffer interface.
+    - [ ] Create a texture interface.
+    - [ ] Create render command queues.
 
 ### VULKAN
     - [ ] Properly Initialize Vulkan

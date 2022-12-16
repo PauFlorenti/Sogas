@@ -29,6 +29,8 @@ namespace Sogas
         CEntity* entity = owner.GetOwner();
         SASSERT(entity);
 
+        key.Transform = entity->Get<TCompTransform>();
+
         keys.push_back(key);
         KeysAreDirty = true;
     }
@@ -60,14 +62,16 @@ namespace Sogas
 
             // Check if visible by culling test.
 
-            //TCompTransform* transform = key->Transform;
-            //SASSERT(transform);
-            glm::vec4 color = glm::vec4(1.0f);
+            if (key->Transform.IsValid())
+            {
+                CEntity* e = key->Owner.GetOwner();
+                TCompTransform* transform = e->Get<TCompTransform>();
+                SASSERT(transform);
+                glm::vec4 color = glm::vec4(1.0f);
 
-            glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
-            // Activate model and color
-            CEngine::Get()->GetRenderModule()->ActivateObject(model /*transform->AsMatrix()*/, color);
+                // Activate model and color
+                CEngine::Get()->GetRenderModule()->ActivateObject(transform->AsMatrix(), color);
+            }
 
             // Activate material
 

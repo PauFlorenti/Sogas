@@ -1,9 +1,10 @@
 #pragma once
 
 #include "render/render_device.h"
-#include "resources/mesh.h"
-
 #include <vulkan/vulkan.h>
+
+// ! TEMP should not communicate directly with both of these
+#include "resources/mesh.h"
 
 #define MAX_FRAMES_IN_FLIGHT 2
 
@@ -32,7 +33,7 @@ namespace Vk
         void draw(const CMesh* mesh) override;
         void DrawIndexed(const u32 indexCount, const u32 indexOffset);
         void activateObject(const glm::mat4& model, const glm::vec4& color) override;
-        void activateCamera() override;
+        void activateCamera(const TCompCamera* camera) override;
         void CreateTexture(){};
         void DestroyTexture(){};
         

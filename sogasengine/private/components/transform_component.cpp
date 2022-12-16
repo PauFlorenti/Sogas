@@ -116,27 +116,7 @@ namespace Sogas
 
     void TCompTransform::Load(const json& j)
     {
-        if(j.count("pos"))
-        {
-            position = LoadVec3(j, "vec3");
-        }
-        if(j.count("rot"))
-        {
-            rotation = LoadQuat(j, "rot");
-        }
-        if(j.count("scale"))
-        {
-            const json& jscale = j["scale"];
-            if(jscale.is_number())
-            {
-                f32 value = jscale.get<f32>();
-                scale = glm::vec3(value);
-            }
-            else
-            {
-                scale = LoadVec3(j, "scale");
-            }
-        }
+        FromJson(j);
     }
 
 } // Sogas

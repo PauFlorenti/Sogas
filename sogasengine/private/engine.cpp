@@ -6,6 +6,8 @@
 #include "resources/primitives.h"
 #include "resources/resource.h"
 
+#include "GLFW/glfw3.h"
+
 namespace Sogas
 {
     CEngine* CEngine::engine = nullptr;
@@ -39,8 +41,12 @@ namespace Sogas
 
     void CEngine::DoFrame()
     {
-        update(0.0f);
+        static f64 previousTime = 0.0;
+        f64 currentTime = glfwGetTime();
+        f64 elapsed = currentTime - previousTime;
+        update(static_cast<f32>(elapsed));
         RenderModule->DoFrame();
+        previousTime = currentTime;
     }
 
     void CEngine::Shutdown()

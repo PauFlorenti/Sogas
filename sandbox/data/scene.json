@@ -2,16 +2,35 @@
   {
     "entity":
     {
-        "transform":
+      "name": "cube",
+      "transform":
+      {
+          "pos": "0 0 5",
+          "scale": 1
+      },
+      "render":
+      [
         {
-            "pos": "0 0 0"
-        },
-        "render":
-        [
-          {
-            "mesh": "../../data/meshes/cube.obj"
-          }
-        ]
+          "mesh": "../../data/meshes/cube.obj"
+        }
+      ]
+    }
+  },
+  {
+    "entity":
+    {
+      "name": "camera",
+      "camera":
+      {
+        "fov": 60
+      },
+      "transform":
+      {
+        "pos": "0 0 0",
+        "lookAt": "0 0 -5",
+        "scale": 1
+      },
+      "camera_controller":{}
     }
   }
 ]

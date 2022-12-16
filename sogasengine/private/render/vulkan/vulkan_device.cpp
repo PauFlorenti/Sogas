@@ -436,6 +436,7 @@ namespace Vk
 
     void VulkanDevice::activateObject(const glm::mat4& model, const glm::vec4& /*color*/)
     {
+        //glm::mat4 model = glm::translate(glm::mat4(1), glm::vec3(0, 0, -5));
         vkCmdPushConstants(
             CommandBuffers.at(FrameIndex), 
             PipelineLayout, 
@@ -443,9 +444,16 @@ namespace Vk
             0, sizeof(glm::mat4), &model);
     }
 
-    void VulkanDevice::activateCamera()
+    void VulkanDevice::activateCamera(const TCompCamera* camera)
     {
-        UpdateUniformBuffer();
+        //UpdateUniformBuffer();
+        ConstantsCamera ubo;
+        ubo.camera_view             = camera->GetView();
+        ubo.camera_projection       = camera->GetProjection();
+        ubo.camera_view_projection  = camera->GetViewProjection();
+        ubo.camera_projection[1][1] *= -1;
+
+        memcpy(UniformBuffersMapped.at(FrameIndex), &ubo, sizeof(ubo));
 
         vkCmdBindDescriptorSets( 
             CommandBuffers.at(FrameIndex), 
