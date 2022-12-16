@@ -36,5 +36,7 @@ namespace Sogas
 
         const char* GetName() const;
     };
+
+    extern CHandle getEntityByName(const std::string& name);
     
 } // Sogas

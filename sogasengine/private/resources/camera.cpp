@@ -11,12 +11,12 @@ namespace Sogas
     {
         mEye    = eye;
         mTarget = target;
-        view    = glm::lookAt(eye, target, up);
+        view    = glm::lookAtRH(eye, target, up);
         updateViewProjection();
 
         mFront  = glm::normalize(target - eye);
-        mRight  = glm::normalize(glm::cross(up, mFront));
-        mUp     = glm::cross(mFront, -mRight);
+        mRight  = glm::normalize(glm::cross(mFront, -up));
+        mUp     = glm::cross(mFront, mRight);
     }
 
     void CCamera::setProjectionParams(const f32 fovDeg, const f32 aspectRatio, const f32 near, const f32 far)

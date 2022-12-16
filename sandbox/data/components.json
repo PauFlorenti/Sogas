@@ -11,6 +11,7 @@
     },
     "update":
     [
-        "render"
+      "camera",
+      "camera_controller"
     ]
 }
