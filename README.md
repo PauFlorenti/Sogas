@@ -50,7 +50,8 @@ Finder should be handled by resouce manager.
         - [ ] Directional Light
         - [ ] Spot Light
         - [ ] Point Light
-    - [ ] Render component with AABB and Sphere bounding. 
+    - [ ] Render component with AABB and Sphere bounding.
+    - [ ] Proper destruction of unused entities and handles.
 
 ### GRAPHICS
 - [ ] Render
@@ -64,6 +65,7 @@ Finder should be handled by resouce manager.
         - [ ] Validate physical device given certain criteria.
         - [ ] Validate logical device creation given certain features and extension needed.
         - [ ] Validate Swapchain creation given device properties (validate extent, format ...).
+        - [ ] Save PhysicalDevice properties so we do not have to query them every time they are required.
     - [ ] Handle minimazing and resizing window.
     - [ ] Create Forward rendering.
     - [ ] Create Deferred rendering.

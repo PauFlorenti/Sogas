@@ -29,8 +29,13 @@ namespace Sogas
         virtual bool beginFrame() = 0;
         virtual void submitRenderCommands() = 0;
         virtual void endFrame() = 0;
+        virtual void CreateSwapchain() = 0;
+        virtual void CreateBuffer(const GPUBufferDescriptor* desc, void* data, GPUBuffer* buffer) const = 0;
 
-        // ! TEMPORAL
+        // API calls
+        // This are commands that will execute when submitCommands is called.
+        virtual void BindVertexBuffer() = 0;
+        virtual void BindIndexBuffer() = 0;
         virtual void bind(const CMesh* mesh) = 0;
         virtual void draw(const CMesh* mesh) = 0;
         virtual void activateObject(const glm::mat4& model, const glm::vec4& color) = 0;

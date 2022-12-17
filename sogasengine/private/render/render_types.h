@@ -21,6 +21,69 @@ namespace Sogas
         LINESTRIP
     };
 
+    enum DrawChannel
+    {
+        SOLID = 0,
+        SHADOW_CASTER = 1,
+        TRANSPARENT = 2,
+        COUNT = TRANSPARENT
+    };
+
+    enum Usage
+    {
+        DEFAULT = 0,    // no CPU access, GPU read/write
+        UPLOAD = 1,     // CPU write, GPU read
+        READBACK = 2    // CPU read, GPU write
+    };
+
+    enum BindPoint
+    {
+        VERTEX,
+        INDEX,
+        UNIFORM
+    };
+
+    // Resource descriptors
+
+    struct GPUBufferDescriptor
+    {
+        u64 size;
+        BindPoint bindPoint;
+        Usage usage;
+    };
+
+    // GPU Resources
+
+    struct GPUResource
+    {
+        enum Type
+        {
+            BUFFER,
+            TEXTURE,
+            UNKNOWN
+        } type = Type::UNKNOWN;
+
+        std::shared_ptr<void> internalState;
+        bool IsValid() const { return internalState.get() != nullptr; }
+        constexpr bool IsBuffer() const { return type == Type::BUFFER; }
+        constexpr bool IsTexture() const { return type == Type::TEXTURE; }
+
+        void* mapdata;
+    };
+
+    class GPU_device;
+
+    struct GPUBuffer : public GPUResource
+    {
+        GPUBufferDescriptor descriptor;
+        std::weak_ptr<GPU_device> device;
+    };
+
+    struct Texture : public GPUResource
+    {
+
+    };
+
     struct Vertex
     {
         glm::vec3 position;
@@ -34,14 +97,6 @@ namespace Sogas
                 //uvs == other.uvs &&
                 color == other.color;
         }
-    };
-
-    enum DrawChannel
-    {
-        SOLID = 0,
-        SHADOW_CASTER = 1,
-        TRANSPARENT = 2,
-        COUNT = TRANSPARENT
     };
 
 } // Sogas

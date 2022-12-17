@@ -12,8 +12,7 @@ namespace Sogas
 
     std::shared_ptr<GPU_device> createOpenGLDevice(void* /*device*/)
     {
-        return nullptr; // std::make_shared();
-        //return std::make_shared<OpenGLDevice>(device);
+        return nullptr;
     }
 
     std::shared_ptr<GPU_device> GPU_device::create(GraphicsAPI api, void* device)

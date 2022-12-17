@@ -24,10 +24,14 @@ namespace Vk
         void submitRenderCommands() override {};
         void endFrame() override;
         void shutdown() override;
+        void CreateSwapchain() override {};
+        void CreateBuffer(const GPUBufferDescriptor* desc, void* data, GPUBuffer* buffer) const override;
 
         // API calls ...
         bool CreateMesh(CMesh* mesh, const std::vector<Vertex>& vertices, PrimitiveTopology topology) override;
         bool CreateMesh(CMesh* mesh, const std::vector<Vertex>& vertices, const std::vector<u32>& indices, PrimitiveTopology topology) override;
+        void BindVertexBuffer() override {};
+        void BindIndexBuffer() override {};
         void bind(const CMesh* mesh);
         //void Bind( const u32 renderId, PrimitiveTopology topology, const bool indexed );
         void draw(const CMesh* mesh) override;
@@ -103,7 +107,7 @@ namespace Vk
         void CreateDescriptorSets();
         void UpdateUniformBuffer();
         void Submit();
-        u32 FindMemoryType(u32 typeFilter, VkMemoryPropertyFlags propertyFlags);
+        u32 FindMemoryType(u32 typeFilter, VkMemoryPropertyFlags propertyFlags) const;
 
         void CreateBuffer(
             VkDeviceSize size, 

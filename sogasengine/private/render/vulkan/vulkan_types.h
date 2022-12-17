@@ -30,6 +30,12 @@ namespace Vk {
         glm::vec4 color;
     };
 
+    struct VulkanBuffer
+    {
+        VkBuffer buffer         = VK_NULL_HANDLE;
+        VkDeviceMemory memory   = VK_NULL_HANDLE;
+    };
+
     struct VulkanMesh
     {
         u32 vertexCount = 0;
