@@ -4,33 +4,52 @@
 
 namespace Sogas
 {
-    bool CMesh::Create(std::vector<Vertex> vertices, PrimitiveTopology topology)
+    bool CMesh::Create(std::vector<Vertex> vs, std::vector<u32> is, PrimitiveTopology topology)
     {
-        SASSERT( !vertices.empty() );
+        
+        device = CEngine::Get()->GetRenderModule()->GetGraphicsDevice();
+
+        SASSERT( !vs.empty() );
         SASSERT( topology != PrimitiveTopology::UNDEFINED );
-        Indexed = false;
-        Topology = topology;
+        Topology        = topology;
+        Indexed         = false;
+        this->vertices  = vs;
+        this->indices   = is;
 
-        return CEngine::Get()->GetRenderModule()->CreateMesh(this, vertices, topology);
-    }
+        GPUBufferDescriptor vertexBufferDescriptor;
+        vertexBufferDescriptor.bindPoint    = BindPoint::VERTEX;
+        vertexBufferDescriptor.usage        = Usage::READBACK;
+        vertexBufferDescriptor.size         = static_cast<u64>(vs.size() * sizeof(Vertex));
+        device.lock()->CreateBuffer(&vertexBufferDescriptor, vs.data(), &vertexBuffer);
 
-    bool CMesh::Create(std::vector<Vertex> vertices, std::vector<u32> indices, PrimitiveTopology topology)
-    {
-        SASSERT( !vertices.empty() );
-        SASSERT( topology != PrimitiveTopology::UNDEFINED );
-        Topology    = topology;
-        Indexed     = true;
+        if (!is.empty())
+        {
+            Indexed = true;
+            GPUBufferDescriptor indexBufferDescriptor;
+            indexBufferDescriptor.bindPoint = BindPoint::INDEX;
+            indexBufferDescriptor.usage     = Usage::READBACK;
+            indexBufferDescriptor.size      = static_cast<u64>(indices.size() * sizeof(u32));
+            device.lock()->CreateBuffer(&indexBufferDescriptor, is.data(), &indexBuffer);
+        }
 
-        return CEngine::Get()->GetRenderModule()->CreateMesh(this, vertices, indices, topology);
+        return true;
     }
 
     void CMesh::Activate() const
     {
-        CEngine::Get()->GetRenderModule()->Bind(this);
+        device.lock()->SetTopology(Topology);
+
+        device.lock()->BindVertexBuffer(&vertexBuffer);
+
+        if (Indexed)
+            device.lock()->BindIndexBuffer(&indexBuffer);
     }
 
     void CMesh::Render() const
     {
-        CEngine::Get()->GetRenderModule()->Draw(this);
+        if (Indexed)
+            device.lock()->DrawIndexed(static_cast<u32>(indices.size()), indexOffset);
+        else
+            device.lock()->Draw(static_cast<u32>(vertices.size()), vertexOffset);
     }
 } // Sogas

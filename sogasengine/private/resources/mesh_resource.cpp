@@ -67,16 +67,8 @@ namespace Sogas
             }
 
             // Update data to renderer
-            bool ok = false;
-            if (indices.size() > 0)
-            {
-                ok = mesh->Create(vertices, indices, PrimitiveTopology::TRIANGLELIST);
-            }
-            else
-            {
-                ok = mesh->Create(vertices, PrimitiveTopology::TRIANGLELIST);
-            }
-
+            bool ok = mesh->Create(vertices, indices, PrimitiveTopology::TRIANGLELIST);
+            
             if (ok == false) {
                 SERROR("Failed to create mesh.");
                 return false;

@@ -12,7 +12,7 @@ namespace Sogas
 
     CRenderManager::CRenderManager()
     {
-        DrawCallsPerChannel.resize(DrawChannel::COUNT);
+        DrawCallsPerChannel.resize(static_cast<u32>(DrawChannel::COUNT));
     }
 
     void CRenderManager::AddKey(CHandle owner, const CMesh* mesh)
@@ -48,7 +48,7 @@ namespace Sogas
         // Of all keys, select only the channel range.
 
         u32 nDrawCalls = 0;
-        DrawCallsPerChannel[channel] = 0;
+        DrawCallsPerChannel[static_cast<u32>(channel)] = 0;
 
         auto it = keys.begin();
 
@@ -77,7 +77,10 @@ namespace Sogas
 
             // Activate mesh
             if( key->Mesh != prev_key->Mesh)
+            {
+                CEngine::Get()->GetRenderModule()->GetGraphicsDevice()->SetTopology(key->Mesh->Topology);
                 key->Mesh->Activate();
+            }
 
             key->Mesh->Render();
             
@@ -86,7 +89,7 @@ namespace Sogas
             ++it;
         }
 
-        DrawCallsPerChannel[channel] = nDrawCalls;
+        DrawCallsPerChannel[static_cast<u32>(channel)] = nDrawCalls;
     }
 
     void CRenderManager::DeleteKeysFromOwner(CHandle owner)

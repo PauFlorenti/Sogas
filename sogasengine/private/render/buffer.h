@@ -12,6 +12,12 @@ namespace Sogas
         Uniform = 2
     };
 
+    enum BufferType
+    {
+        Static = 0,
+        Dynamic = 1
+    };
+
     class Buffer final
     {
         u32 id;

@@ -7,7 +7,6 @@
 
 namespace Sogas 
 {
-    class CMesh;
 
     class GPU_device
     {
@@ -24,19 +23,23 @@ namespace Sogas
         // TODO create general statistics struct
         // virtual statistics getStatistics() const = 0;
 
-        virtual bool init() = 0;
+        virtual bool Init() = 0;
         virtual void shutdown() = 0;
         virtual bool beginFrame() = 0;
         virtual void submitRenderCommands() = 0;
         virtual void endFrame() = 0;
+        virtual void CreateSwapchain(/*const SwapchainDescriptor& desc, SwapChain* swapchain*/) const = 0;
+        virtual void CreateBuffer(const GPUBufferDescriptor* desc, void* data, GPUBuffer* buffer) const = 0;
 
-        // ! TEMPORAL
-        virtual void bind(const CMesh* mesh) = 0;
-        virtual void draw(const CMesh* mesh) = 0;
+        // API calls
+        // This are commands that will execute when submitCommands is called.
+        virtual void BindVertexBuffer(const GPUBuffer* buffer) = 0;
+        virtual void BindIndexBuffer(const GPUBuffer* buffer) = 0;
+        virtual void SetTopology(PrimitiveTopology topology) = 0;
+        virtual void Draw(const u32 count, const u32 offset) = 0;
+        virtual void DrawIndexed(const u32 count, const u32 offset) = 0;
         virtual void activateObject(const glm::mat4& model, const glm::vec4& color) = 0;
         virtual void activateCamera(const TCompCamera* camera) = 0;
-        virtual bool CreateMesh(CMesh* mesh, const std::vector<Vertex>& vertices, PrimitiveTopology topology) = 0;
-        virtual bool CreateMesh(CMesh* mesh, const std::vector<Vertex>& vertices, const std::vector<u32>& indices, PrimitiveTopology topology) = 0;
         
     protected:
         GraphicsAPI api_type;
