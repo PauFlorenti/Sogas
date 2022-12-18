@@ -1,6 +1,9 @@
 #include "primitives.h"
 #include "mesh.h"
 
+//TODO make device weak ptr to the mesh, so there will be no need to call for engine
+#include "engine.h"
+
 namespace Sogas
 {
     static CMesh* line = nullptr;
@@ -14,7 +17,7 @@ namespace Sogas
             {glm::vec3(0.0f, 0.0f, 1.0f), glm::vec4(1.0f)}
         };
 
-        mesh.Create(vertices, PrimitiveTopology::LINELIST);
+        mesh.Create(vertices, std::vector<u32>(), PrimitiveTopology::LINELIST);
     }
 
     bool RegisterPrimitives()
@@ -37,7 +40,8 @@ namespace Sogas
         if(length < 1e-4f)
             return;
         
-        //glm::mat4 world = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, -length)) * glm::inverse(glm::lookAt(src, dst, glm::vec3(0, 1, 0))); 
+        glm::mat4 world = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, -length)) * glm::inverse(glm::lookAt(src, dst, glm::vec3(0, 1, 0))); 
+        line->device.lock()->activateObject(world, glm::vec4(1.0f));
         line->Activate();
         line->Render();
     }

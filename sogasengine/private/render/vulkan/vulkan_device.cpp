@@ -180,7 +180,12 @@ namespace Sogas
         {
         }
 
-        bool VulkanDevice::init()
+        void VulkanDevice::CreateSwapchain(/*const SwapchainDescriptor& desc, SwapChain* swapchain*/) const
+        {
+            
+        }
+
+        bool VulkanDevice::Init()
         {
             STRACE("Initializing Vulkan renderer ... ");
 
@@ -279,11 +284,11 @@ namespace Sogas
             bufferCreateInfo.size = buffer->descriptor.size;
 
             // Binding point
-            if (buffer->descriptor.usage == BindPoint::VERTEX)
+            if (buffer->descriptor.bindPoint == BindPoint::VERTEX)
                 bufferCreateInfo.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-            if (buffer->descriptor.usage == BindPoint::INDEX)
+            if (buffer->descriptor.bindPoint == BindPoint::INDEX)
                 bufferCreateInfo.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-            if (buffer->descriptor.usage == BindPoint::UNIFORM)
+            if (buffer->descriptor.bindPoint == BindPoint::UNIFORM)
                 bufferCreateInfo.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 
             // Buffer usage
@@ -313,13 +318,15 @@ namespace Sogas
 
             VkMemoryAllocateInfo allocateInfo = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
             allocateInfo.allocationSize  = memoryRequirements.size;
-            allocateInfo.memoryTypeIndex = FindMemoryType(memoryRequirements.memoryTypeBits, 0);
+            allocateInfo.memoryTypeIndex = FindMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
             if (vkAllocateMemory(Device, &allocateInfo, nullptr, &internalState->memory))
             {
                 SERROR("Failed to allocate buffer memory.");
                 return;
             }
+
+            vkBindBufferMemory(Device, internalState->buffer, internalState->memory, 0);
 
             // If initial data, upload to the buffer
             if (data != nullptr)
@@ -351,12 +358,15 @@ namespace Sogas
 
                 VkMemoryAllocateInfo stagingMemoryAllocationInfo {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
                 stagingMemoryAllocationInfo.allocationSize  = stagingMemoryRequirements.size;
-                stagingMemoryAllocationInfo.memoryTypeIndex = FindMemoryType(stagingMemoryRequirements.memoryTypeBits, 0);
+                stagingMemoryAllocationInfo.memoryTypeIndex = FindMemoryType(stagingMemoryRequirements.memoryTypeBits, 
+                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
                 if (vkAllocateMemory(Device, &stagingMemoryAllocationInfo, nullptr, &stagingBuffer.memory) != VK_SUCCESS)
                 {
                     SERROR("Failed to allocate staging buffer memory.");
                     return;
                 }
+
+                vkBindBufferMemory(Device, stagingBuffer.buffer, stagingBuffer.memory, 0);
 
                 vkMapMemory(Device, stagingBuffer.memory, 0, buffer->descriptor.size, 0, &buffer->mapdata);
                 memcpy(buffer->mapdata, data, buffer->descriptor.size);
@@ -416,166 +426,72 @@ namespace Sogas
             }
         }
 
-        bool VulkanDevice::CreateMesh(CMesh *mesh, const std::vector<Vertex> &vertices, PrimitiveTopology topology)
+        void VulkanDevice::BindVertexBuffer(const GPUBuffer* buffer)
         {
-            SASSERT(!vertices.empty());
-            SASSERT(mesh->RenderId == INVALID_ID);
-            SASSERT(topology != PrimitiveTopology::UNDEFINED);
+            SASSERT(buffer);
+            SASSERT(buffer->IsValid());
+            SASSERT(buffer->IsBuffer());
 
-            u32 vertexCount = static_cast<u32>(vertices.size());
-            u32 vertexSize = sizeof(VulkanVertex);
-            u32 totalBufferSize = vertexCount * vertexSize;
+            const VulkanBuffer* internalBuffer = static_cast<VulkanBuffer*>(buffer->internalState.get());
+            SASSERT(internalBuffer);
 
-            VulkanMesh *m = new VulkanMesh();
-            m->vertexCount = vertexCount;
-            m->vertexOffset = 0;
+            VkCommandBuffer& cmd = CommandBuffers.at(FrameIndex);
 
-            // VERTEX BUFFER
-            {
-                VkBuffer stagingBuffer;
-                VkDeviceMemory stagingBufferMemory;
-
-                CreateBuffer(
-                    totalBufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                    stagingBuffer, stagingBufferMemory);
-
-                void *data;
-                vkMapMemory(Device, stagingBufferMemory, 0, totalBufferSize, 0, &data);
-                memcpy(data, vertices.data(), static_cast<size_t>(totalBufferSize));
-                vkUnmapMemory(Device, stagingBufferMemory);
-
-                CreateBuffer(
-                    totalBufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                    m->vertexBuffer, m->vertexBufferMemory);
-
-                CopyBuffer(stagingBuffer, m->vertexBuffer, totalBufferSize);
-
-                vkDestroyBuffer(Device, stagingBuffer, nullptr);
-                vkFreeMemory(Device, stagingBufferMemory, nullptr);
-            }
-
-            mesh->data = static_cast<void *>(m);
-
-            return true;
+            VkDeviceSize offset = {0};
+            vkCmdBindVertexBuffers(cmd, 0, 1, &internalBuffer->buffer, &offset);
         }
 
-        bool VulkanDevice::CreateMesh(CMesh *mesh, const std::vector<Vertex> &vertices, const std::vector<u32> &indices, PrimitiveTopology topology)
+        void VulkanDevice::BindIndexBuffer(const GPUBuffer* buffer)
         {
-            SASSERT(!vertices.empty());
-            SASSERT(!indices.empty());
-            SASSERT(mesh->RenderId == INVALID_ID);
-            SASSERT(topology != PrimitiveTopology::UNDEFINED);
+            SASSERT(buffer);
+            SASSERT(buffer->IsValid());
+            SASSERT(buffer->IsBuffer());
 
-            u32 vertexCount = static_cast<u32>(vertices.size());
-            u32 vertexSize = sizeof(VulkanVertex);
-            u32 totalBufferSize = vertexCount * vertexSize;
+            const VulkanBuffer* internalBuffer = static_cast<VulkanBuffer*>(buffer->internalState.get());
+            SASSERT(internalBuffer);
 
-            VulkanMesh *m = new VulkanMesh();
-            mesh->vertexCount = vertexCount;
-            mesh->vertexOffset = 0;
-            mesh->indexCount = static_cast<u32>(indices.size());
-            mesh->indexOffset = 0;
+            VkCommandBuffer& cmd = CommandBuffers.at(FrameIndex);
 
-            // VERTEX BUFFER
-            {
-                VkBuffer stagingBuffer;
-                VkDeviceMemory stagingBufferMemory;
-
-                CreateBuffer(
-                    totalBufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                    stagingBuffer, stagingBufferMemory);
-
-                void *data;
-                vkMapMemory(Device, stagingBufferMemory, 0, totalBufferSize, 0, &data);
-                memcpy(data, vertices.data(), static_cast<size_t>(totalBufferSize));
-                vkUnmapMemory(Device, stagingBufferMemory);
-
-                CreateBuffer(
-                    totalBufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                    m->vertexBuffer, m->vertexBufferMemory);
-
-                CopyBuffer(stagingBuffer, m->vertexBuffer, totalBufferSize);
-
-                vkDestroyBuffer(Device, stagingBuffer, nullptr);
-                vkFreeMemory(Device, stagingBufferMemory, nullptr);
-            }
-
-            // INDEX BUFFER
-            {
-                VkBuffer stagingBuffer;
-                VkDeviceMemory stagingBufferMemory;
-                u32 bufferSize = static_cast<u32>(indices.size() * sizeof(u32));
-
-                CreateBuffer(
-                    bufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                    stagingBuffer, stagingBufferMemory);
-
-                void *data;
-                vkMapMemory(Device, stagingBufferMemory, 0, bufferSize, 0, &data);
-                memcpy(data, indices.data(), bufferSize);
-                vkUnmapMemory(Device, stagingBufferMemory);
-
-                CreateBuffer(
-                    bufferSize,
-                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                    m->indexBuffer, m->indexBufferMemory);
-
-                CopyBuffer(stagingBuffer, m->indexBuffer, bufferSize);
-
-                vkDestroyBuffer(Device, stagingBuffer, nullptr);
-                vkFreeMemory(Device, stagingBufferMemory, nullptr);
-            }
-
-            mesh->data = static_cast<void *>(m);
-
-            return true;
+            VkDeviceSize offset = {0};
+            vkCmdBindIndexBuffer(cmd, internalBuffer->buffer, offset, VK_INDEX_TYPE_UINT32);
         }
 
-        void VulkanDevice::bind(const CMesh *mesh)
+        void VulkanDevice::SetTopology(PrimitiveTopology topology)
         {
-            SASSERT(mesh);
-            VkCommandBuffer &cmd = CommandBuffers.at(FrameIndex);
-            if (mesh->Topology == PrimitiveTopology::LINELIST)
+            VkCommandBuffer& cmd = CommandBuffers.at(FrameIndex);
+            switch (topology)
+            {
+            case PrimitiveTopology::POINTLIST:
+                vkCmdSetPrimitiveTopology(cmd, VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
+                break;
+            case PrimitiveTopology::LINELIST:
                 vkCmdSetPrimitiveTopology(cmd, VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
-            else if (mesh->Topology == PrimitiveTopology::TRIANGLELIST)
+                break;
+            case PrimitiveTopology::TRIANGLELIST:
                 vkCmdSetPrimitiveTopology(cmd, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-
-            VulkanMesh *m = static_cast<VulkanMesh *>(mesh->data);
-            SASSERT(m);
-
-            if (mesh->Indexed)
-                vkCmdBindIndexBuffer(cmd, m->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-
-            VkDeviceSize offset = 0;
-            vkCmdBindVertexBuffers(cmd, 0, 1, &m->vertexBuffer, &offset);
+                break;
+            default:
+                SERROR("No valid topology!");
+                break;
+            }
         }
 
-        void VulkanDevice::draw(const CMesh *mesh)
+        void VulkanDevice::Draw(const u32 count, const u32 offset)
         {
-            SASSERT(mesh);
+            SASSERT(count > 0);
+            SASSERT(offset >= 0);
 
-            VkCommandBuffer &cmd = CommandBuffers.at(FrameIndex);
-
-            if (mesh->Indexed)
-                vkCmdDrawIndexed(cmd, mesh->indexCount, 1, mesh->indexOffset, 0, 0);
-            else
-                vkCmdDraw(cmd, mesh->vertexCount, 1, mesh->vertexOffset, 0);
+            VkCommandBuffer& cmd = CommandBuffers[FrameIndex];
+            vkCmdDraw(cmd, count, 1, offset, 0);
         }
 
-        void VulkanDevice::DrawIndexed(const u32 indexCount, const u32 indexOffset)
+        void VulkanDevice::DrawIndexed(const u32 count, const u32 offset)
         {
-            vkCmdDrawIndexed(CommandBuffers.at(FrameIndex), indexCount, 1, indexOffset, 0, 0);
+            SASSERT(count > 0);
+            SASSERT(offset >= 0);
+
+            VkCommandBuffer& cmd = CommandBuffers.at(FrameIndex);
+            vkCmdDrawIndexed(cmd, count, 1, offset, 0, 0);
         }
 
         void VulkanDevice::activateObject(const glm::mat4 &model, const glm::vec4 & /*color*/)

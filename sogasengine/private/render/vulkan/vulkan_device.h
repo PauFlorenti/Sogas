@@ -19,23 +19,20 @@ namespace Vk
 
         GraphicsAPI getApiType() const { return api_type; }
 
-        bool init() override;
+        bool Init() override;
         bool beginFrame() override;
         void submitRenderCommands() override {};
         void endFrame() override;
         void shutdown() override;
-        void CreateSwapchain() override {};
+        void CreateSwapchain(/*const SwapchainDescriptor& desc, SwapChain* swapchain*/) const override;
         void CreateBuffer(const GPUBufferDescriptor* desc, void* data, GPUBuffer* buffer) const override;
 
         // API calls ...
-        bool CreateMesh(CMesh* mesh, const std::vector<Vertex>& vertices, PrimitiveTopology topology) override;
-        bool CreateMesh(CMesh* mesh, const std::vector<Vertex>& vertices, const std::vector<u32>& indices, PrimitiveTopology topology) override;
-        void BindVertexBuffer() override {};
-        void BindIndexBuffer() override {};
-        void bind(const CMesh* mesh);
-        //void Bind( const u32 renderId, PrimitiveTopology topology, const bool indexed );
-        void draw(const CMesh* mesh) override;
-        void DrawIndexed(const u32 indexCount, const u32 indexOffset);
+        void BindVertexBuffer(const GPUBuffer* buffer) override;
+        void BindIndexBuffer(const GPUBuffer* buffer) override;
+        void SetTopology(PrimitiveTopology topology) override;
+        void Draw(const u32 count, const u32 offset) override;
+        void DrawIndexed(const u32 count, const u32 offset) override;
         void activateObject(const glm::mat4& model, const glm::vec4& color) override;
         void activateCamera(const TCompCamera* camera) override;
         void CreateTexture(){};
