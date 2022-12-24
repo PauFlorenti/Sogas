@@ -50,6 +50,97 @@ namespace Vk {
         VkDeviceMemory indexBufferMemory = VK_NULL_HANDLE;
     };
 
+    constexpr VkImageType GetImageType(TextureDescriptor::TextureType type)
+    {
+        switch (type)
+        {
+            case TextureDescriptor::TextureType::TEXTURE_TYPE_1D:
+                return VK_IMAGE_TYPE_1D;
+            default:
+            case TextureDescriptor::TextureType::TEXTURE_TYPE_2D:
+                return VK_IMAGE_TYPE_2D;
+            case TextureDescriptor::TextureType::TEXTURE_TYPE_3D:
+                return VK_IMAGE_TYPE_3D;
+        }
+    }
+
+    constexpr u32 GetFormatStride(Format format)
+    {
+        switch(format)
+        {
+            case Format::R32G32B32A32_SFLOAT:
+            case Format::R32G32B32A32_UINT:
+            case Format::R32G32B32A32_SINT:
+                return 16u;
+            case Format::R32G32B32_SFLOAT:
+            case Format::R32G32B32_UINT:
+            case Format::R32G32B32_SINT:
+                return 12u;
+            case Format::R32G32_SFLOAT:
+            case Format::R32G32_UINT:
+            case Format::R32G32_SINT:
+            case Format::R16G16B16A16_SFLOAT:
+            case Format::R16G16B16A16_SNORM:
+            case Format::R16G16B16A16_UNORM:
+            case Format::R16G16B16A16_SINT:
+            case Format::R16G16B16A16_UINT:
+                return 8u;
+            case Format::R16G16B16_SFLOAT:
+            case Format::R16G16B16_SNORM:
+            case Format::R16G16B16_UNORM:
+            case Format::R16G16B16_SINT:
+            case Format::R16G16B16_UINT:
+                return 6u;
+            case Format::R32_SFLOAT:
+            case Format::R32_UINT:
+            case Format::R32_SINT:
+            case Format::R16G16_SFLOAT:
+            case Format::R16G16_SNORM:
+            case Format::R16G16_UNORM:
+            case Format::R16G16_SINT:
+            case Format::R16G16_UINT:
+            case Format::R8G8B8A8_SRGB:
+            case Format::R8G8B8A8_SSCALED:
+            case Format::R8G8B8A8_USCALED:
+            case Format::R8G8B8A8_SNORM:
+            case Format::R8G8B8A8_UNORM:
+            case Format::R8G8B8A8_SINT:
+            case Format::R8G8B8A8_UINT:
+                return 4u;
+            case Format::R8G8B8_SRGB:
+            case Format::R8G8B8_SSCALED:
+            case Format::R8G8B8_USCALED:
+            case Format::R8G8B8_SNORM:
+            case Format::R8G8B8_UNORM:
+            case Format::R8G8B8_SINT:
+            case Format::R8G8B8_UINT:
+                return 3u;
+            case Format::R16_SFLOAT:
+            case Format::R16_SNORM:
+            case Format::R16_UNORM:
+            case Format::R16_SINT:
+            case Format::R16_UINT:
+            case Format::R8G8_SRGB:
+            case Format::R8G8_SSCALED:
+            case Format::R8G8_USCALED:
+            case Format::R8G8_SNORM:
+            case Format::R8G8_UNORM:
+            case Format::R8G8_SINT:
+            case Format::R8G8_UINT:
+                return 2u;
+            case Format::R8_SRGB:
+            case Format::R8_SSCALED:
+            case Format::R8_USCALED:
+            case Format::R8_SNORM:
+            case Format::R8_UNORM:
+            case Format::R8_SINT:
+            case Format::R8_UINT:
+                return 1u;
+            default:
+                return 0;
+        }
+    }
+
     constexpr VkFormat ConvertFormat(Format format)
         {
             switch (format)

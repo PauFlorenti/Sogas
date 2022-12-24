@@ -14,7 +14,7 @@ namespace Vk
     {
         auto internalState = std::make_shared<VulkanBuffer>();
         buffer->internalState = internalState; 
-        buffer->type = GPUResource::Type::BUFFER;
+        buffer->resourceType = GPUResource::ResourceType::BUFFER;
         buffer->mapdata = nullptr;
         buffer->descriptor = *desc;
 

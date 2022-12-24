@@ -12,6 +12,7 @@ namespace Vk
     class VulkanDevice : public GPU_device
     {
         friend class VulkanBuffer;
+        friend class VulkanTexture;
     public:
         VulkanDevice(GraphicsAPI apiType, void* device);
         ~VulkanDevice() override;

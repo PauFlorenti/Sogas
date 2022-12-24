@@ -123,9 +123,13 @@ namespace Sogas
 
     enum class BindPoint
     {
-        VERTEX,
-        INDEX,
-        UNIFORM
+        NONE = 0,
+        VERTEX = 1 << 0,
+        INDEX = 1 << 1,
+        UNIFORM = 1 << 2,
+        RENDER_TARGET = 1 << 3,
+        DEPTH_STENCIL = 1 << 4,
+        SHADER_SAMPLE = 1 << 5
     };
 
     // Resource descriptors
@@ -143,11 +147,14 @@ namespace Sogas
             TEXTURE_TYPE_1D,
             TEXTURE_TYPE_2D,
             TEXTURE_TYPE_3D
-        } texturetype = TextureType::TEXTURE_TYPE_2D;
+        } textureType = TextureType::TEXTURE_TYPE_2D;
+
         u32 width = 0;
         u32 height = 0;
         u32 depth = 0;
         Format format = Format::UNDEFINED;
+        Usage usage = Usage::DEFAULT;
+        BindPoint bindPoint = BindPoint::NONE;
     };
 
     struct SwapchainDescriptor
@@ -169,15 +176,15 @@ namespace Sogas
 
     struct GPUResource : public GPUBase
     {
-        enum Type
+        enum ResourceType
         {
             BUFFER,
             TEXTURE,
             UNKNOWN
-        } type = Type::UNKNOWN;
+        } resourceType = ResourceType::UNKNOWN;
 
-        constexpr bool IsBuffer() const { return type == Type::BUFFER; }
-        constexpr bool IsTexture() const { return type == Type::TEXTURE; }
+        constexpr bool IsBuffer() const { return resourceType == ResourceType::BUFFER; }
+        constexpr bool IsTexture() const { return resourceType == ResourceType::TEXTURE; }
 
         void* mapdata;
     };
