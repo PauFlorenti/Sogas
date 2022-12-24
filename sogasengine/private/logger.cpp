@@ -1,6 +1,5 @@
 #include "logger.h"
 
-#include <cstdarg>
 #include <windows.h>
 
 #define LOG_BUFFER_SIZE 1024 * 8

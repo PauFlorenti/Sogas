@@ -1,7 +1,7 @@
 #pragma once
 
 #define GLFW_INCLUDE_VULKAN
-#include "GLFW/glfw3.h"
+#include <GLFW/glfw3.h>
 
 namespace Sogas
 {
@@ -30,6 +30,7 @@ namespace Sogas
 
         GLFWwindow* GetWindow() { return window; }
         bool IsRunning() { return bIsRunning; }
+        void GetWindowSize(i32* width, i32* height) { SASSERT(window); glfwGetWindowSize(window, width, height);}
 
         virtual bool Init();
         virtual void Run();

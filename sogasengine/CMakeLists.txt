@@ -33,7 +33,8 @@ target_include_directories(${PROJECT_NAME}
         ${CMAKE_CURRENT_SOURCE_DIR}/external
         ${Vulkan_INCLUDE_DIRS}
     PRIVATE 
-        ${CMAKE_CURRENT_SOURCE_DIR}/private)
+        ${CMAKE_CURRENT_SOURCE_DIR}/private
+        ${CMAKE_CURRENT_SOURCE_DIR}/internal)
 
 target_link_directories(${PROJECT_NAME}
     PUBLIC
