@@ -4,6 +4,8 @@
 
 namespace Sogas
 {
+namespace Vk
+{
     class VulkanDevice;
 
     class VulkanSwapchain
@@ -33,4 +35,5 @@ namespace Sogas
         SwapchainDescriptor descriptor;
     };
 
+} // Vk
 } // Sogas

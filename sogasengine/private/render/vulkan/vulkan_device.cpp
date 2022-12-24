@@ -192,7 +192,7 @@ namespace Sogas
                 i++;
             }
 
-            if (!VulkanSwapchain::Create(Device, Gpu, internalState.get()))
+            if (!VulkanSwapchain::Create(Handle, Gpu, internalState.get()))
             {
                 SERROR("Failed to create vulkan swapchain");
             }
@@ -238,20 +238,20 @@ namespace Sogas
             STRACE("\tDestroying Uniform buffers ...");
             for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
             {
-                vkDestroyBuffer(Device, UniformBuffers.at(i), nullptr);
-                vkFreeMemory(Device, UniformBufferMemory.at(i), nullptr);
+                vkDestroyBuffer(Handle, UniformBuffers.at(i), nullptr);
+                vkFreeMemory(Handle, UniformBufferMemory.at(i), nullptr);
             }
 
             STRACE("\tDestroying Sync objects ...");
             for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
             {
-                vkDestroyFence(Device, InFlightFence.at(i), nullptr);
-                vkDestroySemaphore(Device, RenderFinishedSemaphore.at(i), nullptr);
-                vkDestroySemaphore(Device, ImageAvailableSemaphore.at(i), nullptr);
+                vkDestroyFence(Handle, InFlightFence.at(i), nullptr);
+                vkDestroySemaphore(Handle, RenderFinishedSemaphore.at(i), nullptr);
+                vkDestroySemaphore(Handle, ImageAvailableSemaphore.at(i), nullptr);
             }
 
             STRACE("\tDestroying Command Pool ...");
-            vkDestroyCommandPool(Device, CommandPool, nullptr);
+            vkDestroyCommandPool(Handle, CommandPool, nullptr);
 
             STRACE("\tDestroying Framebuffer ...");
             /*for (auto &framebuffer : SwapchainFramebuffers)
@@ -260,15 +260,15 @@ namespace Sogas
             }*/
 
             STRACE("\tDestroying Graphics pipeline ...");
-            vkDestroyPipeline(Device, Pipeline, nullptr);
+            vkDestroyPipeline(Handle, Pipeline, nullptr);
             STRACE("\tDestroying Render Pass ...");
-            vkDestroyRenderPass(Device, RenderPass, nullptr);
+            vkDestroyRenderPass(Handle, RenderPass, nullptr);
             STRACE("\tDestroying Graphics pipeline layout ...");
-            vkDestroyPipelineLayout(Device, PipelineLayout, nullptr);
+            vkDestroyPipelineLayout(Handle, PipelineLayout, nullptr);
             STRACE("\tDestroying Descriptor Pool ...");
-            vkDestroyDescriptorPool(Device, DescriptorPool, nullptr);
+            vkDestroyDescriptorPool(Handle, DescriptorPool, nullptr);
             STRACE("\tDestroying Descriptor set layout ...");
-            vkDestroyDescriptorSetLayout(Device, DescriptorSetLayout, nullptr);
+            vkDestroyDescriptorSetLayout(Handle, DescriptorSetLayout, nullptr);
 
             /*
             STRACE("\tDestroying all images and image views ...");
@@ -529,7 +529,7 @@ namespace Sogas
                 deviceCreateInfo.ppEnabledLayerNames = nullptr;
             }
 
-            VkResult ok = vkCreateDevice(Gpu, &deviceCreateInfo, nullptr, &Device);
+            VkResult ok = vkCreateDevice(Gpu, &deviceCreateInfo, nullptr, &Handle);
             if (ok != VK_SUCCESS)
             {
                 SERROR("\tFailed to create logical device.");
@@ -537,7 +537,7 @@ namespace Sogas
             }
 
             STRACE("\tRetrieving queue handles ...");
-            vkGetDeviceQueue(Device, GraphicsFamily, 0, &GraphicsQueue);
+            vkGetDeviceQueue(Handle, GraphicsFamily, 0, &GraphicsQueue);
 
             STRACE("\tLogical device created!");
 
@@ -604,7 +604,7 @@ namespace Sogas
             descriptorSetLayoutCreateInfo.bindingCount = 1;
             descriptorSetLayoutCreateInfo.pBindings = &descriptorSetLayoutBinding;
 
-            if (vkCreateDescriptorSetLayout(Device, &descriptorSetLayoutCreateInfo, nullptr, &DescriptorSetLayout) != VK_SUCCESS)
+            if (vkCreateDescriptorSetLayout(Handle, &descriptorSetLayoutCreateInfo, nullptr, &DescriptorSetLayout) != VK_SUCCESS)
             {
                 throw std::runtime_error("Failed to create descriptor set layout!");
             }
@@ -713,7 +713,7 @@ namespace Sogas
             pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
             pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
 
-            if (vkCreatePipelineLayout(Device, &pipelineLayoutCreateInfo, nullptr, &PipelineLayout) != VK_SUCCESS)
+            if (vkCreatePipelineLayout(Handle, &pipelineLayoutCreateInfo, nullptr, &PipelineLayout) != VK_SUCCESS)
             {
                 throw std::runtime_error("Failed to create pipeline layout.");
             }
@@ -737,7 +737,7 @@ namespace Sogas
             graphicsPipelineCreateInfo.subpass = 0;
             graphicsPipelineCreateInfo.pDepthStencilState = nullptr;
 
-            if (vkCreateGraphicsPipelines(Device, VK_NULL_HANDLE, 1, &graphicsPipelineCreateInfo, nullptr, &Pipeline) != VK_SUCCESS)
+            if (vkCreateGraphicsPipelines(Handle, VK_NULL_HANDLE, 1, &graphicsPipelineCreateInfo, nullptr, &Pipeline) != VK_SUCCESS)
             {
                 throw std::runtime_error("Failed to create graphics pipeline.");
             }
@@ -745,8 +745,8 @@ namespace Sogas
             STRACE("\tGraphics pipeline created.");
 
             STRACE("\tCleaning shade modules used ...");
-            vkDestroyShaderModule(Device, VertexShaderModule, nullptr);
-            vkDestroyShaderModule(Device, FragmentShaderModule, nullptr);
+            vkDestroyShaderModule(Handle, VertexShaderModule, nullptr);
+            vkDestroyShaderModule(Handle, FragmentShaderModule, nullptr);
         }
 
         void VulkanDevice::CreateRenderPass()
@@ -786,7 +786,7 @@ namespace Sogas
             renderPassInfo.dependencyCount = 1;
             renderPassInfo.pDependencies = &subpassDependency;
 
-            if (vkCreateRenderPass(Device, &renderPassInfo, nullptr, &RenderPass) != VK_SUCCESS)
+            if (vkCreateRenderPass(Handle, &renderPassInfo, nullptr, &RenderPass) != VK_SUCCESS)
             {
                 throw std::runtime_error("Failed to create render pass.");
             }
@@ -826,7 +826,7 @@ namespace Sogas
             createInfo.queueFamilyIndex = GraphicsFamily;
             createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-            if (vkCreateCommandPool(Device, &createInfo, nullptr, &CommandPool) != VK_SUCCESS)
+            if (vkCreateCommandPool(Handle, &createInfo, nullptr, &CommandPool) != VK_SUCCESS)
             {
                 throw std::runtime_error("Failed to create command pool!");
             }
@@ -841,7 +841,7 @@ namespace Sogas
             allocInfo.commandBufferCount = static_cast<u32>(CommandBuffers.size());
             allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
-            if (vkAllocateCommandBuffers(Device, &allocInfo, CommandBuffers.data()) != VK_SUCCESS)
+            if (vkAllocateCommandBuffers(Handle, &allocInfo, CommandBuffers.data()) != VK_SUCCESS)
             {
                 throw std::runtime_error("Failed to allcoate command buffer!");
             }
@@ -863,7 +863,7 @@ namespace Sogas
                     VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
                     UniformBuffers.at(i), UniformBufferMemory.at(i));
 
-                vkMapMemory(Device, UniformBufferMemory.at(i), 0, bufferSize, 0, &UniformBuffersMapped.at(i));
+                vkMapMemory(Handle, UniformBufferMemory.at(i), 0, bufferSize, 0, &UniformBuffersMapped.at(i));
             }
         }
 
@@ -878,7 +878,7 @@ namespace Sogas
             createInfo.poolSizeCount = 1;
             createInfo.pPoolSizes = &poolSize;
 
-            if (vkCreateDescriptorPool(Device, &createInfo, nullptr, &DescriptorPool) != VK_SUCCESS)
+            if (vkCreateDescriptorPool(Handle, &createInfo, nullptr, &DescriptorPool) != VK_SUCCESS)
             {
                 throw std::runtime_error("Failed to create descriptor pool.");
             }
@@ -894,7 +894,7 @@ namespace Sogas
             allocateInfo.pSetLayouts = layouts.data();
 
             DescriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-            if (vkAllocateDescriptorSets(Device, &allocateInfo, DescriptorSets.data()) != VK_SUCCESS)
+            if (vkAllocateDescriptorSets(Handle, &allocateInfo, DescriptorSets.data()) != VK_SUCCESS)
             {
                 throw std::runtime_error("Failed to allocate descriptor sets.");
             }
@@ -914,7 +914,7 @@ namespace Sogas
                 descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                 descriptorWrite.descriptorCount = 1;
 
-                vkUpdateDescriptorSets(Device, 1, &descriptorWrite, 0, nullptr);
+                vkUpdateDescriptorSets(Handle, 1, &descriptorWrite, 0, nullptr);
             }
         }
 
@@ -933,13 +933,13 @@ namespace Sogas
 
             for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
             {
-                if (vkCreateSemaphore(Device, &semaphoreCreateInfo, nullptr, &ImageAvailableSemaphore.at(i)) ||
-                    vkCreateSemaphore(Device, &semaphoreCreateInfo, nullptr, &RenderFinishedSemaphore.at(i)) != VK_SUCCESS)
+                if (vkCreateSemaphore(Handle, &semaphoreCreateInfo, nullptr, &ImageAvailableSemaphore.at(i)) ||
+                    vkCreateSemaphore(Handle, &semaphoreCreateInfo, nullptr, &RenderFinishedSemaphore.at(i)) != VK_SUCCESS)
                 {
                     throw std::runtime_error("Failed to create semaphore!");
                 }
 
-                if (vkCreateFence(Device, &fenceCreateInfo, nullptr, &InFlightFence.at(i)) != VK_SUCCESS)
+                if (vkCreateFence(Handle, &fenceCreateInfo, nullptr, &InFlightFence.at(i)) != VK_SUCCESS)
                 {
                     throw std::runtime_error("Failed to create fence!");
                 }
@@ -1073,7 +1073,7 @@ namespace Sogas
             createInfo.pCode = reinterpret_cast<const u32 *>(code.data());
 
             VkShaderModule shaderModule;
-            if (vkCreateShaderModule(Device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
+            if (vkCreateShaderModule(Handle, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
             {
                 throw std::runtime_error("Failed to create shader module.");
             }
@@ -1092,24 +1092,24 @@ namespace Sogas
             createInfo.size = size;
             createInfo.usage = usageFlags;
 
-            if (vkCreateBuffer(Device, &createInfo, nullptr, &buffer) != VK_SUCCESS)
+            if (vkCreateBuffer(Handle, &createInfo, nullptr, &buffer) != VK_SUCCESS)
             {
                 throw std::runtime_error("Failed to create buffer ...");
             }
 
             VkMemoryRequirements memoryRequirements;
-            vkGetBufferMemoryRequirements(Device, buffer, &memoryRequirements);
+            vkGetBufferMemoryRequirements(Handle, buffer, &memoryRequirements);
 
             VkMemoryAllocateInfo allocateInfo = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
             allocateInfo.memoryTypeIndex = FindMemoryType(memoryRequirements.memoryTypeBits, memoryPropertyFlags);
             allocateInfo.allocationSize = memoryRequirements.size;
 
-            if (vkAllocateMemory(Device, &allocateInfo, nullptr, &bufferMemory) != VK_SUCCESS)
+            if (vkAllocateMemory(Handle, &allocateInfo, nullptr, &bufferMemory) != VK_SUCCESS)
             {
                 throw std::runtime_error("Failed to allocate memory for buffer ...");
             }
 
-            vkBindBufferMemory(Device, buffer, bufferMemory, 0);
+            vkBindBufferMemory(Handle, buffer, bufferMemory, 0);
         }
 
         void VulkanDevice::CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size)
@@ -1120,7 +1120,7 @@ namespace Sogas
             allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
             VkCommandBuffer cmdBuffer;
-            if (vkAllocateCommandBuffers(Device, &allocateInfo, &cmdBuffer) != VK_SUCCESS)
+            if (vkAllocateCommandBuffers(Handle, &allocateInfo, &cmdBuffer) != VK_SUCCESS)
             {
                 throw std::runtime_error("Failed to allocate command buffer.");
             }
@@ -1153,7 +1153,7 @@ namespace Sogas
 
             vkQueueWaitIdle(GraphicsQueue);
 
-            vkFreeCommandBuffers(Device, CommandPool, 1, &cmdBuffer);
+            vkFreeCommandBuffers(Handle, CommandPool, 1, &cmdBuffer);
         }
 
     } // Vk

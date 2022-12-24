@@ -45,26 +45,26 @@ namespace Vk
         else
             bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        if (vkCreateBuffer(device.Device, &bufferCreateInfo, nullptr, &internalState->handle) != VK_SUCCESS)
+        if (vkCreateBuffer(device.Handle, &bufferCreateInfo, nullptr, &internalState->handle) != VK_SUCCESS)
         {
             SERROR("Failed to create buffer.");
             return;
         }
 
         VkMemoryRequirements memoryRequirements;
-        vkGetBufferMemoryRequirements(device.Device, internalState->handle, &memoryRequirements);
+        vkGetBufferMemoryRequirements(device.Handle, internalState->handle, &memoryRequirements);
 
         VkMemoryAllocateInfo allocateInfo = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
         allocateInfo.allocationSize  = memoryRequirements.size;
         allocateInfo.memoryTypeIndex = device.FindMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        if (vkAllocateMemory(device.Device, &allocateInfo, nullptr, &internalState->memory))
+        if (vkAllocateMemory(device.Handle, &allocateInfo, nullptr, &internalState->memory))
         {
             SERROR("Failed to allocate buffer memory.");
             return;
         }
 
-        vkBindBufferMemory(device.Device, internalState->handle, internalState->memory, 0);
+        vkBindBufferMemory(device.Handle, internalState->handle, internalState->memory, 0);
 
         // If initial data, upload to the buffer
         if (data != nullptr)
@@ -85,30 +85,30 @@ namespace Vk
             stagingBufferInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
             stagingBufferInfo.size  = buffer->descriptor.size;
 
-            if (vkCreateBuffer(device.Device, &stagingBufferInfo, nullptr, &stagingBuffer.handle) != VK_SUCCESS)
+            if (vkCreateBuffer(device.Handle, &stagingBufferInfo, nullptr, &stagingBuffer.handle) != VK_SUCCESS)
             {
                 SERROR("Failed to create staging buffer.");
                 return;
             }
 
             VkMemoryRequirements stagingMemoryRequirements;
-            vkGetBufferMemoryRequirements(device.Device, stagingBuffer.handle, &stagingMemoryRequirements);
+            vkGetBufferMemoryRequirements(device.Handle, stagingBuffer.handle, &stagingMemoryRequirements);
 
             VkMemoryAllocateInfo stagingMemoryAllocationInfo {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
             stagingMemoryAllocationInfo.allocationSize  = stagingMemoryRequirements.size;
             stagingMemoryAllocationInfo.memoryTypeIndex = device.FindMemoryType(stagingMemoryRequirements.memoryTypeBits, 
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-            if (vkAllocateMemory(device.Device, &stagingMemoryAllocationInfo, nullptr, &stagingBuffer.memory) != VK_SUCCESS)
+            if (vkAllocateMemory(device.Handle, &stagingMemoryAllocationInfo, nullptr, &stagingBuffer.memory) != VK_SUCCESS)
             {
                 SERROR("Failed to allocate staging buffer memory.");
                 return;
             }
 
-            vkBindBufferMemory(device.Device, stagingBuffer.handle, stagingBuffer.memory, 0);
+            vkBindBufferMemory(device.Handle, stagingBuffer.handle, stagingBuffer.memory, 0);
 
-            vkMapMemory(device.Device, stagingBuffer.memory, 0, buffer->descriptor.size, 0, &buffer->mapdata);
+            vkMapMemory(device.Handle, stagingBuffer.memory, 0, buffer->descriptor.size, 0, &buffer->mapdata);
             memcpy(buffer->mapdata, data, buffer->descriptor.size);
-            vkUnmapMemory(device.Device, stagingBuffer.memory);
+            vkUnmapMemory(device.Handle, stagingBuffer.memory);
 
             VkCommandBufferAllocateInfo commandBufferAllocateInfo {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
             commandBufferAllocateInfo.commandBufferCount    = 1;
@@ -116,7 +116,7 @@ namespace Vk
             commandBufferAllocateInfo.level                 = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
             VkCommandBuffer cmd;
-            if (vkAllocateCommandBuffers(device.Device, &commandBufferAllocateInfo, &cmd) != VK_SUCCESS)
+            if (vkAllocateCommandBuffers(device.Handle, &commandBufferAllocateInfo, &cmd) != VK_SUCCESS)
             {
                 SERROR("Failed to allocate command buffer.");
                 return;
@@ -158,9 +158,9 @@ namespace Vk
                 return;
             }
 
-            vkFreeCommandBuffers(device.Device, device.CommandPool, 1, &cmd);
-            vkDestroyBuffer(device.Device, stagingBuffer.handle, nullptr);
-            vkFreeMemory(device.Device, stagingBuffer.memory, nullptr);
+            vkFreeCommandBuffers(device.Handle, device.CommandPool, 1, &cmd);
+            vkDestroyBuffer(device.Handle, stagingBuffer.handle, nullptr);
+            vkFreeMemory(device.Handle, stagingBuffer.memory, nullptr);
         }
     }
 

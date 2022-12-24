@@ -44,7 +44,7 @@ namespace Vk
 
     private:
         VkInstance       Instance   = VK_NULL_HANDLE;
-        VkDevice         Device     = VK_NULL_HANDLE;
+        VkDevice         Handle     = VK_NULL_HANDLE;
         VkPhysicalDevice Gpu        = VK_NULL_HANDLE;
 
         VkDebugUtilsMessengerEXT DebugMessenger = VK_NULL_HANDLE;

@@ -2,6 +2,8 @@
 
 namespace Sogas
 {
+namespace Vk
+{
     VulkanSwapchain::~VulkanSwapchain()
     {
     }
@@ -158,4 +160,5 @@ namespace Sogas
         STRACE("\tSwapchain image views created.");
         return true;
     }
+} // Vk
 } // Sogas
