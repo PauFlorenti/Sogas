@@ -16,13 +16,14 @@ namespace Sogas
         void Render() override;
         void RenderInMenu() override;
 
-        std::shared_ptr<GPU_device> GetGraphicsDevice() const { return Renderer; }
+        std::shared_ptr<GPU_device> GetGraphicsDevice() const { return renderer; }
 
         void DoFrame();
 
         void ActivateObject(const glm::mat4& model, const glm::vec4& color);
 
     private:
-        std::shared_ptr<GPU_device> Renderer;
+        std::shared_ptr<GPU_device> renderer;
+        std::shared_ptr<Swapchain> swapchain;
     };
 } // Sogas

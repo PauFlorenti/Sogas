@@ -7,7 +7,6 @@
 
 namespace Sogas 
 {
-
     class GPU_device
     {
     public:
@@ -28,8 +27,13 @@ namespace Sogas
         virtual bool beginFrame() = 0;
         virtual void submitRenderCommands() = 0;
         virtual void endFrame() = 0;
-        virtual void CreateSwapchain(/*const SwapchainDescriptor& desc, SwapChain* swapchain*/) const = 0;
+        virtual void CreateSwapchain(const SwapchainDescriptor& desc, Swapchain* swapchain) = 0;
         virtual void CreateBuffer(const GPUBufferDescriptor* desc, void* data, GPUBuffer* buffer) const = 0;
+        virtual void CreateTexture(const TextureDescriptor* desc, void* data, Texture* texture) const = 0;
+        //virtual void CreateRenderPass() = 0;
+        virtual void CreatePipeline() = 0;
+        virtual void CreateAttachment() = 0;
+        virtual void CreateShader() = 0;
 
         // API calls
         // This are commands that will execute when submitCommands is called.

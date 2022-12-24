@@ -2,7 +2,8 @@
 
 #include <vulkan/vulkan.h>
 
-namespace Sogas {
+namespace Sogas 
+{
 namespace Vk 
 {
     struct CVulkanVertexDeclaration

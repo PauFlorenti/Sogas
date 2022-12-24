@@ -38,7 +38,7 @@ namespace Sogas
         R32G32B32A32_UINT,
 
         R32G32B32_SFLOAT,
-        R32G32B32_INT,
+        R32G32B32_SINT,
         R32G32B32_UINT,
 
         R32G32_SFLOAT,
@@ -137,11 +137,25 @@ namespace Sogas
         Usage usage;
     };
 
-    struct SwapChainDescriptor
+    struct TextureDescriptor
+    {
+        enum TextureType {
+            TEXTURE_TYPE_1D,
+            TEXTURE_TYPE_2D,
+            TEXTURE_TYPE_3D
+        } texturetype = TextureType::TEXTURE_TYPE_2D;
+        u32 width = 0;
+        u32 height = 0;
+        u32 depth = 0;
+        Format format = Format::UNDEFINED;
+    };
+
+    struct SwapchainDescriptor
     {
         u32 width;
         u32 height;
-        Format format;
+        u32 imageCount; // Number of buffers in the swapchain
+        Format format;  // Swapchain images format
         f32 clearColor[4] = {0.0f, 0.0f, 0.0f, 1.0f};
     };
 
@@ -178,14 +192,14 @@ namespace Sogas
 
     struct Texture : public GPUResource
     {
-
+        TextureDescriptor descriptor;
     };
 
     // Objects
 
-    struct SwapChain : public GPUBase
+    struct Swapchain : public GPUBase
     {
-        SwapChainDescriptor descriptor;
+        SwapchainDescriptor descriptor;
     };
 
     struct RenderPass : public GPUBase

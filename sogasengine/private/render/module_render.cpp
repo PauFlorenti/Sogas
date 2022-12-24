@@ -4,6 +4,7 @@
 #include "render/render_manager.h"
 
 // ! TEMP
+#include "application.h"
 #include "components/camera_component.h"
 
 namespace Sogas
@@ -13,15 +14,27 @@ namespace Sogas
         // Start ImGui
 
         // Start selected renderer. Vulkan only at the moment and by default.
-        Renderer = GPU_device::create(GraphicsAPI::Vulkan, nullptr);
-        Renderer->Init();
+        renderer = GPU_device::create(GraphicsAPI::Vulkan, nullptr);
+        renderer->Init();
+
+        i32 width, height;
+        CApplication::Get()->GetWindowSize(&width, &height);
+
+        swapchain = std::make_shared<Swapchain>();
+        SwapchainDescriptor desc;
+        desc.format = Format::R32G32B32A32_SFLOAT;
+        desc.width = width;
+        desc.height = height;
+        renderer->CreateSwapchain(desc, swapchain.get());
+
+        // Init global buffers
 
         return true;
     }
 
     void CRenderModule::Stop() 
     {
-        Renderer->shutdown();
+        renderer->shutdown();
     }
 
     void CRenderModule::Update(f32 /*dt*/) 
@@ -40,25 +53,29 @@ namespace Sogas
 
     void CRenderModule::DoFrame()
     {
-        if(Renderer->beginFrame())
+        /*
+        if(renderer->beginFrame())
         {
+            // 
+
             // Activate main camera
             // ! TEMPORAL
             CEntity* camera_entity = getEntityByName("camera");
             SASSERT(camera_entity);
             const TCompCamera* camera = camera_entity->Get<TCompCamera>();
             
-            Renderer->activateCamera(camera);
+            renderer->activateCamera(camera);
 
             // Render all solid objects
             RenderManager.RenderAll(CHandle(), DrawChannel::SOLID);
-            Renderer->endFrame();
+            renderer->endFrame();
         }
+        */
     }
 
     void CRenderModule::ActivateObject(const glm::mat4& model, const glm::vec4& color)
     {
-        Renderer->activateObject(model, color);
+        renderer->activateObject(model, color);
     }
 
 } // Sogas

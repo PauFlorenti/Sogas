@@ -1,8 +1,6 @@
 #pragma once
 
-#include "render/render_device.h"
-#include <vulkan/vulkan.h>
-
+#include "vulkan_types.h"
 // ! TEMP should not communicate directly with both of these
 #include "resources/mesh.h"
 
@@ -13,6 +11,7 @@ namespace Vk
 {
     class VulkanDevice : public GPU_device
     {
+        friend class VulkanBuffer;
     public:
         VulkanDevice(GraphicsAPI apiType, void* device);
         ~VulkanDevice() override;
@@ -24,8 +23,13 @@ namespace Vk
         void submitRenderCommands() override {};
         void endFrame() override;
         void shutdown() override;
-        void CreateSwapchain(/*const SwapchainDescriptor& desc, SwapChain* swapchain*/) const override;
+        void CreateSwapchain(const SwapchainDescriptor& desc, Swapchain* swapchain) override;
         void CreateBuffer(const GPUBufferDescriptor* desc, void* data, GPUBuffer* buffer) const override;
+        void CreateTexture(const TextureDescriptor* desc, void* data, Texture* texture) const override;
+        //void CreateRenderPass() override {};
+        void CreatePipeline() override {};
+        void CreateAttachment() override {};
+        void CreateShader() override {};
 
         // API calls ...
         void BindVertexBuffer(const GPUBuffer* buffer) override;
@@ -37,25 +41,22 @@ namespace Vk
         void activateCamera(const TCompCamera* camera) override;
         void CreateTexture(){};
         void DestroyTexture(){};
-        
 
     private:
-        VkInstance Instance = VK_NULL_HANDLE;
+        VkInstance       Instance   = VK_NULL_HANDLE;
+        VkDevice         Handle     = VK_NULL_HANDLE;
+        VkPhysicalDevice Gpu        = VK_NULL_HANDLE;
+
         VkDebugUtilsMessengerEXT DebugMessenger = VK_NULL_HANDLE;
 
-        VkPhysicalDevice Gpu = VK_NULL_HANDLE;
-
-        u32 GraphicsFamily;
-        VkQueue GraphicsQueue;
-        u32 PresentFamily;
-        VkQueue PresentQueue;
-
-        VkDevice Device             = VK_NULL_HANDLE;
-        VkSurfaceKHR Surface        = VK_NULL_HANDLE;
-        VkSwapchainKHR Swapchain    = VK_NULL_HANDLE;
-        VkSurfaceFormatKHR SurfaceFormat;
-        VkPresentModeKHR PresentMode;
-        VkExtent2D Extent;
+        std::vector<VkQueueFamilyProperties> queueFamilyProperties;
+        std::vector<u32> queueFamilies;
+        u32     GraphicsFamily = VK_QUEUE_FAMILY_IGNORED;
+        u32     PresentFamily  = VK_QUEUE_FAMILY_IGNORED;
+        u32     TransferFamily = VK_QUEUE_FAMILY_IGNORED;
+        VkQueue GraphicsQueue  = VK_NULL_HANDLE;
+        VkQueue PresentQueue   = VK_NULL_HANDLE;
+        VkQueue TransferQueue  = VK_NULL_HANDLE;
 
         u32 FrameCount = 0; // Number of frames since the beginning of the application.
         u32 FrameIndex = 0; // The frame index in flight.
@@ -72,10 +73,7 @@ namespace Vk
         std::vector<VkSemaphore> RenderFinishedSemaphore;
         std::vector<VkFence> InFlightFence;
 
-        std::vector<VkImage> SwapchainImages;
-        std::vector<VkImageView> SwapchainImageViews;
-        std::vector<VkFramebuffer> SwapchainFramebuffers;
-
+        // Remove
         std::vector<VkBuffer> UniformBuffers;
         std::vector<VkDeviceMemory> UniformBufferMemory;
         std::vector<void*> UniformBuffersMapped;

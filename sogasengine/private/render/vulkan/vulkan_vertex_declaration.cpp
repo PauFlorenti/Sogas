@@ -1,9 +1,8 @@
-#include "vulkan_vertex_declaration.h"
+#include "render/vulkan/vulkan_vertex_declaration.h"
 
 namespace Sogas {
 namespace Vk
 {
-
     static VkVertexInputAttributeDescription layoutPos[] = {
         {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0}
     };
