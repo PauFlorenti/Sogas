@@ -22,17 +22,22 @@ namespace Vk
             const VkPhysicalDevice& gpu, 
             VulkanSwapchain* internalState);
 
-        VkSwapchainKHR      swapchain = VK_NULL_HANDLE;
-        VkSurfaceKHR        surface = VK_NULL_HANDLE;
-        VkSurfaceFormatKHR  surfaceFormat;
-        VkPresentModeKHR    presentMode;
-        VkExtent2D          extent;
+        VkSwapchainKHR              swapchain = VK_NULL_HANDLE;
+        VkSurfaceKHR                surface = VK_NULL_HANDLE;
+        VkSurfaceFormatKHR          surfaceFormat;
+        VkPresentModeKHR            presentMode;
+        VkExtent2D                  extent;
 
-        std::vector<VkImage> images;
-        std::vector<VkImageView> imageViews;
-        std::vector<VkFramebuffer> framebuffers;
+        std::vector<VkImage>        images;
+        std::vector<VkImageView>    imageViews;
+        std::vector<VkFramebuffer>  framebuffers;
 
-        SwapchainDescriptor descriptor;
+        VkSemaphore swapchainStartSemaphore = VK_NULL_HANDLE;
+        VkSemaphore swapchainEndSemaphore   = VK_NULL_HANDLE;
+
+        Texture                     texture;
+        SwapchainDescriptor         descriptor;
+        RenderPass                  renderpass;
     };
 
 } // Vk

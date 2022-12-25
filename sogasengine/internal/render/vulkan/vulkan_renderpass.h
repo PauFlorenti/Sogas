@@ -4,15 +4,19 @@
 
 namespace Sogas
 {
+namespace Vk
+{
     class VulkanRenderPass
     {
     public:
+        VulkanRenderPass() = default;
         VulkanRenderPass(VulkanRenderPass&) = delete;
         VulkanRenderPass(VulkanRenderPass&&) = delete;
 
-    private:
-        VkRenderPass renderpass;
-        
+        VkRenderPass renderpass   = VK_NULL_HANDLE;
+        VkFramebuffer framebuffer = VK_NULL_HANDLE;
+        VkClearValue clearColor;
     };
 
+} // Vk
 } // Sogas

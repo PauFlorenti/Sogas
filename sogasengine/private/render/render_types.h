@@ -202,6 +202,37 @@ namespace Sogas
         TextureDescriptor descriptor;
     };
 
+    struct Attachment
+    {
+        const Texture* texture = nullptr;
+
+        enum class LoadOp
+        {
+            LOAD,
+            CLEAR,
+            DONTCARE
+        } loadop = LoadOp::LOAD;
+
+        enum class StoreOp
+        {
+            STORE,
+            DONTCARE
+        } storeop = StoreOp::STORE;
+
+        static Attachment RenderTarget(
+            const Texture* texture,
+            LoadOp loadop = LoadOp::LOAD,
+            StoreOp storeop = StoreOp::STORE
+        )
+        {
+            Attachment att;
+            att.texture = texture;
+            att.loadop = loadop;
+            att.storeop = storeop;
+            return att;
+        }
+    };
+
     // Objects
 
     struct Swapchain : public GPUBase
@@ -209,8 +240,14 @@ namespace Sogas
         SwapchainDescriptor descriptor;
     };
 
+    struct RenderPassDescriptor
+    {
+        std::vector<Attachment> attachments;
+    };
+
     struct RenderPass : public GPUBase
     {
+        RenderPassDescriptor descriptor;
 
     };
 

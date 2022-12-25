@@ -1,3 +1,4 @@
+#include "render/vulkan/vulkan_renderpass.h"
 #include "render/vulkan/vulkan_swapchain.h"
 
 namespace Sogas
@@ -99,6 +100,7 @@ namespace Vk
         swapchainCreateInfo.presentMode = internalState->presentMode;
         swapchainCreateInfo.clipped = VK_TRUE;
         swapchainCreateInfo.oldSwapchain = internalState->swapchain;
+        // TODO should chose sharing mode depending on queueFamilyIndices ... probably passing VulkanDevice* into the function.
         swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
         /*
@@ -127,6 +129,56 @@ namespace Vk
             vkDestroySwapchainKHR(device, swapchainCreateInfo.oldSwapchain, nullptr);
         }
 
+        // Create default render pass
+        VkAttachmentDescription colorAttachment = {};
+        colorAttachment.format          = internalState->surfaceFormat.format;
+        colorAttachment.samples         = VK_SAMPLE_COUNT_1_BIT;
+        colorAttachment.loadOp          = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        colorAttachment.storeOp         = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        colorAttachment.stencilLoadOp   = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        colorAttachment.stencilStoreOp  = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        colorAttachment.initialLayout   = VK_IMAGE_LAYOUT_UNDEFINED;
+        colorAttachment.finalLayout     = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+        VkAttachmentReference colorAttachmentReference = {};
+        colorAttachmentReference.attachment = 0;
+        colorAttachmentReference.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        VkSubpassDescription subpass = {};
+        subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass.colorAttachmentCount    = 1;
+        subpass.pColorAttachments       = &colorAttachmentReference;
+
+        VkSubpassDependency dependency = {};
+        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+        dependency.dstSubpass = 0;
+        dependency.srcAccessMask = 0; 
+        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+        VkRenderPassCreateInfo renderPassInfo = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
+        renderPassInfo.attachmentCount  = 1;
+        renderPassInfo.pAttachments     = &colorAttachment;
+        renderPassInfo.subpassCount     = 1;
+        renderPassInfo.pSubpasses       = &subpass;
+
+        auto renderPassInternal = std::make_shared<VulkanRenderPass>();
+        internalState->renderpass.internalState     = renderPassInternal;
+
+
+        internalState->texture.descriptor.width    = internalState->extent.width;
+        internalState->texture.descriptor.height   = internalState->extent.height;
+        internalState->texture.descriptor.depth    = 1;
+        internalState->texture.descriptor.format   = internalState->descriptor.format;
+        internalState->renderpass.descriptor.attachments.push_back(Attachment::RenderTarget(&internalState->texture));
+
+        if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPassInternal->renderpass) != VK_SUCCESS) {
+            SFATAL("Failed to create swapchain default renderpass.");
+            return false;
+        }
+
+        // Create render targets
         u32 swapchainImageCount = 0;
         vkGetSwapchainImagesKHR(device, internalState->swapchain, &swapchainImageCount, nullptr);
         internalState->images.resize(swapchainImageCount);
@@ -134,20 +186,21 @@ namespace Vk
 
         STRACE("\tCreating swapchain image views.");
         internalState->imageViews.resize(swapchainImageCount);
+        internalState->framebuffers.resize(swapchainImageCount);
         for (u32 i = 0; i < swapchainImageCount; i++)
         {
             VkImageViewCreateInfo imageViewCreateInfo = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
-            imageViewCreateInfo.image = internalState->images.at(i);
-            imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            imageViewCreateInfo.format = internalState->surfaceFormat.format;
-            imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-            imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-            imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-            imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-            imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            imageViewCreateInfo.subresourceRange.levelCount = 1;
-            imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
-            imageViewCreateInfo.subresourceRange.layerCount = 1;
+            imageViewCreateInfo.image                           = internalState->images.at(i);
+            imageViewCreateInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
+            imageViewCreateInfo.format                          = internalState->surfaceFormat.format;
+            imageViewCreateInfo.components.r                    = VK_COMPONENT_SWIZZLE_IDENTITY;
+            imageViewCreateInfo.components.g                    = VK_COMPONENT_SWIZZLE_IDENTITY;
+            imageViewCreateInfo.components.b                    = VK_COMPONENT_SWIZZLE_IDENTITY;
+            imageViewCreateInfo.components.a                    = VK_COMPONENT_SWIZZLE_IDENTITY;
+            imageViewCreateInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+            imageViewCreateInfo.subresourceRange.levelCount     = 1;
+            imageViewCreateInfo.subresourceRange.baseMipLevel   = 0;
+            imageViewCreateInfo.subresourceRange.layerCount     = 1;
             imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
 
             if (vkCreateImageView(device, &imageViewCreateInfo, nullptr, &internalState->imageViews.at(i)) != VK_SUCCESS)
@@ -155,6 +208,31 @@ namespace Vk
                 std::cout << "\tFailed to create image view!\n";
                 return false;
             }
+
+            VkFramebufferCreateInfo framebufferInfo = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
+            framebufferInfo.width           = internalState->extent.width;
+            framebufferInfo.height          = internalState->extent.height;
+            framebufferInfo.renderPass      = renderPassInternal->renderpass;
+            framebufferInfo.attachmentCount = 1;
+            framebufferInfo.pAttachments    = &internalState->imageViews[i];
+            framebufferInfo.layers          = 1;
+
+            if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &internalState->framebuffers.at(i)) != VK_SUCCESS) {
+                SERROR("Failed to create framebuffer");
+                return false;
+            }
+        }
+
+        VkSemaphoreCreateInfo semaphoreInfo = {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
+        
+        if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &internalState->swapchainStartSemaphore) != VK_SUCCESS) {
+            SERROR("Failed to create swapchain start semaphore!");
+            return false;
+        }
+
+        if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &internalState->swapchainEndSemaphore) != VK_SUCCESS) {
+            SERROR("Failed to create swapchain end semaphore!");
+            return false;
         }
 
         STRACE("\tSwapchain image views created.");
