@@ -24,9 +24,10 @@ namespace Sogas
 
         virtual bool Init() = 0;
         virtual void shutdown() = 0;
-        virtual bool beginFrame() = 0;
-        virtual void submitRenderCommands() = 0;
-        virtual void endFrame() = 0;
+        virtual CommandBuffer BeginCommandBuffer() = 0;
+        virtual void SubmitCommandBuffers() = 0;
+        virtual void BeginRenderPass(const Swapchain* swapchain, CommandBuffer cmd) = 0;
+        virtual void EndRenderPass(CommandBuffer cmd) = 0;
         virtual void CreateSwapchain(const SwapchainDescriptor& desc, Swapchain* swapchain) = 0;
         virtual void CreateBuffer(const GPUBufferDescriptor* desc, void* data, GPUBuffer* buffer) const = 0;
         virtual void CreateTexture(const TextureDescriptor* desc, void* data, Texture* texture) const = 0;

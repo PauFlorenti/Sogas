@@ -134,6 +134,12 @@ namespace Sogas
 
     // Resource descriptors
 
+    struct CommandBuffer
+    {
+        void* internalState = nullptr;
+        constexpr bool IsValid() const { return internalState != nullptr; }
+    };
+
     struct GPUBufferDescriptor
     {
         u64 size;

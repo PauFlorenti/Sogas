@@ -28,12 +28,14 @@ namespace Vk
         VkPresentModeKHR            presentMode;
         VkExtent2D                  extent;
 
+        u32 imageIndex{0};
         std::vector<VkImage>        images;
         std::vector<VkImageView>    imageViews;
         std::vector<VkFramebuffer>  framebuffers;
 
         VkSemaphore swapchainStartSemaphore = VK_NULL_HANDLE;
         VkSemaphore swapchainEndSemaphore   = VK_NULL_HANDLE;
+        VkFence swapchainFence[MAX_FRAMES_IN_FLIGHT];
 
         Texture                     texture;
         SwapchainDescriptor         descriptor;

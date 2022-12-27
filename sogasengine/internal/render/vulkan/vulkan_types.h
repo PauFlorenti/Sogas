@@ -4,6 +4,8 @@
 #include <vulkan/vulkan.h>
 #include "vulkan_vertex_declaration.h"
 
+#define MAX_FRAMES_IN_FLIGHT 2
+
 namespace Sogas {
 namespace Vk {
     struct VulkanVertex

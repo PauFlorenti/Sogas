@@ -169,7 +169,7 @@ namespace Vk
     {
         VkCommandBufferAllocateInfo cmdAllocInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
         cmdAllocInfo.commandBufferCount = 1;
-        cmdAllocInfo.commandPool        = device->CommandPool;
+        cmdAllocInfo.commandPool        = device->resourcesCommandPool[device->GetFrameIndex()];
         cmdAllocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         
         VkCommandBuffer cmd;
@@ -242,7 +242,7 @@ namespace Vk
             vkEndCommandBuffer(cmd);
         }
 
-        vkFreeCommandBuffers(device->Handle, device->CommandPool, 1, &cmd);
+        vkFreeCommandBuffers(device->Handle, device->resourcesCommandPool[device->GetFrameIndex()], 1, &cmd);
     }
 
     void VulkanTexture::CopyBufferToImage(
@@ -254,7 +254,7 @@ namespace Vk
     {
         VkCommandBufferAllocateInfo cmdAllocInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
         cmdAllocInfo.commandBufferCount = 1;
-        cmdAllocInfo.commandPool        = device->CommandPool;
+        cmdAllocInfo.commandPool        = device->resourcesCommandPool[device->GetFrameIndex()];
         cmdAllocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         
         VkCommandBuffer cmd;
@@ -291,7 +291,7 @@ namespace Vk
             vkQueueWaitIdle(device->GraphicsQueue);
             vkEndCommandBuffer(cmd);
         }
-        vkFreeCommandBuffers(device->Handle, device->CommandPool, 1, &cmd);
+        vkFreeCommandBuffers(device->Handle, device->resourcesCommandPool[device->GetFrameIndex()], 1, &cmd);
     }
 
 } // Vk

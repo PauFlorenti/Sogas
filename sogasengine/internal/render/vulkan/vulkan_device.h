@@ -1,14 +1,14 @@
 #pragma once
 
 #include "vulkan_types.h"
+#include "render/vulkan/vulkan_commandbuffer.h"
 // ! TEMP should not communicate directly with both of these
 #include "resources/mesh.h"
-
-#define MAX_FRAMES_IN_FLIGHT 2
 
 namespace Sogas {
 namespace Vk
 {
+
     class VulkanDevice : public GPU_device
     {
         friend class VulkanBuffer;
@@ -19,11 +19,15 @@ namespace Vk
 
         GraphicsAPI getApiType() const { return api_type; }
 
+        constexpr u32 GetFrameCount() const { return FrameCount; }
+        constexpr u32 GetFrameIndex() const { return GetFrameCount() % MAX_FRAMES_IN_FLIGHT; } 
+
         bool Init() override;
-        bool beginFrame() override;
-        void submitRenderCommands() override {};
-        void endFrame() override;
         void shutdown() override;
+        CommandBuffer BeginCommandBuffer() override;
+        void SubmitCommandBuffers() override;
+        void BeginRenderPass(const Swapchain* swapchain, CommandBuffer cmd) override;
+        void EndRenderPass(CommandBuffer cmd) override;
         void CreateSwapchain(const SwapchainDescriptor& desc, Swapchain* swapchain) override;
         void CreateBuffer(const GPUBufferDescriptor* desc, void* data, GPUBuffer* buffer) const override;
         void CreateTexture(const TextureDescriptor* desc, void* data, Texture* texture) const override;
@@ -50,8 +54,9 @@ namespace Vk
 
         VkDebugUtilsMessengerEXT DebugMessenger = VK_NULL_HANDLE;
 
-        std::vector<VkQueueFamilyProperties> queueFamilyProperties;
-        std::vector<u32> queueFamilies;
+        // Queues
+        std::vector<VkQueueFamilyProperties>    queueFamilyProperties;
+        std::vector<u32>                        queueFamilies;
         u32     GraphicsFamily = VK_QUEUE_FAMILY_IGNORED;
         u32     PresentFamily  = VK_QUEUE_FAMILY_IGNORED;
         u32     TransferFamily = VK_QUEUE_FAMILY_IGNORED;
@@ -60,21 +65,18 @@ namespace Vk
         VkQueue TransferQueue  = VK_NULL_HANDLE;
 
         u32 FrameCount = 0; // Number of frames since the beginning of the application.
-        u32 FrameIndex = 0; // The frame index in flight.
-        u32 ImageIndex = 0;
+
+        VkCommandPool   resourcesCommandPool[MAX_FRAMES_IN_FLIGHT];
+        VkCommandBuffer resourcesCommandBuffer[MAX_FRAMES_IN_FLIGHT];
+        VkFence         fence[MAX_FRAMES_IN_FLIGHT];
+
+        std::vector<std::unique_ptr<VulkanCommandBuffer>> commandBuffers;
+        u32 commandBufferCounter{0};
 
         VkPipelineLayout PipelineLayout = VK_NULL_HANDLE;
         VkPipeline Pipeline             = VK_NULL_HANDLE;
         VkRenderPass RenderPass         = VK_NULL_HANDLE;
 
-        VkCommandPool CommandPool       = VK_NULL_HANDLE;
-
-        std::vector<VkCommandBuffer> CommandBuffers;
-        std::vector<VkSemaphore> ImageAvailableSemaphore;
-        std::vector<VkSemaphore> RenderFinishedSemaphore;
-        std::vector<VkFence> InFlightFence;
-
-        // Remove
         std::vector<VkBuffer> UniformBuffers;
         std::vector<VkDeviceMemory> UniformBufferMemory;
         std::vector<void*> UniformBuffersMapped;
@@ -94,15 +96,11 @@ namespace Vk
         void CreateDescriptorSetLayout();
         void CreateGraphicsPipeline();
         void CreateRenderPass();
-        void CreateFramebuffers();
-        void CreateCommandPool();
-        void CreateCommandBuffer();
-        void CreateSyncObjects();
+        void CreateCommandResources();
         void CreateUniformBuffer();
         void CreateDescriptorPools();
         void CreateDescriptorSets();
         void UpdateUniformBuffer();
-        void Submit();
         u32 FindMemoryType(u32 typeFilter, VkMemoryPropertyFlags propertyFlags) const;
 
         void CreateBuffer(
@@ -112,7 +110,10 @@ namespace Vk
             VkBuffer& buffer, 
             VkDeviceMemory& bufferMemory);
 
-        void CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size);
+        VulkanCommandBuffer GetCommandBuffer(CommandBuffer& cmd) {
+            SASSERT(cmd.IsValid());
+            return *static_cast<VulkanCommandBuffer*>(cmd.internalState);
+        }
     };
 
 } // Vk

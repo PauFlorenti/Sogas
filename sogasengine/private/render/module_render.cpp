@@ -53,24 +53,11 @@ namespace Sogas
 
     void CRenderModule::DoFrame()
     {
-        /*
-        if(renderer->beginFrame())
-        {
-            // 
+        CommandBuffer cmd = renderer->BeginCommandBuffer();
+        renderer->BeginRenderPass(swapchain.get(), cmd);
 
-            // Activate main camera
-            // ! TEMPORAL
-            CEntity* camera_entity = getEntityByName("camera");
-            SASSERT(camera_entity);
-            const TCompCamera* camera = camera_entity->Get<TCompCamera>();
-            
-            renderer->activateCamera(camera);
-
-            // Render all solid objects
-            RenderManager.RenderAll(CHandle(), DrawChannel::SOLID);
-            renderer->endFrame();
-        }
-        */
+        renderer->EndRenderPass(cmd);
+        renderer->SubmitCommandBuffers();
     }
 
     void CRenderModule::ActivateObject(const glm::mat4& model, const glm::vec4& color)
