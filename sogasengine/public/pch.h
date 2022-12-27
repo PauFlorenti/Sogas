@@ -2,6 +2,7 @@
 
 // C++
 #include <algorithm>
+#include <array>
 #include <fstream>
 #include <iostream>
 #include <limits>

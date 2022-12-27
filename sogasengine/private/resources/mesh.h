@@ -13,8 +13,8 @@ namespace Sogas
             std::vector<u32> indices, 
             PrimitiveTopology topology);
 
-        void Activate() const;
-        void Render() const;
+        void Activate(CommandBuffer cmd) const;
+        void Render(CommandBuffer cmd) const;
 
         u32 vertexCount = 0;
         u32 vertexOffset = 0;

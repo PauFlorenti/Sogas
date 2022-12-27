@@ -132,7 +132,23 @@ namespace Sogas
         SHADER_SAMPLE = 1 << 5
     };
 
+    enum class ShaderStage
+    {
+        FRAGMENT = 0,
+        VERTEX, 
+        UNDEFINED,
+        COUNT = UNDEFINED
+    };
+
     // Resource descriptors
+
+    struct Shader;
+
+    struct CommandBuffer
+    {
+        void* internalState = nullptr;
+        constexpr bool IsValid() const { return internalState != nullptr; }
+    };
 
     struct GPUBufferDescriptor
     {
@@ -164,6 +180,21 @@ namespace Sogas
         u32 imageCount; // Number of buffers in the swapchain
         Format format;  // Swapchain images format
         f32 clearColor[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+    };
+
+    struct PushConstantDescriptor
+    {
+        u32 size{0};
+        u32 offset{0};
+        ShaderStage stage = ShaderStage::UNDEFINED;
+    };
+
+    struct PipelineDescriptor
+    {
+        Shader* vs = nullptr;
+        Shader* ps = nullptr;
+        std::string vertexDeclaration;
+        std::vector<PushConstantDescriptor> pushConstantDesc{};
     };
 
     // GPU Resources
@@ -235,11 +266,6 @@ namespace Sogas
 
     // Objects
 
-    struct Swapchain : public GPUBase
-    {
-        SwapchainDescriptor descriptor;
-    };
-
     struct RenderPassDescriptor
     {
         std::vector<Attachment> attachments;
@@ -248,12 +274,22 @@ namespace Sogas
     struct RenderPass : public GPUBase
     {
         RenderPassDescriptor descriptor;
+    };
 
+    struct Swapchain : public GPUBase
+    {
+        SwapchainDescriptor descriptor;
+        RenderPass renderpass;
     };
 
     struct Pipeline : public GPUBase
     {
+        PipelineDescriptor descriptor;
+    };
 
+    struct Shader : public GPUBase
+    {
+        ShaderStage stage = ShaderStage::COUNT;
     };
 
     struct Vertex

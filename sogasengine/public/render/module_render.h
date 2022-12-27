@@ -20,8 +20,6 @@ namespace Sogas
 
         void DoFrame();
 
-        void ActivateObject(const glm::mat4& model, const glm::vec4& color);
-
     private:
         std::shared_ptr<GPU_device> renderer;
         std::shared_ptr<Swapchain> swapchain;

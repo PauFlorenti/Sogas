@@ -6,6 +6,9 @@
 #include "GLFW/glfw3native.h"
 
 #include "render/vulkan/vulkan_buffer.h"
+#include "render/vulkan/vulkan_pipeline.h"
+#include "render/vulkan/vulkan_renderpass.h"
+#include "render/vulkan/vulkan_shader.h"
 #include "render/vulkan/vulkan_types.h"
 #include "render/vulkan/vulkan_texture.h"
 #include "render/vulkan/vulkan_swapchain.h"
@@ -86,21 +89,6 @@ namespace Sogas
             return VK_FALSE;
         }
 
-        static std::vector<char> ReadFile(const std::string &filename)
-        {
-            std::ifstream file(filename, std::ios::ate | std::ios::binary);
-            SASSERT_MSG(file, "No file provided with name '%s'", filename.c_str());
-            SASSERT_MSG(file.is_open(), "Failed to open file '%s'", filename.c_str());
-
-            size_t fileSize = (size_t)file.tellg();
-            std::vector<char> buffer(fileSize);
-            file.seekg(0);
-            file.read(buffer.data(), fileSize);
-            file.close();
-
-            return buffer;
-        }
-
         u32 VulkanDevice::FindMemoryType(u32 typeFilter, VkMemoryPropertyFlags propertyFlags) const
         {
             VkPhysicalDeviceMemoryProperties memoryProperties;
@@ -167,6 +155,8 @@ namespace Sogas
             }
 
             internalState->descriptor = desc;
+            swapchain->descriptor = desc;
+            swapchain->internalState = internalState;
 
             if (internalState->surface == VK_NULL_HANDLE)
             {
@@ -197,19 +187,10 @@ namespace Sogas
                 SERROR("Failed to create vulkan swapchain");
             }
 
-            // ! All the following code should be moved out of here.
-
-            /*
-            CreateDescriptorSetLayout();
-            CreateGraphicsPipeline();
-            CreateFramebuffers();
-            CreateCommandPool();
-            CreateCommandBuffer();
-            CreateSyncObjects();
-            CreateUniformBuffer();
-            CreateDescriptorPools();
-            CreateDescriptorSets();
-            */
+            swapchain->renderpass.internalState = std::make_shared<VulkanRenderPass>();
+            auto renderpassInternalState = std::static_pointer_cast<VulkanRenderPass>(swapchain->renderpass.internalState);
+            auto swapchainRenderpassInternalState = std::static_pointer_cast<VulkanRenderPass>(internalState->renderpass.internalState);
+            renderpassInternalState->renderpass = swapchainRenderpassInternalState->renderpass;
         }
 
         bool VulkanDevice::Init()
@@ -225,6 +206,8 @@ namespace Sogas
                 STRACE("\tFailed to create Vulkan Logical Device!");
                 return false;
             }
+
+            CreateCommandResources();
 
             STRACE("Finished Initializing Vulkan device.\n");
 
@@ -242,22 +225,16 @@ namespace Sogas
                 vkFreeMemory(Handle, UniformBufferMemory.at(i), nullptr);
             }
 
-            STRACE("\tDestroying Sync objects ...");
-            for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-            {
-                vkDestroyFence(Handle, InFlightFence.at(i), nullptr);
-                vkDestroySemaphore(Handle, RenderFinishedSemaphore.at(i), nullptr);
-                vkDestroySemaphore(Handle, ImageAvailableSemaphore.at(i), nullptr);
-            }
-
             STRACE("\tDestroying Command Pool ...");
-            vkDestroyCommandPool(Handle, CommandPool, nullptr);
+            for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+                vkDestroyCommandPool(Handle, resourcesCommandPool[i], nullptr);
+            }
 
             STRACE("\tDestroying Framebuffer ...");
             /*for (auto &framebuffer : SwapchainFramebuffers)
             {
                 vkDestroyFramebuffer(Device, framebuffer, nullptr);
-            }*/
+            }
 
             STRACE("\tDestroying Graphics pipeline ...");
             vkDestroyPipeline(Handle, Pipeline, nullptr);
@@ -265,6 +242,7 @@ namespace Sogas
             vkDestroyRenderPass(Handle, RenderPass, nullptr);
             STRACE("\tDestroying Graphics pipeline layout ...");
             vkDestroyPipelineLayout(Handle, PipelineLayout, nullptr);
+            */
             STRACE("\tDestroying Descriptor Pool ...");
             vkDestroyDescriptorPool(Handle, DescriptorPool, nullptr);
             STRACE("\tDestroying Descriptor set layout ...");
@@ -283,7 +261,7 @@ namespace Sogas
 
             vkDestroySwapchainKHR(Device, Swapchain, nullptr);
             STRACE("\tDestroying Vulkan logical device ...");
-            vkDestroyDevice(Device, nullptr);
+            vkDestroyDevice(Handle, nullptr);
             STRACE("\tLogical device destroyed.");
             STRACE("\tDestroying Surface ...");
             vkDestroySurfaceKHR(Instance, Surface, nullptr);
@@ -296,18 +274,200 @@ namespace Sogas
             STRACE("Vulkan renderer has shut down.\n");
         }
 
+        CommandBuffer VulkanDevice::BeginCommandBuffer()
+        {
+            u32 count = commandBufferCounter++;
+            if (count >= commandBuffers.size()) {
+                commandBuffers.push_back(std::make_unique<VulkanCommandBuffer>());
+            }
+
+            CommandBuffer cmd;
+            cmd.internalState = commandBuffers[count].get();
+
+            VulkanCommandBuffer* internalCmd = static_cast<VulkanCommandBuffer*>(cmd.internalState);
+            
+            if (internalCmd->commandBuffers[GetFrameIndex()] == VK_NULL_HANDLE) {
+
+                for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+                    VkCommandPoolCreateInfo commandPoolInfo = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+                    commandPoolInfo.queueFamilyIndex = GraphicsFamily; // TODO make it configurable
+                    commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+                    if (vkCreateCommandPool(Handle, &commandPoolInfo, nullptr, &internalCmd->commandPools[i]) != VK_SUCCESS) {
+                        SERROR("Failed to create command pool.");
+                        return {};
+                    }
+
+                    VkCommandBufferAllocateInfo allocInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+                    allocInfo.commandBufferCount = 1;
+                    allocInfo.commandPool        = GetCommandBuffer(cmd).commandPools[i];
+                    allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+                    if (vkAllocateCommandBuffers(Handle, &allocInfo, &internalCmd->commandBuffers[i]) != VK_SUCCESS) {
+                        SERROR("Failed to allocate command buffer");
+                        return {};
+                    }
+                }
+            }
+
+            VkCommandBufferBeginInfo beginInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+
+            if (vkBeginCommandBuffer(GetCommandBuffer(cmd).commandBuffers[GetFrameIndex()], &beginInfo) != VK_SUCCESS) {
+                SERROR("Begin command buffer failed.");
+                return {};
+            }
+
+            return cmd;
+        }
+
+        void VulkanDevice::SubmitCommandBuffers()
+        {
+            // TODO submit frame resources commands
+
+            u32 nCommands = commandBufferCounter;
+            commandBufferCounter = 0;
+            std::vector<VkCommandBuffer> submitCommands;
+            std::vector<VkSemaphore> signalSemaphores;
+            std::vector<VkSemaphore> waitSemaphores;
+
+            for (u32 i = 0; i < nCommands; i++)
+            {
+                if (vkEndCommandBuffer(commandBuffers.at(i)->commandBuffers[GetFrameIndex()]) != VK_SUCCESS) {
+                    SFATAL("Failed to end command buffer");
+                    SASSERT_MSG(false, "Failed to end command buffer.");
+                }
+
+                submitCommands.push_back(commandBuffers.at(i)->commandBuffers[GetFrameIndex()]);
+                signalSemaphores.push_back(commandBuffers.at(i)->swapchain.lock()->swapchainEndSemaphore);
+                waitSemaphores.push_back(commandBuffers.at(i)->swapchain.lock()->swapchainStartSemaphore);
+            }
+
+            VkPipelineStageFlags waitStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+            VkSubmitInfo submitInfo         = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
+            submitInfo.commandBufferCount   = static_cast<u32>(submitCommands.size());
+            submitInfo.pCommandBuffers      = submitCommands.data();
+            submitInfo.signalSemaphoreCount = static_cast<u32>(signalSemaphores.size());
+            submitInfo.pSignalSemaphores    = signalSemaphores.data();
+            submitInfo.waitSemaphoreCount   = static_cast<u32>(waitSemaphores.size());
+            submitInfo.pWaitSemaphores      = waitSemaphores.data();
+            submitInfo.pWaitDstStageMask    = &waitStages;
+
+            if (vkQueueSubmit(GraphicsQueue, 1, &submitInfo, fence[GetFrameIndex()]) != VK_SUCCESS) { 
+                SASSERT_MSG(false, "Failed to submit graphics commands");
+            }
+
+            // TODO Only if is a swapchain pass, at the moment only a swapchain pass
+            VkPresentInfoKHR presentInfo = {VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
+            presentInfo.swapchainCount      = 1;
+            presentInfo.pSwapchains         = &commandBuffers.at(0)->swapchain.lock()->swapchain;
+            presentInfo.waitSemaphoreCount  = static_cast<u32>(signalSemaphores.size());
+            presentInfo.pWaitSemaphores     = signalSemaphores.data();
+            presentInfo.pImageIndices       = &commandBuffers.at(0)->swapchain.lock()->imageIndex;
+
+            if (vkQueuePresentKHR(GraphicsQueue, &presentInfo) != VK_SUCCESS) {
+                SFATAL("Failed to present image.");
+                return;
+            }
+
+            FrameCount++;
+
+            // Ignore 2 first frames.
+            if (GetFrameCount() >= MAX_FRAMES_IN_FLIGHT)
+            {
+                if (vkWaitForFences(Handle, 1, &fence[GetFrameIndex()], VK_TRUE, UINT64_MAX) != VK_SUCCESS) {
+                    SERROR("Failed waiting for fence.");
+                    return;
+                }
+
+                if (vkResetFences(Handle, 1, &fence[GetFrameIndex()]) != VK_SUCCESS) {
+                    SERROR("Failed to reset fence.");
+                    return;
+                }
+            }
+        }
+
+        void VulkanDevice::BeginRenderPass(const Swapchain* swapchain, CommandBuffer cmd)
+        {
+            SASSERT(cmd.IsValid());
+            VulkanCommandBuffer* internalCommand = static_cast<VulkanCommandBuffer*>(cmd.internalState); // GetCommandBuffer(cmd);
+            auto internalSwapchain = std::static_pointer_cast<VulkanSwapchain>(swapchain->internalState);
+            internalCommand->activeRenderPass    = &internalSwapchain->renderpass;
+            internalCommand->swapchain           = internalSwapchain;
+
+            if (vkAcquireNextImageKHR(Handle, internalSwapchain->swapchain, UINT64_MAX, internalSwapchain->swapchainStartSemaphore, VK_NULL_HANDLE, &internalSwapchain->imageIndex) != VK_SUCCESS)
+            {
+                // TODO Recreate swapchain and call begin render pass again.
+                throw std::runtime_error("Failed to acquire next image!");
+            }
+
+            // Begin Render Pass
+            VkViewport viewport{};
+            viewport.x = 0;
+            viewport.y = 0;
+            viewport.width = (f32)swapchain->descriptor.width;
+            viewport.height = (f32)swapchain->descriptor.height;
+            viewport.minDepth = 0.0f;
+            viewport.maxDepth = 1.0f;
+
+            vkCmdSetViewport(internalCommand->commandBuffers[GetFrameIndex()], 0, 1, &viewport);
+
+            VkRect2D scissor{};
+            scissor.extent.width = swapchain->descriptor.width;
+            scissor.extent.height = swapchain->descriptor.height;
+            scissor.offset = {0, 0};
+
+            vkCmdSetScissor(internalCommand->commandBuffers[GetFrameIndex()], 0, 1, &scissor);
+
+            //vkCmdSetLineWidth(internalCommand->commandBuffers[GetFrameIndex()], 1.0f);
+
+            VkClearValue clearValue = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+
+            VkRenderPassBeginInfo renderpassBeginInfo = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
+            renderpassBeginInfo.renderPass          = std::static_pointer_cast<VulkanRenderPass>(internalCommand->activeRenderPass->internalState)->renderpass;
+            renderpassBeginInfo.clearValueCount     = 1;
+            renderpassBeginInfo.pClearValues        = &clearValue;
+            renderpassBeginInfo.framebuffer         = internalSwapchain->framebuffers.at(internalSwapchain->imageIndex);
+            renderpassBeginInfo.renderArea.extent   = internalSwapchain->extent;
+            renderpassBeginInfo.renderArea.offset   = {0, 0};
+
+            vkCmdBeginRenderPass(internalCommand->commandBuffers[GetFrameIndex()], &renderpassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+        }
+
+        void VulkanDevice::EndRenderPass(CommandBuffer cmd)
+        {
+            VulkanCommandBuffer* internalCmd = static_cast<VulkanCommandBuffer*>(cmd.internalState);
+            SASSERT(internalCmd);
+
+            vkCmdEndRenderPass(internalCmd->commandBuffers[GetFrameIndex()]);
+        }
+
         void VulkanDevice::CreateBuffer(const GPUBufferDescriptor* desc, void* data, GPUBuffer* buffer) const
         {
-            VulkanBuffer::Create(*this, desc, data, buffer);
+            VulkanBuffer::Create(this, desc, data, buffer);
         }
 
-        void VulkanDevice::CreateTexture(const TextureDescriptor* desc, void* /*data*/, Texture* /*texture*/) const
+        void VulkanDevice::CreateTexture(const TextureDescriptor* desc, void* data, Texture* texture) const
         {
-            SASSERT(desc);
-            //auto internalState = static_cast<VulkanTexture>(texture->internalState);
+            VulkanTexture::Create(this, desc, data, texture);
         }
 
-        void VulkanDevice::BindVertexBuffer(const GPUBuffer* buffer)
+        void VulkanDevice::CreateRenderPass(const RenderPassDescriptor* desc, RenderPass* renderpass) const
+        {
+            VulkanRenderPass::Create(this, desc, renderpass);
+        }
+
+        void VulkanDevice::CreatePipeline(const PipelineDescriptor* desc, Pipeline* pipeline, RenderPass* renderpass) const
+        {
+            VulkanPipeline::Create(this, desc, pipeline, renderpass);
+        }
+
+        void VulkanDevice::CreateShader(ShaderStage stage, const char* filename, Shader* shader) const
+        {
+            VulkanShader::Create(this, stage, filename, shader);
+        }
+
+        void VulkanDevice::BindVertexBuffer(const GPUBuffer* buffer, CommandBuffer cmd)
         {
             SASSERT(buffer);
             SASSERT(buffer->IsValid());
@@ -316,13 +476,11 @@ namespace Sogas
             const VulkanBuffer* internalBuffer = static_cast<VulkanBuffer*>(buffer->internalState.get());
             SASSERT(internalBuffer);
 
-            VkCommandBuffer& cmd = CommandBuffers.at(FrameIndex);
-
             VkDeviceSize offset = {0};
-            vkCmdBindVertexBuffers(cmd, 0, 1, internalBuffer->GetHandle(), &offset);
+            vkCmdBindVertexBuffers(static_cast<VulkanCommandBuffer*>(cmd.internalState)->commandBuffers[GetFrameIndex()], 0, 1, internalBuffer->GetHandle(), &offset);
         }
 
-        void VulkanDevice::BindIndexBuffer(const GPUBuffer* buffer)
+        void VulkanDevice::BindIndexBuffer(const GPUBuffer* buffer, CommandBuffer cmd)
         {
             SASSERT(buffer);
             SASSERT(buffer->IsValid());
@@ -331,15 +489,25 @@ namespace Sogas
             const VulkanBuffer* internalBuffer = static_cast<VulkanBuffer*>(buffer->internalState.get());
             SASSERT(internalBuffer);
 
-            VkCommandBuffer& cmd = CommandBuffers.at(FrameIndex);
-
             VkDeviceSize offset = {0};
-            vkCmdBindIndexBuffer(cmd, *internalBuffer->GetHandle(), offset, VK_INDEX_TYPE_UINT32);
+            vkCmdBindIndexBuffer(GetCommandBuffer(cmd).commandBuffers[GetFrameIndex()], *internalBuffer->GetHandle(), offset, VK_INDEX_TYPE_UINT32);
+        }
+
+        void VulkanDevice::BindPipeline(const Pipeline* pipeline, CommandBuffer cmd)
+        {
+            SASSERT(pipeline)
+
+            auto pipelineInternalState = std::static_pointer_cast<VulkanPipeline>(pipeline->internalState);
+            SASSERT(pipelineInternalState);
+            auto cmdInternalState = static_cast<VulkanCommandBuffer*>(cmd.internalState);
+            cmdInternalState->activePipeline = static_cast<VulkanPipeline*>(pipeline->internalState.get());
+
+            vkCmdBindPipeline(cmdInternalState->commandBuffers[GetFrameIndex()], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineInternalState->handle);
         }
 
         void VulkanDevice::SetTopology(PrimitiveTopology topology)
         {
-            VkCommandBuffer& cmd = CommandBuffers.at(FrameIndex);
+            VkCommandBuffer& cmd = resourcesCommandBuffer[GetFrameIndex()];
             switch (topology)
             {
             case PrimitiveTopology::POINTLIST:
@@ -357,30 +525,29 @@ namespace Sogas
             }
         }
 
-        void VulkanDevice::Draw(const u32 count, const u32 offset)
+        void VulkanDevice::Draw(const u32 count, const u32 offset, CommandBuffer cmd)
         {
             SASSERT(count > 0);
             SASSERT(offset >= 0);
 
-            VkCommandBuffer& cmd = CommandBuffers[FrameIndex];
-            vkCmdDraw(cmd, count, 1, offset, 0);
+            vkCmdDraw(GetCommandBuffer(cmd).commandBuffers[GetFrameIndex()], count, 1, offset, 0);
         }
 
-        void VulkanDevice::DrawIndexed(const u32 count, const u32 offset)
+        void VulkanDevice::DrawIndexed(const u32 count, const u32 offset, CommandBuffer cmd)
         {
             SASSERT(count > 0);
             SASSERT(offset >= 0);
 
-            VkCommandBuffer& cmd = CommandBuffers.at(FrameIndex);
-            vkCmdDrawIndexed(cmd, count, 1, offset, 0, 0);
+            vkCmdDrawIndexed(GetCommandBuffer(cmd).commandBuffers[GetFrameIndex()], count, 1, offset, 0, 0);
         }
 
-        void VulkanDevice::activateObject(const glm::mat4 &model, const glm::vec4 & /*color*/)
+        void VulkanDevice::ActivateObject(const glm::mat4 & model, const glm::vec4 & /*color*/, CommandBuffer cmd)
         {
-            // glm::mat4 model = glm::translate(glm::mat4(1), glm::vec3(0, 0, -5));
+
+            VulkanCommandBuffer vkcmd = VulkanCommandBuffer::ToInternal(&cmd);
             vkCmdPushConstants(
-                CommandBuffers.at(FrameIndex),
-                PipelineLayout,
+                GetCommandBuffer(cmd).commandBuffers[GetFrameIndex()],
+                vkcmd.activePipeline->pipelineLayout,
                 VK_SHADER_STAGE_VERTEX_BIT,
                 0, sizeof(glm::mat4), &model);
         }
@@ -394,15 +561,16 @@ namespace Sogas
             ubo.camera_view_projection = camera->GetViewProjection();
             ubo.camera_projection[1][1] *= -1;
 
-            memcpy(UniformBuffersMapped.at(FrameIndex), &ubo, sizeof(ubo));
-
+            memcpy(UniformBuffersMapped.at(GetFrameIndex()), &ubo, sizeof(ubo));
+            /*
             vkCmdBindDescriptorSets(
-                CommandBuffers.at(FrameIndex),
+                resourcesCommandBuffer[GetFrameIndex()], //CommandBuffers.at(GetFrameIndex()),
                 VK_PIPELINE_BIND_POINT_GRAPHICS,
                 PipelineLayout,
                 0, 1,
-                &DescriptorSets.at(FrameIndex),
+                &DescriptorSets.at(GetFrameIndex()),
                 0, nullptr);
+            */
         }
 
         bool VulkanDevice::CreateInstance()
@@ -612,6 +780,7 @@ namespace Sogas
 
         void VulkanDevice::CreateGraphicsPipeline()
         {
+            /*
             STRACE("\tReading compiled shaders ...");
             auto VertexShader = ReadFile("../../data/shaders/triangle.vert.spv");
             SASSERT(!VertexShader.empty());
@@ -747,103 +916,38 @@ namespace Sogas
             STRACE("\tCleaning shade modules used ...");
             vkDestroyShaderModule(Handle, VertexShaderModule, nullptr);
             vkDestroyShaderModule(Handle, FragmentShaderModule, nullptr);
-        }
-
-        void VulkanDevice::CreateRenderPass()
-        {
-            VkAttachmentDescription colorAttachment{};
-            colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-            colorAttachment.format = VK_FORMAT_R8G8B8A8_SRGB;// SurfaceFormat.format;
-            colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-            colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-            colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-            colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-            colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-
-            VkAttachmentReference colorAttachmentRef = {};
-            colorAttachmentRef.attachment = 0;
-            colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-            VkSubpassDescription subpass{};
-            subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-            subpass.colorAttachmentCount = 1;
-            subpass.pColorAttachments = &colorAttachmentRef;
-
-            VkSubpassDependency subpassDependency = {};
-            subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-            subpassDependency.dstSubpass = 0;
-            subpassDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            subpassDependency.srcAccessMask = 0;
-            subpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            subpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-            VkRenderPassCreateInfo renderPassInfo = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
-            renderPassInfo.attachmentCount = 1;
-            renderPassInfo.pAttachments = &colorAttachment;
-            renderPassInfo.subpassCount = 1;
-            renderPassInfo.pSubpasses = &subpass;
-            renderPassInfo.dependencyCount = 1;
-            renderPassInfo.pDependencies = &subpassDependency;
-
-            if (vkCreateRenderPass(Handle, &renderPassInfo, nullptr, &RenderPass) != VK_SUCCESS)
-            {
-                throw std::runtime_error("Failed to create render pass.");
-            }
-        }
-
-        void VulkanDevice::CreateFramebuffers()
-        {
-            /*
-            STRACE("\tCreating framebuffers ...");
-            SwapchainFramebuffers.resize(SwapchainImageViews.size());
-
-            for (size_t i = 0; i < SwapchainImageViews.size(); i++)
-            {
-                VkImageView attachments[] = {
-                    SwapchainImageViews[i]};
-
-                VkFramebufferCreateInfo createInfo = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
-                createInfo.attachmentCount = 1;
-                createInfo.pAttachments = attachments;
-                createInfo.renderPass = RenderPass;
-                createInfo.width = 640; //Extent.width;
-                createInfo.height = 480; //Extent.height;
-                createInfo.layers = 1;
-
-                if (vkCreateFramebuffer(Device, &createInfo, nullptr, &SwapchainFramebuffers.at(i)) != VK_SUCCESS)
-                {
-                    throw std::runtime_error("Failed to create framebuffer.");
-                }
-            }
             */
         }
 
-        void VulkanDevice::CreateCommandPool()
+        void VulkanDevice::CreateCommandResources()
         {
             STRACE("\tCreating Command Pool ...");
-            VkCommandPoolCreateInfo createInfo = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
-            createInfo.queueFamilyIndex = GraphicsFamily;
-            createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+            VkCommandPoolCreateInfo createInfo  = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+            createInfo.queueFamilyIndex         = GraphicsFamily;
+            createInfo.flags                    = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-            if (vkCreateCommandPool(Handle, &createInfo, nullptr, &CommandPool) != VK_SUCCESS)
-            {
-                throw std::runtime_error("Failed to create command pool!");
-            }
-        }
+            for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+                if (vkCreateCommandPool(Handle, &createInfo, nullptr, &resourcesCommandPool[i]) != VK_SUCCESS)
+                {
+                    throw std::runtime_error("Failed to create command pool!");
+                }
 
-        void VulkanDevice::CreateCommandBuffer()
-        {
-            STRACE("\tAllocating Command Buffers ...");
-            CommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-            VkCommandBufferAllocateInfo allocInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
-            allocInfo.commandPool = CommandPool;
-            allocInfo.commandBufferCount = static_cast<u32>(CommandBuffers.size());
-            allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+                VkCommandBufferAllocateInfo allocInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+                allocInfo.commandPool           = resourcesCommandPool[i];
+                allocInfo.commandBufferCount    = 1;
+                allocInfo.level                 = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
-            if (vkAllocateCommandBuffers(Handle, &allocInfo, CommandBuffers.data()) != VK_SUCCESS)
-            {
-                throw std::runtime_error("Failed to allcoate command buffer!");
+                if (vkAllocateCommandBuffers(Handle, &allocInfo, &resourcesCommandBuffer[i]) != VK_SUCCESS)
+                {
+                    throw std::runtime_error("Failed to allcoate command buffer!");
+                }
+
+                VkFenceCreateInfo fenceInfo = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+                
+                if (vkCreateFence(Handle, &fenceInfo, nullptr, &fence[i]) != VK_SUCCESS) { 
+                    SFATAL("Failed to create frame fence.");
+                    return;
+                }
             }
         }
 
@@ -918,34 +1022,6 @@ namespace Sogas
             }
         }
 
-        void VulkanDevice::CreateSyncObjects()
-        {
-            STRACE("\tCreating Sync objects ...");
-
-            ImageAvailableSemaphore.resize(MAX_FRAMES_IN_FLIGHT);
-            RenderFinishedSemaphore.resize(MAX_FRAMES_IN_FLIGHT);
-            InFlightFence.resize(MAX_FRAMES_IN_FLIGHT);
-
-            VkSemaphoreCreateInfo semaphoreCreateInfo = {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
-
-            VkFenceCreateInfo fenceCreateInfo = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
-            fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-            for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-            {
-                if (vkCreateSemaphore(Handle, &semaphoreCreateInfo, nullptr, &ImageAvailableSemaphore.at(i)) ||
-                    vkCreateSemaphore(Handle, &semaphoreCreateInfo, nullptr, &RenderFinishedSemaphore.at(i)) != VK_SUCCESS)
-                {
-                    throw std::runtime_error("Failed to create semaphore!");
-                }
-
-                if (vkCreateFence(Handle, &fenceCreateInfo, nullptr, &InFlightFence.at(i)) != VK_SUCCESS)
-                {
-                    throw std::runtime_error("Failed to create fence!");
-                }
-            }
-        }
-
         void VulkanDevice::UpdateUniformBuffer()
         {
             ConstantsCamera ubo;
@@ -954,130 +1030,7 @@ namespace Sogas
             ubo.camera_view_projection = ubo.camera_projection * ubo.camera_view;
             ubo.camera_projection[1][1] *= -1;
 
-            memcpy(UniformBuffersMapped.at(FrameIndex), &ubo, sizeof(ubo));
-        }
-
-        bool VulkanDevice::beginFrame()
-        {
-            /*
-            if (vkAcquireNextImageKHR(Device, Swapchain, UINT64_MAX, ImageAvailableSemaphore.at(FrameIndex), VK_NULL_HANDLE, &ImageIndex) != VK_SUCCESS)
-            {
-                throw std::runtime_error("Failed to acquire next image!");
-            }
-
-            if (vkWaitForFences(Device, 1, &InFlightFence.at(FrameIndex), VK_TRUE, UINT64_MAX) != VK_SUCCESS)
-            {
-                throw std::runtime_error("Failed to wait for fences!");
-            }
-
-            if (vkResetFences(Device, 1, &InFlightFence.at(FrameIndex)) != VK_SUCCESS)
-            {
-                throw std::runtime_error("Failed to reset fence!");
-            }
-
-            VkCommandBufferBeginInfo cmdBeginInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
-
-            if (vkBeginCommandBuffer(CommandBuffers.at(FrameIndex), &cmdBeginInfo) != VK_SUCCESS)
-            {
-                throw std::runtime_error("Failed to begin recording command buffer");
-            }
-
-            VkViewport viewport{};
-            viewport.x = 0;
-            viewport.y = 0;
-            viewport.width = 640.0f; //(f32)Extent.width;
-            viewport.height = 480.0f; //(f32)Extent.height;
-            viewport.minDepth = 0.0f;
-            viewport.maxDepth = 1.0f;
-
-            vkCmdSetViewport(CommandBuffers.at(FrameIndex), 0, 1, &viewport);
-
-            VkRect2D scissor{};
-            scissor.extent.width = 640; //Extent.width;
-            scissor.extent.height = 480; //Extent.height;
-            scissor.offset = {0, 0};
-
-            vkCmdSetScissor(CommandBuffers.at(FrameIndex), 0, 1, &scissor);
-
-            vkCmdSetLineWidth(CommandBuffers.at(FrameIndex), 1.0f);
-
-            VkClearValue clearValue = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-
-            VkRenderPassBeginInfo renderpassBeginInfo = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
-            renderpassBeginInfo.renderPass = RenderPass;
-            renderpassBeginInfo.clearValueCount = 1;
-            renderpassBeginInfo.pClearValues = &clearValue;
-            renderpassBeginInfo.framebuffer = SwapchainFramebuffers[ImageIndex];
-            renderpassBeginInfo.renderArea.extent = {640, 480}; //Extent;
-            renderpassBeginInfo.renderArea.offset = {0, 0};
-
-            vkCmdBeginRenderPass(CommandBuffers.at(FrameIndex), &renderpassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-            vkCmdBindPipeline(CommandBuffers.at(FrameIndex), VK_PIPELINE_BIND_POINT_GRAPHICS, Pipeline);
-            */
-            return true;
-        }
-
-        void VulkanDevice::endFrame()
-        {
-            vkCmdEndRenderPass(CommandBuffers.at(FrameIndex));
-
-            if (vkEndCommandBuffer(CommandBuffers.at(FrameIndex)) != VK_SUCCESS)
-            {
-                throw std::runtime_error("Failed to end recording command buffer");
-            }
-
-            Submit();
-
-            FrameCount++;
-            FrameIndex = (FrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
-        }
-
-        void VulkanDevice::Submit()
-        {
-            VkPipelineStageFlags waitStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-
-            VkSubmitInfo submit = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
-            submit.commandBufferCount = 1;
-            submit.pCommandBuffers = &CommandBuffers.at(FrameIndex);
-            submit.signalSemaphoreCount = 1;
-            submit.pSignalSemaphores = &RenderFinishedSemaphore.at(FrameIndex);
-            submit.waitSemaphoreCount = 1;
-            submit.pWaitSemaphores = &ImageAvailableSemaphore.at(FrameIndex);
-            submit.pWaitDstStageMask = &waitStages;
-
-            if (vkQueueSubmit(GraphicsQueue, 1, &submit, InFlightFence.at(FrameIndex)) != VK_SUCCESS)
-            {
-                throw std::runtime_error("Failed to submit commands.");
-            }
-
-            /*
-            VkPresentInfoKHR presentInfo = {VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
-            presentInfo.pImageIndices = &ImageIndex;
-            presentInfo.waitSemaphoreCount = 1;
-            presentInfo.pWaitSemaphores = &RenderFinishedSemaphore.at(FrameIndex);
-            presentInfo.swapchainCount = 1;
-            presentInfo.pSwapchains = &Swapchain;
-
-            if (vkQueuePresentKHR(GraphicsQueue, &presentInfo) != VK_SUCCESS)
-            {
-                throw std::runtime_error("Failed to present");
-            }
-            */
-        }
-
-        VkShaderModule VulkanDevice::CreateShaderModule(const std::vector<char> &code)
-        {
-            VkShaderModuleCreateInfo createInfo = {VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
-            createInfo.codeSize = code.size();
-            createInfo.pCode = reinterpret_cast<const u32 *>(code.data());
-
-            VkShaderModule shaderModule;
-            if (vkCreateShaderModule(Handle, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
-            {
-                throw std::runtime_error("Failed to create shader module.");
-            }
-            return shaderModule;
+            memcpy(UniformBuffersMapped.at(GetFrameIndex()), &ubo, sizeof(ubo));
         }
 
         void VulkanDevice::CreateBuffer(
@@ -1111,50 +1064,5 @@ namespace Sogas
 
             vkBindBufferMemory(Handle, buffer, bufferMemory, 0);
         }
-
-        void VulkanDevice::CopyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size)
-        {
-            VkCommandBufferAllocateInfo allocateInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
-            allocateInfo.commandBufferCount = 1;
-            allocateInfo.commandPool = CommandPool;
-            allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-
-            VkCommandBuffer cmdBuffer;
-            if (vkAllocateCommandBuffers(Handle, &allocateInfo, &cmdBuffer) != VK_SUCCESS)
-            {
-                throw std::runtime_error("Failed to allocate command buffer.");
-            }
-
-            VkCommandBufferBeginInfo beginInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
-            beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-            if (vkBeginCommandBuffer(cmdBuffer, &beginInfo) != VK_SUCCESS)
-            {
-                throw std::runtime_error("Failed to start recording copy command buffer.");
-            }
-
-            VkBufferCopy copyRegion{};
-            copyRegion.srcOffset = 0;
-            copyRegion.dstOffset = 0;
-            copyRegion.size = size;
-
-            vkCmdCopyBuffer(cmdBuffer, src, dst, 1, &copyRegion);
-
-            vkEndCommandBuffer(cmdBuffer);
-
-            VkSubmitInfo submit = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
-            submit.commandBufferCount = 1;
-            submit.pCommandBuffers = &cmdBuffer;
-
-            if (vkQueueSubmit(GraphicsQueue, 1, &submit, VK_NULL_HANDLE) != VK_SUCCESS)
-            {
-                throw std::runtime_error("Failed to submit copy buffer commands.");
-            }
-
-            vkQueueWaitIdle(GraphicsQueue);
-
-            vkFreeCommandBuffers(Handle, CommandPool, 1, &cmdBuffer);
-        }
-
     } // Vk
 } // Sogas

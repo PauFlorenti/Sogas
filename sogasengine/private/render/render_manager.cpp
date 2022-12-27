@@ -3,6 +3,7 @@
 #include "engine.h"
 #include "entity/entity.h"
 #include "render/module_render.h"
+#include "resources/mesh.h"
 #include "render_manager.h"
 
 namespace Sogas
@@ -35,7 +36,7 @@ namespace Sogas
         KeysAreDirty = true;
     }
 
-    void CRenderManager::RenderAll(CHandle /*camera_handle*/, DrawChannel channel)
+    void CRenderManager::RenderAll(CHandle /*camera_handle*/, DrawChannel channel, CommandBuffer cmd)
     {
         // SASSERT(camera_handle.IsValid());
 
@@ -70,7 +71,7 @@ namespace Sogas
                 glm::vec4 color = glm::vec4(1.0f);
 
                 // Activate model and color
-                CEngine::Get()->GetRenderModule()->ActivateObject(transform->AsMatrix(), color);
+               // CEngine::Get()->GetRenderModule()->ActivateObject(transform->AsMatrix(), color);
             }
 
             // Activate material
@@ -79,10 +80,10 @@ namespace Sogas
             if( key->Mesh != prev_key->Mesh)
             {
                 CEngine::Get()->GetRenderModule()->GetGraphicsDevice()->SetTopology(key->Mesh->Topology);
-                key->Mesh->Activate();
+                key->Mesh->Activate(cmd);
             }
 
-            key->Mesh->Render();
+            key->Mesh->Render(cmd);
             
             prev_key = key;
             ++nDrawCalls;

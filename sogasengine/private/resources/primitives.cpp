@@ -41,9 +41,9 @@ namespace Sogas
             return;
         
         glm::mat4 world = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, -length)) * glm::inverse(glm::lookAt(src, dst, glm::vec3(0, 1, 0))); 
-        line->device.lock()->activateObject(world, glm::vec4(1.0f));
-        line->Activate();
-        line->Render();
+        //line->device.lock()->activateObject(world, glm::vec4(1.0f));
+        //line->Activate();
+        //line->Render();
     }
 
 /*

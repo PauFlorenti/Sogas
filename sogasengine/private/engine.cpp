@@ -4,6 +4,7 @@
 #include "modules/module_entities.h"
 #include "render/module_render.h"
 #include "resources/primitives.h"
+#include "resources/mesh.h"
 #include "resources/resource.h"
 
 #include "GLFW/glfw3.h"

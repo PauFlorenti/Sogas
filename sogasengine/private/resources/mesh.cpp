@@ -15,6 +15,7 @@ namespace Sogas
         Indexed         = false;
         this->vertices  = vs;
         this->indices   = is;
+        this->vertexCount = static_cast<u32>(vs.size());
 
         GPUBufferDescriptor vertexBufferDescriptor;
         vertexBufferDescriptor.bindPoint    = BindPoint::VERTEX;
@@ -25,6 +26,7 @@ namespace Sogas
         if (!is.empty())
         {
             Indexed = true;
+            this->indexCount = static_cast<u32>(is.size());
             GPUBufferDescriptor indexBufferDescriptor;
             indexBufferDescriptor.bindPoint = BindPoint::INDEX;
             indexBufferDescriptor.usage     = Usage::READBACK;
@@ -35,21 +37,21 @@ namespace Sogas
         return true;
     }
 
-    void CMesh::Activate() const
+    void CMesh::Activate(CommandBuffer cmd) const
     {
         device.lock()->SetTopology(Topology);
 
-        device.lock()->BindVertexBuffer(&vertexBuffer);
+        device.lock()->BindVertexBuffer(&vertexBuffer, cmd);
 
         if (Indexed)
-            device.lock()->BindIndexBuffer(&indexBuffer);
+            device.lock()->BindIndexBuffer(&indexBuffer, cmd);
     }
 
-    void CMesh::Render() const
+    void CMesh::Render(CommandBuffer cmd) const
     {
         if (Indexed)
-            device.lock()->DrawIndexed(static_cast<u32>(indices.size()), indexOffset);
+            device.lock()->DrawIndexed(static_cast<u32>(indices.size()), indexOffset, cmd);
         else
-            device.lock()->Draw(static_cast<u32>(vertices.size()), vertexOffset);
+            device.lock()->Draw(static_cast<u32>(vertices.size()), vertexOffset, cmd);
     }
 } // Sogas

@@ -6,9 +6,16 @@
 // ! TEMP
 #include "application.h"
 #include "components/camera_component.h"
+#include "resources/mesh.h"
 
 namespace Sogas
 {
+    Pipeline pipeline;
+    Shader shaders[2];
+
+    CMesh square;
+
+
     bool CRenderModule::Start () 
     {
         // Start ImGui
@@ -27,7 +34,33 @@ namespace Sogas
         desc.height = height;
         renderer->CreateSwapchain(desc, swapchain.get());
 
+        std::vector<Vertex> vertices = {
+            {{-0.5f, -0.5f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+            {{ 0.5f,  0.5f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+            {{-0.5f,  0.5f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+            {{-0.5f, -0.5f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+            {{ 0.5f, -0.5f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+            {{ 0.5f,  0.5f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}}
+        };
+
+        square.Create(std::move(vertices), std::vector<u32>(), PrimitiveTopology::TRIANGLELIST);
+
         // Init global buffers
+        renderer->CreateShader(ShaderStage::VERTEX, "test.vert.spv", &shaders[0]);
+        renderer->CreateShader(ShaderStage::FRAGMENT, "test.frag.spv", &shaders[1]);
+
+        PushConstantDescriptor modelPushConstant;
+        modelPushConstant.offset = 0;
+        modelPushConstant.size   = sizeof(glm::mat4);
+        modelPushConstant.stage  = ShaderStage::VERTEX;
+
+        PipelineDescriptor psoDesc;
+        psoDesc.vs = &shaders[0];
+        psoDesc.ps = &shaders[1];
+        psoDesc.vertexDeclaration = "PosColor";
+        psoDesc.pushConstantDesc.push_back(modelPushConstant);
+
+        renderer->CreatePipeline(&psoDesc, &pipeline, &swapchain->renderpass);
 
         return true;
     }
@@ -53,29 +86,15 @@ namespace Sogas
 
     void CRenderModule::DoFrame()
     {
-        /*
-        if(renderer->beginFrame())
-        {
-            // 
+        CommandBuffer cmd = renderer->BeginCommandBuffer();
+        renderer->BindPipeline(&pipeline, cmd);
+        renderer->BeginRenderPass(swapchain.get(), cmd);
 
-            // Activate main camera
-            // ! TEMPORAL
-            CEntity* camera_entity = getEntityByName("camera");
-            SASSERT(camera_entity);
-            const TCompCamera* camera = camera_entity->Get<TCompCamera>();
-            
-            renderer->activateCamera(camera);
+        renderer->BindVertexBuffer(&square.vertexBuffer, cmd);
+        renderer->ActivateObject(glm::translate(glm::mat4(1), glm::vec3(1, 0, 0)), glm::vec4(1.0f), cmd);
+        renderer->Draw(square.vertexCount, 0, cmd);
 
-            // Render all solid objects
-            RenderManager.RenderAll(CHandle(), DrawChannel::SOLID);
-            renderer->endFrame();
-        }
-        */
+        renderer->EndRenderPass(cmd);
+        renderer->SubmitCommandBuffers();
     }
-
-    void CRenderModule::ActivateObject(const glm::mat4& model, const glm::vec4& color)
-    {
-        renderer->activateObject(model, color);
-    }
-
 } // Sogas

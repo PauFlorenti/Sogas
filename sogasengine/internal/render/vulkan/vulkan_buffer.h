@@ -16,7 +16,7 @@ namespace Vk
         VulkanBuffer(VulkanBuffer&&) = delete;
 
         static void Create(
-            const VulkanDevice& device, 
+            const VulkanDevice* device, 
             const GPUBufferDescriptor* desc, 
             void* data, 
             GPUBuffer* buffer);

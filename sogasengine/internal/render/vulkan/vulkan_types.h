@@ -4,6 +4,8 @@
 #include <vulkan/vulkan.h>
 #include "vulkan_vertex_declaration.h"
 
+#define MAX_FRAMES_IN_FLIGHT 2
+
 namespace Sogas {
 namespace Vk {
     struct VulkanVertex
@@ -355,6 +357,20 @@ namespace Vk {
                 break;
             }
         }
+
+    constexpr VkShaderStageFlagBits ConvertShaderStage(ShaderStage stage)
+    {
+        switch (stage)
+        {
+            case ShaderStage::FRAGMENT:
+                return VK_SHADER_STAGE_FRAGMENT_BIT;
+            case ShaderStage::VERTEX:
+                return VK_SHADER_STAGE_VERTEX_BIT;
+            case ShaderStage::UNDEFINED:
+            default:
+                return VK_SHADER_STAGE_ALL;
+        }
+    } 
 
 } // Vk
 } // Sogas
