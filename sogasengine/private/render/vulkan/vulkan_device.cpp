@@ -6,6 +6,7 @@
 #include "GLFW/glfw3native.h"
 
 #include "render/vulkan/vulkan_buffer.h"
+#include "render/vulkan/vulkan_pipeline.h"
 #include "render/vulkan/vulkan_renderpass.h"
 #include "render/vulkan/vulkan_types.h"
 #include "render/vulkan/vulkan_texture.h"
@@ -86,7 +87,7 @@ namespace Sogas
             }
             return VK_FALSE;
         }
-
+/*
         static std::vector<char> ReadFile(const std::string &filename)
         {
             std::ifstream file(filename, std::ios::ate | std::ios::binary);
@@ -101,6 +102,7 @@ namespace Sogas
 
             return buffer;
         }
+*/
 
         u32 VulkanDevice::FindMemoryType(u32 typeFilter, VkMemoryPropertyFlags propertyFlags) const
         {
@@ -256,7 +258,7 @@ namespace Sogas
             /*for (auto &framebuffer : SwapchainFramebuffers)
             {
                 vkDestroyFramebuffer(Device, framebuffer, nullptr);
-            }*/
+            }
 
             STRACE("\tDestroying Graphics pipeline ...");
             vkDestroyPipeline(Handle, Pipeline, nullptr);
@@ -264,6 +266,7 @@ namespace Sogas
             vkDestroyRenderPass(Handle, RenderPass, nullptr);
             STRACE("\tDestroying Graphics pipeline layout ...");
             vkDestroyPipelineLayout(Handle, PipelineLayout, nullptr);
+            */
             STRACE("\tDestroying Descriptor Pool ...");
             vkDestroyDescriptorPool(Handle, DescriptorPool, nullptr);
             STRACE("\tDestroying Descriptor set layout ...");
@@ -473,6 +476,11 @@ namespace Sogas
             VulkanTexture::Create(this, desc, data, texture);
         }
 
+        void VulkanDevice::CreatePipeline(const PipelineDescriptor* desc, Pipeline* pipeline) const
+        {
+            VulkanPipeline::Create(this, desc, pipeline);
+        }
+
         void VulkanDevice::BindVertexBuffer(const GPUBuffer* buffer)
         {
             SASSERT(buffer);
@@ -500,6 +508,14 @@ namespace Sogas
             VkCommandBuffer& cmd = resourcesCommandBuffer[GetFrameIndex()];
             VkDeviceSize offset = {0};
             vkCmdBindIndexBuffer(cmd, *internalBuffer->GetHandle(), offset, VK_INDEX_TYPE_UINT32);
+        }
+
+        void VulkanDevice::BindPipeline(const Pipeline* pipeline, CommandBuffer /*cmd*/)
+        {
+            SASSERT(pipeline)
+
+            auto pipelineInternalState = std::static_pointer_cast<VulkanPipeline*>(pipeline->internalState);
+            //auto cmdInternalState = std::static_pointer_cast<VulkanCommandBuffer>(cmd.internalState);
         }
 
         void VulkanDevice::SetTopology(PrimitiveTopology topology)
@@ -540,14 +556,16 @@ namespace Sogas
             vkCmdDrawIndexed(cmd, count, 1, offset, 0, 0);
         }
 
-        void VulkanDevice::activateObject(const glm::mat4 &model, const glm::vec4 & /*color*/)
+        void VulkanDevice::activateObject(const glm::mat4 & /*model*/, const glm::vec4 & /*color*/)
         {
+            /*
             // glm::mat4 model = glm::translate(glm::mat4(1), glm::vec3(0, 0, -5));
             vkCmdPushConstants(
                 resourcesCommandBuffer[GetFrameIndex()], //CommandBuffers.at(GetFrameIndex()),
                 PipelineLayout,
                 VK_SHADER_STAGE_VERTEX_BIT,
                 0, sizeof(glm::mat4), &model);
+            */
         }
 
         void VulkanDevice::activateCamera(const TCompCamera *camera)
@@ -560,7 +578,7 @@ namespace Sogas
             ubo.camera_projection[1][1] *= -1;
 
             memcpy(UniformBuffersMapped.at(GetFrameIndex()), &ubo, sizeof(ubo));
-
+            /*
             vkCmdBindDescriptorSets(
                 resourcesCommandBuffer[GetFrameIndex()], //CommandBuffers.at(GetFrameIndex()),
                 VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -568,6 +586,7 @@ namespace Sogas
                 0, 1,
                 &DescriptorSets.at(GetFrameIndex()),
                 0, nullptr);
+            */
         }
 
         bool VulkanDevice::CreateInstance()
@@ -777,6 +796,7 @@ namespace Sogas
 
         void VulkanDevice::CreateGraphicsPipeline()
         {
+            /*
             STRACE("\tReading compiled shaders ...");
             auto VertexShader = ReadFile("../../data/shaders/triangle.vert.spv");
             SASSERT(!VertexShader.empty());
@@ -912,6 +932,7 @@ namespace Sogas
             STRACE("\tCleaning shade modules used ...");
             vkDestroyShaderModule(Handle, VertexShaderModule, nullptr);
             vkDestroyShaderModule(Handle, FragmentShaderModule, nullptr);
+            */
         }
 
         void VulkanDevice::CreateRenderPass()

@@ -6,8 +6,6 @@ namespace Sogas
 {
 namespace Vk
 {
-    class VulkanDevice;
-
     class VulkanSwapchain
     {
     public:

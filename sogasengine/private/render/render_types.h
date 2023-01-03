@@ -132,7 +132,17 @@ namespace Sogas
         SHADER_SAMPLE = 1 << 5
     };
 
+    enum class ShaderStage
+    {
+        FRAGMENT = 0,
+        PIXEL, 
+        UNDEFINED,
+        COUNT = UNDEFINED
+    };
+
     // Resource descriptors
+
+    struct Shader;
 
     struct CommandBuffer
     {
@@ -170,6 +180,12 @@ namespace Sogas
         u32 imageCount; // Number of buffers in the swapchain
         Format format;  // Swapchain images format
         f32 clearColor[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+    };
+
+    struct PipelineDescriptor
+    {
+        Shader* vs = nullptr;
+        Shader* ps = nullptr;
     };
 
     // GPU Resources
@@ -254,13 +270,17 @@ namespace Sogas
     struct RenderPass : public GPUBase
     {
         RenderPassDescriptor descriptor;
-
     };
 
     struct Pipeline : public GPUBase
     {
-
+        PipelineDescriptor descriptor;
     };
+
+    struct Shader : public GPUBase
+    {
+        ShaderStage stage = ShaderStage::COUNT;
+    }
 
     struct Vertex
     {

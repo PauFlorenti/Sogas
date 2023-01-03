@@ -13,6 +13,7 @@ namespace Vk
     {
         friend class VulkanBuffer;
         friend class VulkanTexture;
+        friend class VulkanPipeline;
     public:
         VulkanDevice(GraphicsAPI apiType, void* device);
         ~VulkanDevice() override;
@@ -32,20 +33,19 @@ namespace Vk
         void CreateBuffer(const GPUBufferDescriptor* desc, void* data, GPUBuffer* buffer) const override;
         void CreateTexture(const TextureDescriptor* desc, void* data, Texture* texture) const override;
         //void CreateRenderPass() override {};
-        void CreatePipeline() override {};
+        void CreatePipeline(const PipelineDescriptor* desc, Pipeline* pipeline) const override;
         void CreateAttachment() override {};
-        void CreateShader() override {};
+        void CreateShader(ShaderStage stage, const char* filename, Shader* shader) override {};
 
         // API calls ...
         void BindVertexBuffer(const GPUBuffer* buffer) override;
         void BindIndexBuffer(const GPUBuffer* buffer) override;
+        void BindPipeline(const Pipeline* pipeline, CommandBuffer cmd) override;
         void SetTopology(PrimitiveTopology topology) override;
         void Draw(const u32 count, const u32 offset) override;
         void DrawIndexed(const u32 count, const u32 offset) override;
         void activateObject(const glm::mat4& model, const glm::vec4& color) override;
         void activateCamera(const TCompCamera* camera) override;
-        void CreateTexture(){};
-        void DestroyTexture(){};
 
     private:
         VkInstance       Instance   = VK_NULL_HANDLE;
@@ -73,8 +73,8 @@ namespace Vk
         std::vector<std::unique_ptr<VulkanCommandBuffer>> commandBuffers;
         u32 commandBufferCounter{0};
 
-        VkPipelineLayout PipelineLayout = VK_NULL_HANDLE;
-        VkPipeline Pipeline             = VK_NULL_HANDLE;
+        //VkPipelineLayout PipelineLayout = VK_NULL_HANDLE;
+        //VkPipeline Pipeline             = VK_NULL_HANDLE;
         VkRenderPass RenderPass         = VK_NULL_HANDLE;
 
         std::vector<VkBuffer> UniformBuffers;
