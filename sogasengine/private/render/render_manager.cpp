@@ -3,13 +3,18 @@
 #include "engine.h"
 #include "entity/entity.h"
 #include "render/module_render.h"
+#include "render/render_manager.h"
 #include "resources/mesh.h"
-#include "render_manager.h"
 
 namespace Sogas
 {
-
     CRenderManager RenderManager;
+
+    struct ConstantsMesh
+    {
+        glm::mat4 model;
+        glm::vec4 color;
+    };
 
     CRenderManager::CRenderManager()
     {
@@ -38,15 +43,9 @@ namespace Sogas
 
     void CRenderManager::RenderAll(CHandle /*camera_handle*/, DrawChannel channel, CommandBuffer cmd)
     {
-        // SASSERT(camera_handle.IsValid());
+        auto renderer = CEngine::Get()->GetRenderModule()->GetGraphicsDevice();
 
         // TODO If keys are dirty, sort keys
-
-        // Retrieve active camera ...
-        // CEntity* camera_entity = camera_handle;
-        // SASSERT(camera_entity);
-
-        // Of all keys, select only the channel range.
 
         u32 nDrawCalls = 0;
         DrawCallsPerChannel[static_cast<u32>(channel)] = 0;
@@ -71,7 +70,11 @@ namespace Sogas
                 glm::vec4 color = glm::vec4(1.0f);
 
                 // Activate model and color
-               // CEngine::Get()->GetRenderModule()->ActivateObject(transform->AsMatrix(), color);
+                ConstantsMesh cte;
+                cte.model = transform->AsMatrix();
+                cte.color = color;
+                
+                renderer->PushConstants(&cte, sizeof(ConstantsMesh), cmd);
             }
 
             // Activate material
@@ -79,7 +82,6 @@ namespace Sogas
             // Activate mesh
             if( key->Mesh != prev_key->Mesh)
             {
-                CEngine::Get()->GetRenderModule()->GetGraphicsDevice()->SetTopology(key->Mesh->Topology);
                 key->Mesh->Activate(cmd);
             }
 
@@ -100,5 +102,4 @@ namespace Sogas
         });
         keys.erase(it, keys.end());
     }
-
 } // Sogas

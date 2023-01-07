@@ -1,5 +1,5 @@
-#include "primitives.h"
-#include "mesh.h"
+#include "resources/primitives.h"
+#include "resources/mesh.h"
 
 //TODO make device weak ptr to the mesh, so there will be no need to call for engine
 #include "engine.h"

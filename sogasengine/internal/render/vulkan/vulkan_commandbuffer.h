@@ -22,9 +22,13 @@ namespace Vk
         VkCommandBuffer commandBuffers[MAX_FRAMES_IN_FLIGHT];
         u32 frameIndex;
 
-        RenderPass* activeRenderPass = nullptr;
-        VulkanPipeline* activePipeline = nullptr;
-        std::weak_ptr<VulkanSwapchain> swapchain;
+        RenderPass*         activeRenderPass = nullptr;
+        VulkanPipeline*     activePipeline   = nullptr;
+        Swapchain*          swapchain        = nullptr;
+
+        bool                            dirty{true};
+        VkDescriptorPool                descriptorPools[MAX_FRAMES_IN_FLIGHT];
+        std::vector<VkDescriptorSet>    descriptorSets;
     };
 
 } // Vk

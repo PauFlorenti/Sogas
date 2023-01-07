@@ -16,7 +16,6 @@ namespace Vk
         buffer->internalState = internalState; 
         buffer->resourceType = GPUResource::ResourceType::BUFFER;
         buffer->mapdata = nullptr;
-        //buffer->device = device;
         buffer->descriptor = *desc;
 
         VkBufferCreateInfo bufferCreateInfo = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
@@ -31,10 +30,17 @@ namespace Vk
             bufferCreateInfo.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 
         // Buffer usage
+        VkMemoryPropertyFlags memoryPropertyFlags = VK_MEMORY_PROPERTY_FLAG_BITS_MAX_ENUM;
         if (buffer->descriptor.usage == Usage::UPLOAD)
+        {
             bufferCreateInfo.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+            memoryPropertyFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+        }
         if (buffer->descriptor.usage == Usage::READBACK)
+        {
             bufferCreateInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+            memoryPropertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+        }
 
         u32 families[2] = {device->GraphicsFamily, device->PresentFamily};
         if (device->GraphicsFamily != device->PresentFamily)
@@ -57,7 +63,7 @@ namespace Vk
 
         VkMemoryAllocateInfo allocateInfo = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
         allocateInfo.allocationSize  = memoryRequirements.size;
-        allocateInfo.memoryTypeIndex = device->FindMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        allocateInfo.memoryTypeIndex = device->FindMemoryType(memoryRequirements.memoryTypeBits, memoryPropertyFlags);
 
         if (vkAllocateMemory(device->Handle, &allocateInfo, nullptr, &internalState->memory))
         {

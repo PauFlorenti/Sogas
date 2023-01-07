@@ -21,7 +21,12 @@ namespace Vk
             void* data, 
             GPUBuffer* buffer);
 
+        static VulkanBuffer* ToInternal(const GPUBuffer* InBuffer) {
+            return static_cast<VulkanBuffer*>(InBuffer->internalState.get());
+        }
+
         const VkBuffer* GetHandle() const { return &handle; }
+        const VkDeviceMemory GetMemory() const { return memory; }
 
     private:
         VkBuffer handle         = VK_NULL_HANDLE;

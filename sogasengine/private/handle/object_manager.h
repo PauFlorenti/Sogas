@@ -73,6 +73,11 @@ namespace Sogas
             Objects = static_cast<TObj*>((void*)AllocatedMemory.data());
         }
 
+        TObj* GetAddress()
+        {
+            return Objects;
+        }
+
         CHandle GetHandleFromAddress(TObj* ObjectAddress)
         {
             auto InternalIndex = ObjectAddress - Objects;

@@ -12,6 +12,7 @@ namespace Vk
     bool VulkanSwapchain::Create(
         const VkDevice& device,
         const VkPhysicalDevice& gpu,
+        const SwapchainDescriptor* descriptor,
         VulkanSwapchain* internalState
     )
     {
@@ -27,7 +28,7 @@ namespace Vk
             return false;
         }
 
-        internalState->surfaceFormat.format = Vk::ConvertFormat(internalState->descriptor.format);
+        internalState->surfaceFormat.format = Vk::ConvertFormat(descriptor->format);
         std::vector<VkSurfaceFormatKHR> formats(formatCount);
         vkGetPhysicalDeviceSurfaceFormatsKHR(gpu, internalState->surface, &formatCount, formats.data());
 
@@ -77,8 +78,8 @@ namespace Vk
         }
         else
         {
-            internalState->extent.width  = internalState->descriptor.width;
-            internalState->extent.height = internalState->descriptor.height;
+            internalState->extent.width  = descriptor->width;
+            internalState->extent.height = descriptor->height;
             internalState->extent.width  = std::clamp(internalState->extent.width, surfaceCapabilities.minImageExtent.width, surfaceCapabilities.maxImageExtent.width);
             internalState->extent.height = std::clamp(internalState->extent.height, surfaceCapabilities.minImageExtent.height, surfaceCapabilities.maxImageExtent.height);
         }
@@ -169,7 +170,7 @@ namespace Vk
         internalState->texture.descriptor.width    = internalState->extent.width;
         internalState->texture.descriptor.height   = internalState->extent.height;
         internalState->texture.descriptor.depth    = 1;
-        internalState->texture.descriptor.format   = internalState->descriptor.format;
+        internalState->texture.descriptor.format   = descriptor->format;
         internalState->renderpass.descriptor.attachments.push_back(Attachment::RenderTarget(&internalState->texture));
 
         if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPassInternal->renderpass) != VK_SUCCESS) {
@@ -237,5 +238,6 @@ namespace Vk
         STRACE("\tSwapchain image views created.");
         return true;
     }
+
 } // Vk
 } // Sogas

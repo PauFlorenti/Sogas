@@ -14,6 +14,20 @@ namespace Vk
     };
     CVulkanVertexDeclaration vtx_decl_pos_color("PosColor", layoutPosColor, 2);
 
+    static VkVertexInputAttributeDescription layoutPosNormal[] = {
+        {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0},
+        {1, 0, VK_FORMAT_R32G32B32_SFLOAT, sizeof(f32) * 3}
+    };
+    CVulkanVertexDeclaration vtx_decl_pos_normal("PosNormal", layoutPosNormal, 2);
+
+    static VkVertexInputAttributeDescription layoutPosNormalUvColor[] = {
+        {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0},
+        {1, 0, VK_FORMAT_R32G32B32_SFLOAT, sizeof(f32) * 3},
+        {2, 0, VK_FORMAT_R32G32_SFLOAT, sizeof(f32) * 6},
+        {3, 0, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(f32) * 8}
+    };
+    CVulkanVertexDeclaration vtx_decl_pos_normal_uv_color("PosNormalUvColor", layoutPosNormalUvColor, 4);
+
     CVulkanVertexDeclaration::CVulkanVertexDeclaration(const char* InName, const VkVertexInputAttributeDescription* InLayout, const u32 InSize)
         : name(InName), layout(InLayout), size(InSize)
     { };
@@ -24,6 +38,8 @@ namespace Vk
             return &vtx_decl_pos;
         if( InName == vtx_decl_pos_color.name )
             return &vtx_decl_pos_color;
+        if (InName == vtx_decl_pos_normal_uv_color.name)
+            return &vtx_decl_pos_normal_uv_color;
         return nullptr;
     }
 } // Vk

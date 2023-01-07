@@ -87,9 +87,9 @@ namespace Vk
 
         VkViewport viewport{};
         viewport.x          = 0.0f;
-        viewport.y          = 0.0f;
+        viewport.y          = 480.0f;
         viewport.width      = 640.0f;
-        viewport.height     = 480.0f;
+        viewport.height     = -480.0f;
         viewport.minDepth   = 0.0f;
         viewport.maxDepth   = 1.0f;
 
@@ -108,7 +108,7 @@ namespace Vk
         rasterizationStateInfo.rasterizerDiscardEnable  = VK_FALSE;
         rasterizationStateInfo.polygonMode              = VK_POLYGON_MODE_FILL;
         rasterizationStateInfo.lineWidth                = 1.0f;
-        rasterizationStateInfo.cullMode                 = VK_CULL_MODE_FRONT_BIT;
+        rasterizationStateInfo.cullMode                 = VK_CULL_MODE_BACK_BIT;
         rasterizationStateInfo.frontFace                = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         rasterizationStateInfo.depthBiasEnable          = VK_FALSE;
 
@@ -125,7 +125,7 @@ namespace Vk
         colorBlendStateInfo.attachmentCount = 1;
         colorBlendStateInfo.pAttachments    = &colorBlendAttachment;
         colorBlendStateInfo.logicOpEnable   = VK_FALSE;
-        
+
         std::vector<VkPushConstantRange> pushConstantRanges;
         for (auto& pc : pipeline->descriptor.pushConstantDesc)
         {
@@ -137,11 +137,31 @@ namespace Vk
             pushConstantRanges.push_back(pcRange);
         }
 
+        for (auto& ds : pipeline->descriptor.descriptorSetDesc)
+        {
+            VkDescriptorSetLayoutBinding binding;
+            binding.binding         = ds.binding;
+            binding.descriptorCount = 1;
+            binding.descriptorType  = ConvertDescriptorType(ds.uniformType);
+            binding.stageFlags      = ConvertShaderStage(ds.stage);
+
+            internalState->descriptorSetLayoutBindings.push_back(binding);
+        }
+
+        VkDescriptorSetLayoutCreateInfo info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
+        info.bindingCount   = static_cast<u32>(internalState->descriptorSetLayoutBindings.size());
+        info.pBindings      = internalState->descriptorSetLayoutBindings.data();
+
+        if (vkCreateDescriptorSetLayout(device->Handle, &info, nullptr, &internalState->descriptorSetLayout) != VK_SUCCESS) {
+            SERROR("Failed to create descriptor set layout!");
+            return;
+        }
+
         VkPipelineLayoutCreateInfo pipelineLayoutInfo = {VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
         pipelineLayoutInfo.pushConstantRangeCount   = static_cast<u32>(pushConstantRanges.size());
         pipelineLayoutInfo.pPushConstantRanges      = pushConstantRanges.data();
-        pipelineLayoutInfo.setLayoutCount           = 0;
-        pipelineLayoutInfo.pSetLayouts              = nullptr;
+        pipelineLayoutInfo.setLayoutCount           = 1;
+        pipelineLayoutInfo.pSetLayouts              = &internalState->descriptorSetLayout;
 
         if (vkCreatePipelineLayout(device->Handle, &pipelineLayoutInfo, nullptr, &internalState->pipelineLayout) != VK_SUCCESS) {
             SFATAL("Failed to create graphics pipeline layout!");

@@ -1,5 +1,15 @@
 #version 450
 
+layout(location = 0) in vec3 InPosition;
+layout(location = 1) in vec3 InNormal;
+layout(location = 2) in vec2 InUv;
+layout(location = 3) in vec4 InColor;
+
+layout(location = 0) out vec4 OutColor;
+layout(location = 1) out vec3 OutNormal;
+layout(location = 2) out vec2 OutUv;
+layout(location = 3) out vec3 OutPosition;
+
 layout( set = 0, binding = 0) uniform UniformBufferObject
 {
     mat4 projection;
@@ -11,17 +21,18 @@ layout( set = 0, binding = 0) uniform UniformBufferObject
 layout( push_constant ) uniform constants
 {
     mat4 model;
-} model;
-
-layout(location = 0) in vec3 inPosition;
-layout(location = 1) in vec4 inColor;
-
-layout(location = 0) out vec3 fragColor;
+    vec4 color;
+} MeshConstants;
 
 void main() 
 {
-    mat4 model = model.model;
+    mat4 model          = MeshConstants.model;
+    vec4 color          = MeshConstants.color;
+    vec3 worldPosition  = vec4(model * vec4(InPosition, 1.0)).xyz;
 
-    gl_Position = Camera.projection * Camera.view * model * vec4(inPosition, 1.0);
-    fragColor = inColor.xyz;
+    gl_Position = Camera.projection * Camera.view * vec4(worldPosition, 1.0);
+    OutColor    = color * InColor;
+    OutNormal   = mat3(transpose(inverse(model))) * InNormal;
+    OutUv       = InUv;
+    OutPosition = worldPosition;
 }

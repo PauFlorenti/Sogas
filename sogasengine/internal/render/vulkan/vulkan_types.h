@@ -11,6 +11,8 @@ namespace Vk {
     struct VulkanVertex
     {
         glm::vec3 position;
+        glm::vec3 normal;
+        glm::vec2 uv;
         glm::vec4 color;
     };
 
@@ -370,7 +372,19 @@ namespace Vk {
             default:
                 return VK_SHADER_STAGE_ALL;
         }
-    } 
+    }
+
+    constexpr VkDescriptorType ConvertDescriptorType(UniformType InType)
+    {
+        switch (InType)
+        {
+            default:
+            case UniformType::UNIFORM:
+                return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            case UniformType::SAMPLED:
+                return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        }
+    }
 
 } // Vk
 } // Sogas

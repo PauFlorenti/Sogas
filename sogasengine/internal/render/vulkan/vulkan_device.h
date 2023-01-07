@@ -10,6 +10,7 @@ namespace Vk
     class VulkanDevice : public GPU_device
     {
         friend class VulkanBuffer;
+        friend class VulkanDescriptorSet;
         friend class VulkanPipeline;
         friend class VulkanShader;
         friend class VulkanTexture;
@@ -26,7 +27,7 @@ namespace Vk
         void shutdown() override;
         CommandBuffer BeginCommandBuffer() override;
         void SubmitCommandBuffers() override;
-        void BeginRenderPass(const Swapchain* swapchain, CommandBuffer cmd) override;
+        void BeginRenderPass(Swapchain* swapchain, CommandBuffer cmd) override;
         void EndRenderPass(CommandBuffer cmd) override;
         void CreateSwapchain(const SwapchainDescriptor& desc, Swapchain* swapchain) override;
         void CreateBuffer(const GPUBufferDescriptor* desc, void* data, GPUBuffer* buffer) const override;
@@ -35,16 +36,19 @@ namespace Vk
         void CreatePipeline(const PipelineDescriptor* desc, Pipeline* pipeline, RenderPass* renderpass = nullptr) const override;
         void CreateAttachment() const override {};
         void CreateShader(ShaderStage stage, const char* filename, Shader* shader) const override;
+        void CreateDescriptorSet(DescriptorSet* InDescriptorSet, const Pipeline* InPipeline) const override;
+        void UpdateDescriptorSet(DescriptorSet* InDescriptorSet, const std::vector<DescriptorSetDescriptor>& InDescriptorInfos) const override;
 
         // API calls ...
         void BindVertexBuffer(const GPUBuffer* buffer, CommandBuffer cmd) override;
         void BindIndexBuffer(const GPUBuffer* buffer, CommandBuffer cmd) override;
         void BindPipeline(const Pipeline* pipeline, CommandBuffer cmd) override;
+        void BindDescriptor(const DescriptorSet* InDescriptor, CommandBuffer cmd) override;
         void SetTopology(PrimitiveTopology topology) override;
         void Draw(const u32 count, const u32 offset, CommandBuffer cmd) override;
         void DrawIndexed(const u32 count, const u32 offset, CommandBuffer cmd) override;
-        void ActivateObject(const glm::mat4& model, const glm::vec4& color, CommandBuffer cmd) override;
-        void activateCamera(const TCompCamera* camera) override;
+        void PushConstants(const void* InData, const u32 InSize, CommandBuffer cmd) override;
+        void UpdateBuffer(const GPUBuffer* InBuffer, const void* InData, const u32 InDataSize, const u32 InOffset, CommandBuffer cmd) override;
 
     private:
         VkInstance       Instance   = VK_NULL_HANDLE;
@@ -72,14 +76,6 @@ namespace Vk
         std::vector<std::unique_ptr<VulkanCommandBuffer>> commandBuffers;
         u32 commandBufferCounter{0};
 
-        std::vector<VkBuffer> UniformBuffers;
-        std::vector<VkDeviceMemory> UniformBufferMemory;
-        std::vector<void*> UniformBuffersMapped;
-
-        VkDescriptorSetLayout DescriptorSetLayout   = VK_NULL_HANDLE;
-        VkDescriptorPool DescriptorPool             = VK_NULL_HANDLE;
-        std::vector<VkDescriptorSet> DescriptorSets;
-
         CHandle MainCamera;
 
         bool CreateInstance();
@@ -87,26 +83,8 @@ namespace Vk
         void PickPhysicalDevice();
         bool CreateDevice();
         bool CheckValidationLayersSupport();
-        void CreateDescriptorSetLayout();
-        void CreateGraphicsPipeline();
         void CreateCommandResources();
-        void CreateUniformBuffer();
-        void CreateDescriptorPools();
-        void CreateDescriptorSets();
-        void UpdateUniformBuffer();
         u32 FindMemoryType(u32 typeFilter, VkMemoryPropertyFlags propertyFlags) const;
-
-        void CreateBuffer(
-            VkDeviceSize size, 
-            VkBufferUsageFlags usageFlags, 
-            VkMemoryPropertyFlags memoryPropertyFlags, 
-            VkBuffer& buffer, 
-            VkDeviceMemory& bufferMemory);
-
-        VulkanCommandBuffer GetCommandBuffer(CommandBuffer& cmd) {
-            SASSERT(cmd.IsValid());
-            return *static_cast<VulkanCommandBuffer*>(cmd.internalState);
-        }
     };
 
 } // Vk

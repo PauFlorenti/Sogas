@@ -1,6 +1,6 @@
 #include "engine.h"
-#include "mesh.h"
 #include "render/module_render.h"
+#include "resources/mesh.h"
 
 namespace Sogas
 {
@@ -39,8 +39,6 @@ namespace Sogas
 
     void CMesh::Activate(CommandBuffer cmd) const
     {
-        device.lock()->SetTopology(Topology);
-
         device.lock()->BindVertexBuffer(&vertexBuffer, cmd);
 
         if (Indexed)

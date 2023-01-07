@@ -25,7 +25,7 @@ namespace Sogas
         }
         else if (glfwGetKey(CApplication::Get()->GetWindow(), GLFW_KEY_A))
         {
-            transform->SetPosition(transform->GetPosition() - movement_speed * transform->GetRight());
+            transform->SetPosition(transform->GetPosition() + movement_speed * transform->GetRight());
         }
         else if (glfwGetKey(CApplication::Get()->GetWindow(), GLFW_KEY_S))
         {
@@ -33,7 +33,15 @@ namespace Sogas
         }
         else if (glfwGetKey(CApplication::Get()->GetWindow(), GLFW_KEY_D))
         {
-            transform->SetPosition(transform->GetPosition() + movement_speed * transform->GetRight());
+            transform->SetPosition(transform->GetPosition() - movement_speed * transform->GetRight());
+        }
+        else if (glfwGetKey(CApplication::Get()->GetWindow(), GLFW_KEY_SPACE))
+        {
+            transform->SetPosition(transform->GetPosition() + movement_speed * transform->GetUp());
+        }
+        else if (glfwGetKey(CApplication::Get()->GetWindow(), GLFW_KEY_LEFT_SHIFT))
+        {
+            transform->SetPosition(transform->GetPosition() - movement_speed * transform->GetUp());
         }
     }
 

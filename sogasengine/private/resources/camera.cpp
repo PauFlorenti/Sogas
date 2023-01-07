@@ -1,4 +1,4 @@
-#include "camera.h"
+#include "resources/camera.h"
 
 namespace Sogas
 {

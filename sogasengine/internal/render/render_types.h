@@ -2,6 +2,7 @@
 
 namespace Sogas 
 {
+    
     enum class GraphicsAPI
     {
         Vulkan = 0,
@@ -140,6 +141,12 @@ namespace Sogas
         COUNT = UNDEFINED
     };
 
+    enum class UniformType
+    {
+        UNIFORM = 0,
+        SAMPLED
+    };
+
     // Resource descriptors
 
     struct Shader;
@@ -175,8 +182,8 @@ namespace Sogas
 
     struct SwapchainDescriptor
     {
-        u32 width;
-        u32 height;
+        i32 width;
+        i32 height;
         u32 imageCount; // Number of buffers in the swapchain
         Format format;  // Swapchain images format
         f32 clearColor[4] = {0.0f, 0.0f, 0.0f, 1.0f};
@@ -189,12 +196,24 @@ namespace Sogas
         ShaderStage stage = ShaderStage::UNDEFINED;
     };
 
+    struct GPUBuffer;
+    struct DescriptorSetDescriptor
+    {
+        u32                 binding     = 0;
+        u32                 size        = 0;
+        u32                 offset      = 0;
+        UniformType         uniformType = UniformType::UNIFORM;
+        ShaderStage         stage       = ShaderStage::UNDEFINED;
+        const GPUBuffer*    buffer      = nullptr;
+    };
+
     struct PipelineDescriptor
     {
         Shader* vs = nullptr;
         Shader* ps = nullptr;
         std::string vertexDeclaration;
         std::vector<PushConstantDescriptor> pushConstantDesc{};
+        std::vector<DescriptorSetDescriptor> descriptorSetDesc{};
     };
 
     // GPU Resources
@@ -280,6 +299,12 @@ namespace Sogas
     {
         SwapchainDescriptor descriptor;
         RenderPass renderpass;
+        bool resized{false};
+
+        void SetSwapchainSize(const i32 InWidth, const i32 InHeight) {
+            descriptor.width    = InWidth;
+            descriptor.height   = InHeight;
+        }
     };
 
     struct Pipeline : public GPUBase
@@ -292,17 +317,21 @@ namespace Sogas
         ShaderStage stage = ShaderStage::COUNT;
     };
 
+    struct DescriptorSet : public GPUBase
+    {
+    };
+
     struct Vertex
     {
         glm::vec3 position;
-        //glm::vec3 normal;
-        //glm::vec2 uvs;
+        glm::vec3 normal;
+        glm::vec2 uvs;
         glm::vec4 color;
 
         bool operator==(const Vertex& other) const {
             return position == other.position && 
-                //normal == other.normal &&
-                //uvs == other.uvs &&
+                normal == other.normal &&
+                uvs == other.uvs &&
                 color == other.color;
         }
     };

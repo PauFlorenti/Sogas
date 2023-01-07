@@ -19,6 +19,55 @@
   {
     "entity":
     {
+      "name": "sphere",
+      "transform": {
+        "pos": "3 0 5",
+        "scale": 1
+      },
+      "render":[
+        {
+          "mesh": "../../data/meshes/sphere.obj"
+        }
+      ]
+    }
+  },
+  {
+    "entity":
+    {
+      "name": "light",
+      "transform":
+      {
+        "pos": "0 2 0"
+      },
+      "point_light":
+      {
+        "color": "1 0 0 1",
+        "radius": 10,
+        "intensity": 1,
+        "enabled": true
+      }
+    }
+  },
+  {
+    "entity":
+    {
+      "name": "light2",
+      "transform":
+      {
+        "pos": "2 2 0"
+      },
+      "point_light":
+      {
+        "color": "0 0 1 1",
+        "radius": 10,
+        "intensity": 1,
+        "enabled": true
+      }
+    }
+  },
+  {
+    "entity":
+    {
       "name": "camera",
       "camera":
       {
@@ -27,7 +76,7 @@
       "transform":
       {
         "pos": "0 0 0",
-        "lookAt": "0 0 -5",
+        "lookAt": "0 2 -7",
         "scale": 1
       },
       "camera_controller":{}
