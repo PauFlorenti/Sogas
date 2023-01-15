@@ -7,26 +7,49 @@ namespace Sogas
 namespace Vk
 {
 
-    void VulkanDescriptorSet::Create(const VulkanDevice* InDevice, DescriptorSet* InDescriptorSet, const Pipeline* InPipeline)
+    void VulkanDescriptorSet::Create(
+        const VulkanDevice* InDevice, 
+        DescriptorSet* InDescriptorSet, 
+        VkDescriptorSetLayout InDescriptorSetLayout, 
+        VkPipelineLayout InPipelineLayout, 
+        const std::vector<VkDescriptorSetLayoutBinding>& InBindings,
+        const u32 InSetNumber)
     {
         SASSERT(InDescriptorSet);
-        SASSERT(InPipeline);
 
-        auto internalState = std::make_shared<VulkanDescriptorSet>();
+        auto internalState = std::make_shared<VulkanDescriptorSet>(InSetNumber);
         InDescriptorSet->internalState = internalState;
+        internalState->pipelineLayout = InPipelineLayout;
+        internalState->pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
-        auto pipelineInternalState = VulkanPipeline::ToInternal(InPipeline);
-
-        internalState->pipelineLayout = pipelineInternalState.pipelineLayout;
+        u32 numberBuffers = 0;
+        u32 numberSamplers = 0;
+        for (const auto& binding : InBindings)
+        {
+            if (binding.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+                numberBuffers++;
+            }
+            else if (binding.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+                numberSamplers++;
+            }
+        }
 
         // Create descriptor pool
-        VkDescriptorPoolSize poolSize;
-        poolSize.descriptorCount    = 10;
-        poolSize.type               = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        std::vector<VkDescriptorPoolSize> poolSizes;
+
+        if (numberBuffers > 0)
+        {
+            poolSizes.push_back({VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, numberBuffers});
+        }
+
+        if (numberSamplers > 0)
+        {
+            poolSizes.push_back({VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, numberSamplers});
+        }
 
         VkDescriptorPoolCreateInfo poolInfo = {VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
-        poolInfo.poolSizeCount  = 1;
-        poolInfo.pPoolSizes     = &poolSize;
+        poolInfo.poolSizeCount  = static_cast<u32>(poolSizes.size());
+        poolInfo.pPoolSizes     = poolSizes.data();
         poolInfo.maxSets        = 1;
 
         if (vkCreateDescriptorPool(InDevice->Handle, &poolInfo, nullptr, &internalState->descriptorPool) != VK_SUCCESS) {
@@ -37,10 +60,11 @@ namespace Vk
         VkDescriptorSetAllocateInfo allocInfo = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
         allocInfo.descriptorPool        = internalState->descriptorPool;
         allocInfo.descriptorSetCount    = 1;
-        allocInfo.pSetLayouts           = &pipelineInternalState.descriptorSetLayout;
+        allocInfo.pSetLayouts           = &InDescriptorSetLayout;
 
         // Allocate descriptor set
-        if (vkAllocateDescriptorSets(InDevice->Handle, &allocInfo, &internalState->descriptorSet) != VK_SUCCESS) {
+        VkResult res = vkAllocateDescriptorSets(InDevice->Handle, &allocInfo, &internalState->descriptorSet);
+        if ( res != VK_SUCCESS) {
             SERROR("Failed to allocate descriptor set.");
             return;
         }
@@ -48,7 +72,7 @@ namespace Vk
 
     void VulkanDescriptorSet::BindDescriptor(VkCommandBuffer cmd) const
     {
-        vkCmdBindDescriptorSets(cmd, pipelineBindPoint, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+        vkCmdBindDescriptorSets(cmd, pipelineBindPoint, pipelineLayout, setNumber, 1, &descriptorSet, 0, nullptr);
     }
 } // Vk
 } // Sogas

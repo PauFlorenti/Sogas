@@ -1,5 +1,7 @@
 #pragma once
 
+#include "resources/resource.h"
+
 namespace Sogas 
 {
     
@@ -150,10 +152,11 @@ namespace Sogas
     // Resource descriptors
 
     struct Shader;
-
+    struct Pipeline;
     struct CommandBuffer
     {
         void* internalState = nullptr;
+        const Pipeline* activePipeline = nullptr;
         constexpr bool IsValid() const { return internalState != nullptr; }
     };
 
@@ -197,14 +200,18 @@ namespace Sogas
     };
 
     struct GPUBuffer;
-    struct DescriptorSetDescriptor
+    struct Texture;
+    struct DescriptorSet;
+    struct Descriptor
     {
         u32                 binding     = 0;
         u32                 size        = 0;
         u32                 offset      = 0;
+        u32                 count       = 0;
         UniformType         uniformType = UniformType::UNIFORM;
         ShaderStage         stage       = ShaderStage::UNDEFINED;
         const GPUBuffer*    buffer      = nullptr;
+        const Texture*      texture     = nullptr;
     };
 
     struct PipelineDescriptor
@@ -212,8 +219,6 @@ namespace Sogas
         Shader* vs = nullptr;
         Shader* ps = nullptr;
         std::string vertexDeclaration;
-        std::vector<PushConstantDescriptor> pushConstantDesc{};
-        std::vector<DescriptorSetDescriptor> descriptorSetDesc{};
     };
 
     // GPU Resources
@@ -243,12 +248,23 @@ namespace Sogas
 
     struct GPUBuffer : public GPUResource
     {
+        GPUBuffer()
+        {
+            resourceType    = ResourceType::BUFFER;
+            mapdata         = nullptr;
+        };
+
         GPUBufferDescriptor descriptor;
         std::weak_ptr<GPU_device> device;
     };
 
-    struct Texture : public GPUResource
+    struct Texture : public GPUResource, public IResource
     {
+        Texture() {
+            resourceType    = ResourceType::TEXTURE;
+            //mapdata         = nullptr;
+        };
+
         TextureDescriptor descriptor;
     };
 
@@ -319,6 +335,7 @@ namespace Sogas
 
     struct DescriptorSet : public GPUBase
     {
+        bool dirty{false};
     };
 
     struct Vertex

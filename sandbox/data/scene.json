@@ -11,7 +11,8 @@
       "render":
       [
         {
-          "mesh": "../../data/meshes/cube.obj"
+          "mesh": "../../data/meshes/cube.obj",
+          "material": "../../data/materials/default.mat"
         }
       ]
     }
@@ -26,7 +27,8 @@
       },
       "render":[
         {
-          "mesh": "../../data/meshes/sphere.obj"
+          "mesh": "../../data/meshes/sphere.obj",
+          "material": "../../data/materials/default.mat"
         }
       ]
     }

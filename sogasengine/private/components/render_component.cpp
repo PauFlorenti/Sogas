@@ -1,5 +1,6 @@
 #include "render_component.h"
 #include "render/render_manager.h"
+#include "resources/material.h"
 #include "resources/mesh.h"
 #include "resources/resource.h"
 
@@ -10,7 +11,8 @@ namespace Sogas
 
     bool TCompRender::DrawCall::Load(const json& j)
     {
-        mesh = CResourceManager::Get()->GetResource(j["mesh"])->As<CMesh>();
+        mesh        = CResourceManager::Get()->GetResource(j["mesh"])->As<CMesh>();
+        material    = CResourceManager::Get()->GetResource(j["material"])->As<Material>();
         return true;
     }
 
@@ -58,7 +60,7 @@ namespace Sogas
         {
             if(!dc.enabled)
                 continue;
-            RenderManager.AddKey(handle, dc.mesh);
+            RenderManager.AddKey(handle, dc.mesh, dc.material);
         }
     }
 

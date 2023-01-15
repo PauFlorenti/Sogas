@@ -505,38 +505,18 @@ namespace Sogas
             VulkanShader::Create(this, stage, filename, shader);
         }
 
-        void VulkanDevice::CreateDescriptorSet(DescriptorSet* InDescriptorSet, const Pipeline* InPipeline) const
+        void VulkanDevice::UpdateDescriptorSet(const Pipeline* InPipeline) const
         {
-            VulkanDescriptorSet::Create(this, InDescriptorSet, InPipeline);
-        }
-
-        void VulkanDevice::UpdateDescriptorSet(DescriptorSet* InDescriptorSet, const std::vector<DescriptorSetDescriptor>& InDescriptorInfos) const
-        {
-            auto descriptorSetInternalState = VulkanDescriptorSet::ToInternal(InDescriptorSet);
-            std::vector<VkWriteDescriptorSet> writes;
-            std::vector<VkDescriptorBufferInfo> bufferInfos(InDescriptorInfos.size());
-
-            u32 i = 0;
-            for (auto& info : InDescriptorInfos)
+            auto pipelineInternalState = VulkanPipeline::ToInternal(InPipeline);
+            for (auto& descriptorSet : pipelineInternalState->descriptorSets[GetFrameIndex()])
             {
-                auto bufferInternalState = VulkanBuffer::ToInternal(info.buffer);
-
-                bufferInfos[i].buffer = *bufferInternalState->GetHandle();
-                bufferInfos[i].offset = info.offset;
-                bufferInfos[i].range  = info.size;
-
-                VkWriteDescriptorSet write = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
-                write.dstBinding        = info.binding;
-                write.descriptorCount   = 1;
-                write.descriptorType    = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                write.pBufferInfo       = &bufferInfos[i];
-                write.dstSet            = descriptorSetInternalState->GetDescriptorSet();
-
-                i++;
-                writes.push_back(write);
+                auto descriptorSetInternalState = VulkanDescriptorSet::ToInternal(&descriptorSet);
+                if (descriptorSet.dirty) 
+                {
+                    vkUpdateDescriptorSets(Handle, static_cast<u32>(descriptorSetInternalState->writes.size()), descriptorSetInternalState->writes.data(), 0, nullptr);
+                    descriptorSet.dirty = false;
+                }
             }
-
-            vkUpdateDescriptorSets(Handle, static_cast<u32>(writes.size()), writes.data(), 0, nullptr);
         }
 
         void VulkanDevice::BindVertexBuffer(const GPUBuffer* buffer, CommandBuffer cmd)
@@ -565,21 +545,68 @@ namespace Sogas
             vkCmdBindIndexBuffer(VulkanCommandBuffer::ToInternal(&cmd).commandBuffers[GetFrameIndex()], *internalBuffer->GetHandle(), offset, VK_INDEX_TYPE_UINT32);
         }
 
-        void VulkanDevice::BindPipeline(const Pipeline* pipeline, CommandBuffer cmd)
+        void VulkanDevice::BindPipeline(const Pipeline* InPipeline, CommandBuffer& cmd)
         {
-            SASSERT(pipeline)
-
-            auto pipelineInternalState = std::static_pointer_cast<VulkanPipeline>(pipeline->internalState);
-            SASSERT(pipelineInternalState);
-            auto cmdInternalState = static_cast<VulkanCommandBuffer*>(cmd.internalState);
-            cmdInternalState->activePipeline = static_cast<VulkanPipeline*>(pipeline->internalState.get());
+            SASSERT(InPipeline)
+            auto pipelineInternalState = VulkanPipeline::ToInternal(InPipeline);
+            cmd.activePipeline = InPipeline;
 
             vkCmdBindPipeline(VulkanCommandBuffer::ToInternal(&cmd).commandBuffers[GetFrameIndex()], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineInternalState->handle);
         }
 
-        void VulkanDevice::BindDescriptor(const DescriptorSet* InDescriptor, CommandBuffer cmd)
+        void VulkanDevice::BindDescriptor(CommandBuffer cmd)
         {
-            VulkanDescriptorSet::ToInternal(InDescriptor)->BindDescriptor(VulkanCommandBuffer::ToInternal(&cmd).commandBuffers[GetFrameIndex()]);
+            auto commandBufferInternalState = VulkanCommandBuffer::ToInternal(&cmd);
+            auto pipelineInternalState = VulkanPipeline::ToInternal(cmd.activePipeline);
+
+            for (auto& descriptorSet : pipelineInternalState->descriptorSets[GetFrameIndex()])
+            {
+                auto descriptorSetInternalState = VulkanDescriptorSet::ToInternal(&descriptorSet);
+                descriptorSetInternalState->BindDescriptor(commandBufferInternalState.commandBuffers[GetFrameIndex()]);
+            }
+        }
+
+        void VulkanDevice::BindBuffer(const GPUBuffer* InBuffer, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet, const u32 InOffset)
+        {
+            auto bufferInternalState        = VulkanBuffer::ToInternal(InBuffer);
+            auto pipelineInternalState      = VulkanPipeline::ToInternal(InPipeline);
+            auto descriptorSetInternalState = VulkanDescriptorSet::ToInternal(&pipelineInternalState->descriptorSets[GetFrameIndex()].at(InDescriptorSet));
+
+            bufferInternalState->descriptorInfo.buffer  = *bufferInternalState->GetHandle();
+            bufferInternalState->descriptorInfo.offset  = InOffset;
+            bufferInternalState->descriptorInfo.range   = InBuffer->descriptor.size;
+            
+            VkWriteDescriptorSet write = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+            write.descriptorCount   = 1;
+            write.dstBinding        = InSlot;
+            write.descriptorType    = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            write.dstSet            = descriptorSetInternalState->GetDescriptorSet();
+            write.pBufferInfo       = &bufferInternalState->descriptorInfo;
+
+            descriptorSetInternalState->writes.push_back(write);
+
+            pipelineInternalState->descriptorSets[GetFrameIndex()].at(InDescriptorSet).dirty = true;
+        }
+
+        void VulkanDevice::BindTexture(const Texture* InTexture, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet)
+        {
+            auto internalState              = VulkanTexture::ToInternal(InTexture);
+            auto pipelineInternalState      = VulkanPipeline::ToInternal(InPipeline);
+            auto descriptorSetInternalState = VulkanDescriptorSet::ToInternal(&pipelineInternalState->descriptorSets[GetFrameIndex()].at(InDescriptorSet));
+
+            internalState->descriptorImageInfo.imageView     = internalState->GetImageView();
+            internalState->descriptorImageInfo.sampler       = internalState->GetSampler();
+            internalState->descriptorImageInfo.imageLayout   = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+            VkWriteDescriptorSet write = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+            write.descriptorCount   = 1;
+            write.descriptorType    = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            write.dstBinding        = InSlot;
+            write.dstSet            = descriptorSetInternalState->GetDescriptorSet();
+            write.pImageInfo        = &internalState->descriptorImageInfo;
+
+            descriptorSetInternalState->writes.push_back(write);
+            pipelineInternalState->descriptorSets[GetFrameIndex()].at(InDescriptorSet).dirty = true;
         }
 
         void VulkanDevice::SetTopology(PrimitiveTopology topology)
@@ -623,7 +650,7 @@ namespace Sogas
             VulkanCommandBuffer vkcmd = VulkanCommandBuffer::ToInternal(&cmd);
             vkCmdPushConstants(
                 vkcmd.commandBuffers[GetFrameIndex()],
-                vkcmd.activePipeline->pipelineLayout,
+                VulkanPipeline::ToInternal(cmd.activePipeline)->pipelineLayout,
                 VK_SHADER_STAGE_VERTEX_BIT,
                 0, InSize, InData);
         }
@@ -854,5 +881,5 @@ namespace Sogas
                 }
             }
         }
-    } // Vk
+} // Vk
 } // Sogas

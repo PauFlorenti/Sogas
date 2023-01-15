@@ -6,7 +6,6 @@ namespace Sogas
 {
     bool CMesh::Create(std::vector<Vertex> vs, std::vector<u32> is, PrimitiveTopology topology)
     {
-        
         device = CEngine::Get()->GetRenderModule()->GetGraphicsDevice();
 
         SASSERT( !vs.empty() );

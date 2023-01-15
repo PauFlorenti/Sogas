@@ -7,8 +7,6 @@ namespace Sogas
     class IResourceType
     {
     public:
-        virtual bool Open(const std::string& filename) = 0;
-        virtual void Create() = 0;
         virtual const char* GetExtension(const i32 i) const = 0;
         virtual u32 GetNumResourceTypeExtensions() { return 1; }
         virtual const char* GetName() const = 0;

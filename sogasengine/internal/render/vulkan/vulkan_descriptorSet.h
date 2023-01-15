@@ -9,9 +9,15 @@ namespace Vk
     class VulkanDescriptorSet
     {
     public:
-        VulkanDescriptorSet() = default;
+        explicit VulkanDescriptorSet(const u32 InSetNumber) : setNumber(InSetNumber) {};
 
-        static void Create(const VulkanDevice* InDevice, DescriptorSet* InDescriptorSet, const Pipeline* InPipeline);
+        static void Create(
+            const VulkanDevice* InDevice, 
+            DescriptorSet* InDescriptorSet, 
+            VkDescriptorSetLayout InDescriptorSetLayout, 
+            VkPipelineLayout InPipelineLayout, 
+            const std::vector<VkDescriptorSetLayoutBinding>& InBinding,
+            const u32 InSetNumber);
 
         static VulkanDescriptorSet* ToInternal(const DescriptorSet* InDescriptorSet) {
             return static_cast<VulkanDescriptorSet*>(InDescriptorSet->internalState.get());
@@ -21,6 +27,9 @@ namespace Vk
 
         const VkDescriptorSet& GetDescriptorSet() const { return descriptorSet; }
 
+        std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
+        std::vector<VkWriteDescriptorSet> writes;
+        const u32 setNumber;
     private:
         VkPipelineBindPoint pipelineBindPoint;
         VkPipelineLayout    pipelineLayout = VK_NULL_HANDLE;

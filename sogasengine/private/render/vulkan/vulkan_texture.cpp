@@ -20,22 +20,23 @@ namespace Vk
         SASSERT(desc);
         SASSERT(texture && texture->IsTexture());
 
-        auto internalState = std::make_shared<VulkanTexture>();
-        texture->descriptor = *desc;
-        texture->resourceType = GPUResource::ResourceType::TEXTURE;
-        texture->internalState = internalState;
+        auto internalState      = std::make_shared<VulkanTexture>();
+        texture->descriptor     = *desc;
+        texture->resourceType   = GPUResource::ResourceType::TEXTURE;
+        texture->internalState  = internalState;
+        internalState->device   = device->Handle;
         
         VkImageCreateInfo imageInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
-        imageInfo.format = ConvertFormat(desc->format);
-        imageInfo.extent = {desc->width, desc->height, 1};
-        imageInfo.mipLevels = 1; // TODO pass info from descriptor
-        imageInfo.arrayLayers = 1;
-        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-        imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-        imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        imageInfo.format                = ConvertFormat(desc->format);
+        imageInfo.extent                = {desc->width, desc->height, 1};
+        imageInfo.mipLevels             = 1; // TODO pass info from descriptor
+        imageInfo.arrayLayers           = 1;
+        imageInfo.samples               = VK_SAMPLE_COUNT_1_BIT;
+        imageInfo.tiling                = VK_IMAGE_TILING_OPTIMAL;
+        imageInfo.sharingMode           = VK_SHARING_MODE_EXCLUSIVE;
         imageInfo.queueFamilyIndexCount = static_cast<u32>(device->queueFamilies.size());
-        imageInfo.pQueueFamilyIndices = device->queueFamilies.data();
-        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        imageInfo.pQueueFamilyIndices   = device->queueFamilies.data();
+        imageInfo.initialLayout         = VK_IMAGE_LAYOUT_UNDEFINED;
 
         switch (desc->textureType)
         {
@@ -52,9 +53,9 @@ namespace Vk
         }
 
         if (desc->usage == Usage::UPLOAD)
-            imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-        if (desc->usage == Usage::READBACK)
             imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        if (desc->usage == Usage::READBACK)
+            imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
         //if (desc->bindPoint == BindPoint::)
         //    imageInfo.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
@@ -65,16 +66,10 @@ namespace Vk
         if (desc->bindPoint == BindPoint::RENDER_TARGET)
             imageInfo.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-        if (desc->usage == Usage::READBACK)
+        if (desc->usage == Usage::READBACK || desc->usage == Usage::UPLOAD)
         {
-            VkDeviceSize imageSize = imageInfo.extent.width * imageInfo.extent.height * imageInfo.extent.depth * imageInfo.arrayLayers * GetFormatStride(desc->format);
-
-            VulkanTexture::TransitionLayout(
-                device, 
-                internalState->handle, 
-                imageInfo.format, 
-                imageInfo.initialLayout, 
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+            //VkDeviceSize imageSize = imageInfo.extent.width * imageInfo.extent.height * imageInfo.extent.depth * imageInfo.arrayLayers * GetFormatStride(desc->format);
+            VkDeviceSize imageSize = imageInfo.extent.width * imageInfo.extent.height * 4;
 
             if (vkCreateImage(device->Handle, &imageInfo, nullptr, &internalState->handle) != VK_SUCCESS) {
                 SFATAL("Could not create image.");
@@ -85,24 +80,27 @@ namespace Vk
             vkGetImageMemoryRequirements(device->Handle, internalState->handle, &memoryRequirements);
 
             {   
-                VkMemoryAllocateInfo allocInfo = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
-                allocInfo.allocationSize = memoryRequirements.size;
-                allocInfo.memoryTypeIndex = device->FindMemoryType(memoryRequirements.memoryTypeBits, 0);
+                VkMemoryAllocateInfo allocInfo  = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+                allocInfo.allocationSize        = memoryRequirements.size;
+                allocInfo.memoryTypeIndex       = device->FindMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
                 vkAllocateMemory(device->Handle, &allocInfo, nullptr, &internalState->memory);
-
                 vkBindImageMemory(device->Handle, internalState->handle, internalState->memory, 0);
             }
-            VkImageViewCreateInfo imageViewInfo = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
 
-            imageViewInfo.image = internalState->handle;
+            VulkanTexture::TransitionLayout(
+                device, 
+                internalState->handle, 
+                imageInfo.format, 
+                imageInfo.initialLayout, 
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
             if (data != nullptr)
             {
-                VkBuffer stagingBuffer;
-                VkDeviceMemory stagingMemory;
-                VkBufferCreateInfo bufferInfo       = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
-                bufferInfo.usage                    = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+                VkBuffer            stagingBuffer;
+                VkDeviceMemory      stagingMemory;
+                VkBufferCreateInfo  bufferInfo      = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+                bufferInfo.usage                    = desc->usage == Usage::READBACK ? VK_BUFFER_USAGE_TRANSFER_DST_BIT : VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
                 bufferInfo.queueFamilyIndexCount    = static_cast<u32>(device->queueFamilies.size());
                 bufferInfo.pQueueFamilyIndices      = device->queueFamilies.data();
                 bufferInfo.size                     = imageSize;
@@ -114,11 +112,15 @@ namespace Vk
 
                 VkMemoryRequirements stagingMemoryRequirements;
                 vkGetBufferMemoryRequirements(device->Handle, stagingBuffer, &stagingMemoryRequirements);
-
                 {
-                    VkMemoryAllocateInfo allocInfo = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
-                    allocInfo.allocationSize = stagingMemoryRequirements.size;
-                    allocInfo.memoryTypeIndex = device->FindMemoryType(stagingMemoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                    VkMemoryAllocateInfo allocInfo  = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+                    allocInfo.allocationSize        = stagingMemoryRequirements.size;
+                    if (desc->usage == Usage::UPLOAD) {
+                        allocInfo.memoryTypeIndex       = device->FindMemoryType(stagingMemoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                    }
+                    else {
+                        allocInfo.memoryTypeIndex = device->FindMemoryType(stagingMemoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                    }
 
                     if (vkAllocateMemory(device->Handle, &allocInfo, nullptr, &stagingMemory) != VK_SUCCESS) {
                         SERROR("Could not allocate memory for image staging buffer.");
@@ -131,8 +133,9 @@ namespace Vk
                     }
                 }
 
+                //void* mapdata;
                 vkMapMemory(device->Handle, stagingMemory, 0, imageSize, 0, &texture->mapdata);
-                memcpy(&texture->mapdata, &data, imageSize);
+                memcpy(texture->mapdata, data, static_cast<size_t>(imageSize));
                 vkUnmapMemory(device->Handle, stagingMemory);
 
                 TransitionLayout(device, internalState->handle, imageInfo.format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -141,6 +144,19 @@ namespace Vk
 
                 vkDestroyBuffer(device->Handle, stagingBuffer, nullptr);
                 vkFreeMemory(device->Handle, stagingMemory, nullptr);
+            }
+            else 
+            {
+                // TODO should be moved to a layout specified by the descriptor image.
+                TransitionLayout(device, internalState->handle, imageInfo.format, imageInfo.initialLayout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+            }
+        }
+        else 
+        {
+            if (vkCreateImage(device->Handle, &imageInfo, nullptr, &internalState->handle) != VK_SUCCESS) 
+            {
+                SFATAL("Could not create image.");
+                return;
             }
         }
 
@@ -229,6 +245,8 @@ namespace Vk
                 0, nullptr,
                 1, &barrier);
 
+            vkEndCommandBuffer(cmd);
+
             VkSubmitInfo submitInfo = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
             submitInfo.commandBufferCount = 1;
             submitInfo.pCommandBuffers = &cmd;
@@ -239,9 +257,7 @@ namespace Vk
             }
 
             vkQueueWaitIdle(device->GraphicsQueue);
-            vkEndCommandBuffer(cmd);
         }
-
         vkFreeCommandBuffers(device->Handle, device->resourcesCommandPool[device->GetFrameIndex()], 1, &cmd);
     }
 
@@ -279,6 +295,8 @@ namespace Vk
 
             vkCmdCopyBufferToImage(cmd, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
+            vkEndCommandBuffer(cmd);
+
             VkSubmitInfo submitInfo = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
             submitInfo.commandBufferCount = 1;
             submitInfo.pCommandBuffers = &cmd;
@@ -289,9 +307,35 @@ namespace Vk
             }
 
             vkQueueWaitIdle(device->GraphicsQueue);
-            vkEndCommandBuffer(cmd);
         }
         vkFreeCommandBuffers(device->Handle, device->resourcesCommandPool[device->GetFrameIndex()], 1, &cmd);
+    }
+
+    const VkSampler VulkanTexture::GetSampler()
+    {
+        if (sampler != VK_NULL_HANDLE)
+            return sampler;
+
+        VkSamplerCreateInfo samplerInfo = {VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
+        samplerInfo.magFilter = VK_FILTER_LINEAR;
+        samplerInfo.minFilter = VK_FILTER_LINEAR;
+        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.anisotropyEnable = VK_FALSE; // TODO check gpu properties and enable it!
+        samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+        samplerInfo.unnormalizedCoordinates = VK_FALSE;
+        samplerInfo.compareEnable = VK_TRUE;
+        samplerInfo.compareOp= VK_COMPARE_OP_ALWAYS;
+        samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        samplerInfo.mipLodBias = 0.0f;
+        samplerInfo.minLod = 0.0f;
+        samplerInfo.maxLod = 0.0f;
+
+        if (vkCreateSampler(device, &samplerInfo, nullptr, &sampler) != VK_SUCCESS) {
+            SFATAL("Failed to create sampler.");
+        }
+        return sampler;
     }
 
 } // Vk

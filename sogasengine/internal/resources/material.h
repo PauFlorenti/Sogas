@@ -1,10 +1,11 @@
 #pragma once
 
 #include "resource.h"
+#include "render/render_types.h"
 
 namespace Sogas
 {
-    class Texture;
+    struct Texture;
     class Material : public IResource
     {
         const Texture* albedo               = nullptr;
@@ -13,6 +14,8 @@ namespace Sogas
         const Texture* emissive             = nullptr;
 
     public:
+        bool CreateFromJson(const json& j);
 
+        void Activate(CommandBuffer cmd) const;
     }; 
 } // Sogas

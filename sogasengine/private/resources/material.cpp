@@ -1,0 +1,61 @@
+#include "engine.h"
+#include "render/module_render.h"
+#include "render/render_device.h"
+#include "render/render_command.h"
+#include "resources/material.h"
+
+namespace Sogas
+{
+    class Material_resource : public IResourceType
+    {
+        bool LoadMaterial(Material* InMaterial, const std::string& InName) const
+        {
+            json j = LoadJson(InName);
+            InMaterial->CreateFromJson(j);
+            return true;
+        }
+
+    public:
+        const char* GetExtension( const i32 /*i*/ ) const override {return ".mat";}
+        const char* GetName() const override { return "Material"; }
+        IResource* Create( const std::string& InName ) const override
+        {
+            Material* material = new Material();
+            if (LoadMaterial(material, InName))
+                return material;
+            return nullptr;
+        }
+    };
+
+    bool Material::CreateFromJson(const json& j)
+    {
+        std::string albedo_name = j.value("albedo", "");
+        albedo = albedo_name.empty() ? CResourceManager::Get()->GetResource("white.text")->As<Texture>() : CResourceManager::Get()->GetResource(albedo_name)->As<Texture>();
+
+        /*
+        std::string normal_name = j.value("normal", "");
+        normal = normal_name.empty() ? CResourceManager::Get()->GetResource("white.text")->As<Texture>() : CResourceManager::Get()->GetResource(normal_name)->As<Texture>();
+
+        std::string metallic_roughness_name = j.value("metallic_roughness", "");
+        metallic_roughness = metallic_roughness_name.empty() ? CResourceManager::Get()->GetResource("white.text")->As<Texture>() : CResourceManager::Get()->GetResource(metallic_roughness_name)->As<Texture>();
+
+        std::string emissive_name = j.value("emissive", "");
+        emissive = emissive_name.empty() ? CResourceManager::Get()->GetResource("white.text")->As<Texture>() : CResourceManager::Get()->GetResource(emissive_name)->As<Texture>();
+
+        */
+        return true;
+    }
+
+    void Material::Activate(CommandBuffer cmd) const
+    {
+        auto renderer = CEngine::Get()->GetRenderModule()->GetGraphicsDevice();
+        renderer->BindTexture(albedo, cmd.activePipeline, 0, 1);
+    }
+
+    template<>
+    IResourceType* GetResourceType<Material>()
+    {
+        static Material_resource factory;
+        return &factory;
+    }
+} // Sogas

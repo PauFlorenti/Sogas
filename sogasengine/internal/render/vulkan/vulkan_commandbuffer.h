@@ -23,8 +23,9 @@ namespace Vk
         u32 frameIndex;
 
         RenderPass*         activeRenderPass = nullptr;
-        VulkanPipeline*     activePipeline   = nullptr;
+        //VulkanPipeline*     activePipeline   = nullptr;
         Swapchain*          swapchain        = nullptr;
+        DescriptorSet*      descriptorSetBound = nullptr;
 
         bool                            dirty{true};
         VkDescriptorPool                descriptorPools[MAX_FRAMES_IN_FLIGHT];

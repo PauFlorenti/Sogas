@@ -7,8 +7,10 @@ template<> struct std::hash<Sogas::Vertex>
 {
     size_t operator()(Sogas::Vertex const& vertex) const 
     {
-        return (std::hash<glm::vec3>()(vertex.position) ^
-            (std::hash<glm::vec4>()(vertex.color) << 1));
+        return (((std::hash<glm::vec3>()(vertex.position) ^
+            (std::hash<glm::vec4>()(vertex.color) << 1)) >> 1) ^
+            (std::hash<glm::vec2>()(vertex.uvs) << 1) >> 1) ^
+            (std::hash<glm::vec3>()(vertex.normal) << 1);
     }
 };
 
@@ -95,13 +97,10 @@ namespace Sogas
         }
 
     public:
-        bool Open( const std::string& /*filename*/ ) override { return true; };
-        void Create() override {};
         const char* GetExtension( const i32 /*i*/ ) const override
         {
             return ".obj";
         }
-
 
         const char* GetName() const override { return "Mesh"; }
         IResource* Create( const std::string& name ) const override

@@ -20,6 +20,10 @@ namespace Vk
             void* data,
             Texture* texture);
 
+        static VulkanTexture* ToInternal(const Texture* InTexture) {
+            return static_cast<VulkanTexture*>(InTexture->internalState.get());
+        }
+
         static void TransitionLayout(
             const VulkanDevice* device,
             VkImage& image,
@@ -33,11 +37,20 @@ namespace Vk
             VkImage image,
             const u32& width, 
             const u32& height);
+
+    const VkImage GetHandle() const { return handle; }
+    const VkImageView GetImageView() const { return imageView; }
+
+    const VkSampler GetSampler();
+
+    VkDescriptorImageInfo descriptorImageInfo;
         
     private:
-        VkImage     handle;
-        VkImageView imageView;
-        VkDeviceMemory memory;
+        VkDevice        device      = VK_NULL_HANDLE;
+        VkImage         handle      = VK_NULL_HANDLE;
+        VkImageView     imageView   = VK_NULL_HANDLE;
+        VkDeviceMemory  memory      = VK_NULL_HANDLE;
+        VkSampler       sampler     = VK_NULL_HANDLE;
     };
     
 } // Vk

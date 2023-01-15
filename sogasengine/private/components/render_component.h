@@ -5,6 +5,7 @@
 namespace Sogas
 {
     class CMesh;
+    class Material;
 
     class TCompRender : public TCompBase
     {
@@ -12,7 +13,7 @@ namespace Sogas
         {
             const CMesh*    mesh = nullptr;
             bool            enabled = true;
-            // const CMaterial* material = nullptr;
+            const Material* material = nullptr;
 
             bool Load(const json& j);
         };

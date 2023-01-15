@@ -5,6 +5,7 @@
 #include "render/module_render.h"
 #include "resources/primitives.h"
 #include "resources/mesh.h"
+#include "resources/material.h"
 #include "resources/resource.h"
 
 #include "GLFW/glfw3.h"
@@ -24,6 +25,8 @@ namespace Sogas
         static CModuleBoot boot("boot");
 
         CResourceManager::Get()->RegisterResourceType(GetResourceType<CMesh>());
+        CResourceManager::Get()->RegisterResourceType(GetResourceType<Texture>());
+        CResourceManager::Get()->RegisterResourceType(GetResourceType<Material>());
 
         RenderModule = new CRenderModule("render");
         EntityModule = new CEntityModule("entities");

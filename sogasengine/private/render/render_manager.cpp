@@ -5,6 +5,7 @@
 #include "render/module_render.h"
 #include "render/render_manager.h"
 #include "resources/mesh.h"
+#include "resources/material.h"
 
 namespace Sogas
 {
@@ -21,13 +22,15 @@ namespace Sogas
         DrawCallsPerChannel.resize(static_cast<u32>(DrawChannel::COUNT));
     }
 
-    void CRenderManager::AddKey(CHandle owner, const CMesh* mesh)
+    void CRenderManager::AddKey(CHandle owner, const CMesh* mesh, const Material* InMaterial)
     {
         SASSERT(owner.IsValid());
         SASSERT(mesh);
+        SASSERT(InMaterial);
 
         Key key;
         key.Mesh        = mesh;
+        key.Material    = InMaterial;
         key.Owner       = owner;
         key.Transform   = CHandle();
         key.AABB        = CHandle();
@@ -78,12 +81,17 @@ namespace Sogas
             }
 
             // Activate material
+            if (key->Material != prev_key->Material) {
+                key->Material->Activate(cmd);
+            }
 
             // Activate mesh
             if( key->Mesh != prev_key->Mesh)
             {
                 key->Mesh->Activate(cmd);
             }
+
+            renderer->UpdateDescriptorSet(cmd.activePipeline);
 
             key->Mesh->Render(cmd);
             

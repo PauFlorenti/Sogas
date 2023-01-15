@@ -35,16 +35,16 @@ namespace Sogas
         virtual void CreatePipeline(const PipelineDescriptor* desc, Pipeline* pipeline, RenderPass* renderpass = nullptr) const = 0;
         virtual void CreateAttachment() const = 0;
         virtual void CreateShader(ShaderStage stage, const char* filename, Shader* shader) const = 0;
-        virtual void CreateDescriptorSet(DescriptorSet* InDescriptorSet, const Pipeline* InPipeline) const = 0;
-        // TODO this should be generalized by passing a struct with all information, eg. WriteDesc. It should give the type, data, size and offset.
-        virtual void UpdateDescriptorSet(DescriptorSet* InDescriptorSet, const std::vector<DescriptorSetDescriptor>& InDescriptorInfos) const = 0;
+        virtual void UpdateDescriptorSet(const Pipeline* InPipeline) const = 0;
 
         // API calls
         // This are commands that will execute when submitCommands is called.
         virtual void BindVertexBuffer(const GPUBuffer* buffer, CommandBuffer cmd) = 0;
         virtual void BindIndexBuffer(const GPUBuffer* buffer, CommandBuffer cmd) = 0;
-        virtual void BindPipeline(const Pipeline* pipeline, CommandBuffer cmd) = 0;
-        virtual void BindDescriptor(const DescriptorSet* InDescriptor, CommandBuffer cmd) = 0;
+        virtual void BindPipeline(const Pipeline* InPipeline, CommandBuffer& cmd) = 0;
+        virtual void BindDescriptor(CommandBuffer cmd) = 0;
+        virtual void BindBuffer(const GPUBuffer* InBuffer, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet, const u32 InOffset = 0) = 0;
+        virtual void BindTexture(const Texture* InTexture, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet) = 0;
         virtual void SetTopology(PrimitiveTopology topology) = 0;
         virtual void Draw(const u32 count, const u32 offset, CommandBuffer cmd) = 0;
         virtual void DrawIndexed(const u32 count, const u32 offset, CommandBuffer cmd) = 0;

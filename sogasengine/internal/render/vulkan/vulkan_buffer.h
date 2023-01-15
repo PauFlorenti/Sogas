@@ -28,6 +28,8 @@ namespace Vk
         const VkBuffer* GetHandle() const { return &handle; }
         const VkDeviceMemory GetMemory() const { return memory; }
 
+        VkDescriptorBufferInfo descriptorInfo;
+
     private:
         VkBuffer handle         = VK_NULL_HANDLE;
         VkDeviceMemory memory   = VK_NULL_HANDLE;

@@ -11,12 +11,10 @@
 
 namespace Sogas
 {
-    Pipeline pipeline;
-    Shader shaders[2];
-    DescriptorSet descriptorSet;
+    Pipeline pipeline; // Forward pipeline
+    Shader shaders[2]; // 0 vs, 1 ps
     GPUBuffer constantBuffer;
     GPUBuffer lightBuffer;
-
     const u32 nLights = 10;
 
     struct ConstantsCamera
@@ -77,8 +75,8 @@ namespace Sogas
         modelPushConstant.stage         = ShaderStage::VERTEX;
 
         GPUBufferDescriptor constantBufferDesc;
-        constantBufferDesc.bindPoint    = BindPoint::UNIFORM;
         constantBufferDesc.size         = sizeof(ConstantsCamera);
+        constantBufferDesc.bindPoint    = BindPoint::UNIFORM;
         constantBufferDesc.usage        = Usage::UPLOAD;
         renderer->CreateBuffer(&constantBufferDesc, nullptr, &constantBuffer);
 
@@ -88,35 +86,17 @@ namespace Sogas
         lightBufferDesc.usage           = Usage::UPLOAD;
         renderer->CreateBuffer(&lightBufferDesc, nullptr, &lightBuffer);
 
-        DescriptorSetDescriptor constDescriptorSet;
-        constDescriptorSet.binding      = 0;
-        constDescriptorSet.stage        = ShaderStage::VERTEX;
-        constDescriptorSet.uniformType  = UniformType::UNIFORM;
-        constDescriptorSet.size         = static_cast<u32>(sizeof(ConstantsCamera));
-        constDescriptorSet.offset       = 0;
-        constDescriptorSet.buffer       = &constantBuffer;
-
-        DescriptorSetDescriptor lightDescriptor;
-        lightDescriptor.binding     = 1;
-        lightDescriptor.stage       = ShaderStage::FRAGMENT;
-        lightDescriptor.uniformType = UniformType::UNIFORM;
-        lightDescriptor.size        = static_cast<u32>(sizeof(Light)) * nLights;
-        lightDescriptor.offset      = 0;
-        lightDescriptor.buffer      = &lightBuffer;
-
         PipelineDescriptor psoDesc;
         psoDesc.vs = &shaders[0];
         psoDesc.ps = &shaders[1];
         psoDesc.vertexDeclaration = "PosNormalUvColor";
-        psoDesc.pushConstantDesc.push_back(modelPushConstant);
-        psoDesc.descriptorSetDesc.push_back(constDescriptorSet);
-        psoDesc.descriptorSetDesc.push_back(lightDescriptor);
 
         renderer->CreatePipeline(&psoDesc, &pipeline, &swapchain->renderpass);
-        renderer->CreateDescriptorSet(&descriptorSet, &pipeline);
+        //renderer->CreateDescriptorSet(&descriptorSets[0], &pipeline);
+        //renderer->CreateDescriptorSet(&descriptorSets[1], &pipeline);
 
-        renderer->UpdateDescriptorSet(&descriptorSet, psoDesc.descriptorSetDesc);
-
+        // Should bind resources by name.
+        //renderer->UpdateDescriptorSet(&pipeline);
         return true;
     }
 
@@ -144,6 +124,10 @@ namespace Sogas
         renderer->BindPipeline(&pipeline, cmd);
         renderer->BeginRenderPass(swapchain.get(), cmd);
 
+        // Bind frame constants.
+        renderer->BindBuffer(&constantBuffer, &pipeline, 0, 0);
+        renderer->BindBuffer(&lightBuffer, &pipeline, 1, 0);
+
         // Update constants per frame data.
         CEntity* eCamera = getEntityByName("camera");
         SASSERT(eCamera);
@@ -170,10 +154,10 @@ namespace Sogas
         });
 
         // Bind constants per frame.
-        renderer->BindDescriptor(&descriptorSet, cmd);
+        renderer->BindDescriptor(cmd);
 
         // Draw mesh instances.
-       RenderManager.RenderAll(CHandle(), DrawChannel::SOLID, cmd);
+        RenderManager.RenderAll(CHandle(), DrawChannel::SOLID, cmd);
 
         // End drawing.
         renderer->EndRenderPass(cmd);

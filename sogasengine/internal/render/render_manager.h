@@ -5,8 +5,8 @@
 
 namespace Sogas
 {
-
     class CMesh;
+    class Material;
 
     class CRenderManager
     {
@@ -14,6 +14,7 @@ namespace Sogas
         struct Key
         {
             const CMesh* Mesh;
+            const Material* Material;
             CHandle Owner;
             CHandle Transform;
             CHandle AABB;
@@ -25,7 +26,7 @@ namespace Sogas
 
         CRenderManager();
 
-        void AddKey(CHandle owner, const CMesh* mesh /*const CMaterial*/);
+        void AddKey(CHandle owner, const CMesh* mesh, const Material* InMaterial);
         void RenderAll(CHandle camera, DrawChannel channel, CommandBuffer cmd);
         void DeleteKeysFromOwner(CHandle owner);
 

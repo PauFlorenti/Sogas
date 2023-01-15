@@ -36,14 +36,15 @@ namespace Vk
         void CreatePipeline(const PipelineDescriptor* desc, Pipeline* pipeline, RenderPass* renderpass = nullptr) const override;
         void CreateAttachment() const override {};
         void CreateShader(ShaderStage stage, const char* filename, Shader* shader) const override;
-        void CreateDescriptorSet(DescriptorSet* InDescriptorSet, const Pipeline* InPipeline) const override;
-        void UpdateDescriptorSet(DescriptorSet* InDescriptorSet, const std::vector<DescriptorSetDescriptor>& InDescriptorInfos) const override;
+        void UpdateDescriptorSet(const Pipeline* InPipeline) const override;
 
         // API calls ...
         void BindVertexBuffer(const GPUBuffer* buffer, CommandBuffer cmd) override;
         void BindIndexBuffer(const GPUBuffer* buffer, CommandBuffer cmd) override;
-        void BindPipeline(const Pipeline* pipeline, CommandBuffer cmd) override;
-        void BindDescriptor(const DescriptorSet* InDescriptor, CommandBuffer cmd) override;
+        void BindPipeline(const Pipeline* InPipeline, CommandBuffer& cmd) override;
+        void BindDescriptor(CommandBuffer cmd) override;
+        void BindBuffer(const GPUBuffer* InBuffer, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet, const u32 InOffset = 0) override;
+        void BindTexture(const Texture* InTexture, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet) override;
         void SetTopology(PrimitiveTopology topology) override;
         void Draw(const u32 count, const u32 offset, CommandBuffer cmd) override;
         void DrawIndexed(const u32 count, const u32 offset, CommandBuffer cmd) override;

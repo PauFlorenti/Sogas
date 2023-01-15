@@ -1,3 +1,4 @@
+#include "render/vulkan/vulkan_descriptorSet.h"
 #include "render/vulkan/vulkan_device.h"
 #include "render/vulkan/vulkan_pipeline.h"
 #include "render/vulkan/vulkan_renderpass.h"
@@ -46,6 +47,8 @@ namespace Vk
         {
             internalState = std::make_shared<VulkanPipeline>();
         }
+
+        internalState->device = device;
 
         pipeline->internalState = internalState;
         pipeline->descriptor    = *desc;
@@ -126,42 +129,62 @@ namespace Vk
         colorBlendStateInfo.pAttachments    = &colorBlendAttachment;
         colorBlendStateInfo.logicOpEnable   = VK_FALSE;
 
-        std::vector<VkPushConstantRange> pushConstantRanges;
-        for (auto& pc : pipeline->descriptor.pushConstantDesc)
-        {
-            VkPushConstantRange pcRange = {};
-            pcRange.offset     = pc.offset;
-            pcRange.size       = pc.size;
-            pcRange.stageFlags = ConvertShaderStage(pc.stage);
+        VulkanShader* ps = VulkanShader::ToInternal(pipeline->descriptor.ps);
+        VulkanShader* vs = VulkanShader::ToInternal(pipeline->descriptor.vs);
 
-            pushConstantRanges.push_back(pcRange);
+        for (u32 i = 0; i < 8; i++)
+        {
+            size_t numberOfBindings = ps->layoutBindingsPerSet[i].size() + vs->layoutBindingsPerSet[i].size();
+            if (numberOfBindings > 0)
+            {
+                internalState->descriptorSetLayoutBindingsPerSet[i].reserve(numberOfBindings);
+                internalState->descriptorSetLayoutBindingsPerSet[i].insert(internalState->descriptorSetLayoutBindingsPerSet[i].end(), vs->layoutBindingsPerSet[i].begin(), vs->layoutBindingsPerSet[i].end());
+                internalState->descriptorSetLayoutBindingsPerSet[i].insert(internalState->descriptorSetLayoutBindingsPerSet[i].end(), ps->layoutBindingsPerSet[i].begin(), ps->layoutBindingsPerSet[i].end());
+
+                VkDescriptorSetLayoutCreateInfo info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
+                info.bindingCount   = static_cast<u32>(internalState->descriptorSetLayoutBindingsPerSet[i].size());
+                info.pBindings      = internalState->descriptorSetLayoutBindingsPerSet[i].data();
+
+                VkDescriptorSetLayout descriptorSetLayout;
+                VkResult res = vkCreateDescriptorSetLayout(device->Handle, &info, nullptr, &descriptorSetLayout);
+                if (res != VK_SUCCESS) {
+                    SERROR("Failed to create descriptor set layout!");
+                    return;
+                }
+
+                internalState->descriptorSetLayouts.push_back(descriptorSetLayout);
+            }
         }
 
-        for (auto& ds : pipeline->descriptor.descriptorSetDesc)
+        std::vector<VkPushConstantRange> ranges;
+        if (!vs->pushConstantRanges.empty())
         {
-            VkDescriptorSetLayoutBinding binding;
-            binding.binding         = ds.binding;
-            binding.descriptorCount = 1;
-            binding.descriptorType  = ConvertDescriptorType(ds.uniformType);
-            binding.stageFlags      = ConvertShaderStage(ds.stage);
-
-            internalState->descriptorSetLayoutBindings.push_back(binding);
+            VkPushConstantRange vertexShaderRange{};
+            for (auto& pc : vs->pushConstantRanges)
+            {
+                vertexShaderRange.size += pc.size;
+            }
+            vertexShaderRange.offset = vs->pushConstantRanges.at(0).offset;
+            vertexShaderRange.stageFlags = vs->pushConstantRanges.at(0).stageFlags;
+            ranges.push_back(vertexShaderRange);
         }
 
-        VkDescriptorSetLayoutCreateInfo info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
-        info.bindingCount   = static_cast<u32>(internalState->descriptorSetLayoutBindings.size());
-        info.pBindings      = internalState->descriptorSetLayoutBindings.data();
-
-        if (vkCreateDescriptorSetLayout(device->Handle, &info, nullptr, &internalState->descriptorSetLayout) != VK_SUCCESS) {
-            SERROR("Failed to create descriptor set layout!");
-            return;
+        if (!ps->pushConstantRanges.empty())
+        {
+            VkPushConstantRange pixelShaderRange{};
+            for (auto& pc : ps->pushConstantRanges) {
+                pixelShaderRange.size += pc.size;
+            }
+            pixelShaderRange.offset = ps->pushConstantRanges.at(0).offset;
+            pixelShaderRange.stageFlags = ps->pushConstantRanges.at(0).stageFlags;
+            ranges.push_back(pixelShaderRange);
         }
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo = {VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
-        pipelineLayoutInfo.pushConstantRangeCount   = static_cast<u32>(pushConstantRanges.size());
-        pipelineLayoutInfo.pPushConstantRanges      = pushConstantRanges.data();
-        pipelineLayoutInfo.setLayoutCount           = 1;
-        pipelineLayoutInfo.pSetLayouts              = &internalState->descriptorSetLayout;
+        pipelineLayoutInfo.pushConstantRangeCount   = static_cast<u32>(ranges.size());
+        pipelineLayoutInfo.pPushConstantRanges      = ranges.data();
+        pipelineLayoutInfo.setLayoutCount           = static_cast<u32>(internalState->descriptorSetLayouts.size());
+        pipelineLayoutInfo.pSetLayouts              = internalState->descriptorSetLayouts.data();
 
         if (vkCreatePipelineLayout(device->Handle, &pipelineLayoutInfo, nullptr, &internalState->pipelineLayout) != VK_SUCCESS) {
             SFATAL("Failed to create graphics pipeline layout!");
@@ -187,6 +210,23 @@ namespace Vk
         if (vkCreateGraphicsPipelines(device->Handle, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &internalState->handle) != VK_SUCCESS) {
             SFATAL("Failed to create graphics pipeline.");
             return;
+        }
+
+        internalState->CreateDescriptorSets();
+    }
+
+    void VulkanPipeline::CreateDescriptorSets()
+    {
+        for (u32 frameIndex = 0; frameIndex < MAX_FRAMES_IN_FLIGHT; frameIndex++)
+        {
+            u32 i = 0;
+            for (auto& descriptorSetLayout : descriptorSetLayouts)
+            {
+                DescriptorSet descriptorSet;
+                VulkanDescriptorSet::Create(device, &descriptorSet, descriptorSetLayout, pipelineLayout, descriptorSetLayoutBindingsPerSet[i], i);
+                descriptorSets[frameIndex].push_back(descriptorSet);
+                i++;
+            }
         }
     }
 

@@ -1,38 +1,90 @@
 #include "render/vulkan/vulkan_device.h"
 #include "render/vulkan/vulkan_shader.h"
+#include <spirv/src/spirv_cross.hpp>
 
 namespace Sogas
 {
 namespace Vk
 {
-    static std::vector<char> ReadShaderFile(const std::string &InFilename)
+    static std::vector<u32> ReadShaderFile(const std::string &InFilename)
     {
-        std::ifstream file(InFilename, std::ios::ate | std::ios::binary);
+
+        FILE* file;
+        fopen_s(&file, InFilename.c_str(), "rb");
         SASSERT_MSG(file, "No file provided with name '%s'", InFilename.c_str());
-        SASSERT_MSG(file.is_open(), "Failed to open file '%s'", InFilename.c_str());
 
-        size_t fileSize = (size_t)file.tellg();
-        std::vector<char> buffer(fileSize);
-        file.seekg(0);
-        file.read(buffer.data(), fileSize);
-        file.close();
+        fseek(file, 0, SEEK_END);
+        size_t fileSize = ftell(file) / sizeof(u32);
+        rewind(file);
+        std::vector<u32> buffer(fileSize);
+        if (fread(buffer.data(), sizeof(u32), fileSize, file) != fileSize)
+            buffer.clear();
 
+        fclose(file);
         return buffer;
     }
 
-    void VulkanShader::Create(const VulkanDevice* device, ShaderStage stage, const char* InFilename, Shader* OutShader)
+    void VulkanShader::Create(const VulkanDevice* device, ShaderStage InStage, const char* InFilename, Shader* OutShader)
     {
         std::string name = InFilename;
         std::string filename = "../../data/shaders/" + name;
         auto code = ReadShaderFile(filename);
         SASSERT(!code.empty());
 
+        spirv_cross::Compiler comp(code);
+
+        spirv_cross::ShaderResources shaderResources = comp.get_shader_resources();
+
         auto internalState          = std::make_shared<VulkanShader>();
         OutShader->internalState    = internalState;
-        OutShader->stage            = stage;
+        OutShader->stage            = InStage;
+
+        for (const auto& resource : shaderResources.push_constant_buffers)
+        {
+            auto ranges = comp.get_active_buffer_ranges(resource.id);
+            for (auto& range : ranges)
+            {
+                STRACE("%d %d %d", range.index, range.offset, range.range);
+                VkPushConstantRange pushConstantRange = {};
+                pushConstantRange.offset        = static_cast<u32>(range.offset);
+                pushConstantRange.size          = static_cast<u32>(range.range);
+                pushConstantRange.stageFlags    = ConvertShaderStage(InStage);
+
+                internalState->pushConstantRanges.push_back(pushConstantRange);
+            }
+        }
+
+        for (const auto& resource : shaderResources.uniform_buffers)
+        {
+            u32 set = comp.get_decoration(resource.id, spv::DecorationDescriptorSet);
+            u32 binding = comp.get_decoration(resource.id, spv::DecorationBinding);
+            STRACE("Found UBO with name %s at set %d binding %d.", resource.name.c_str(), set, binding);
+
+            VkDescriptorSetLayoutBinding layoutBinding = {};
+            layoutBinding.binding           = binding;
+            layoutBinding.descriptorCount   = 1;
+            layoutBinding.descriptorType    = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            layoutBinding.stageFlags        = ConvertShaderStage(InStage);
+
+            internalState->layoutBindingsPerSet[set].push_back(layoutBinding);
+        }
+
+        for (const auto& resource : shaderResources.sampled_images)
+        {
+            u32 set = comp.get_decoration(resource.id, spv::DecorationDescriptorSet);
+            u32 binding = comp.get_decoration(resource.id, spv::DecorationBinding);
+            STRACE("Found sample with name %s at set %d binding %d", resource.name.c_str(), set, binding);
+
+            VkDescriptorSetLayoutBinding layoutBinding = {};
+            layoutBinding.binding           = binding;
+            layoutBinding.descriptorCount   = 1;
+            layoutBinding.descriptorType    = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            layoutBinding.stageFlags        = ConvertShaderStage(InStage);
+            internalState->layoutBindingsPerSet[set].push_back(layoutBinding);
+        }
 
         VkShaderModuleCreateInfo shaderModuleInfo = {VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
-        shaderModuleInfo.codeSize   = static_cast<u32>(code.size());
+        shaderModuleInfo.codeSize   = static_cast<u32>(code.size() * sizeof(u32));
         shaderModuleInfo.pCode      = reinterpret_cast<const u32 *>(code.data());
         
         if (vkCreateShaderModule(device->Handle, &shaderModuleInfo, nullptr, &internalState->shaderModule) != VK_SUCCESS) {

@@ -43,7 +43,12 @@ target_link_directories(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
         ${Vulkan_LIBRARIES}
-        GLFW/lib/glfw3)
+        GLFW/lib/glfw3
+        spirv/lib/spirv-cross-cored)
+        #spirv/lib/spirv-cross-reflect
+        #spirv/lib/spirv-cross-glsl
+        #spirv/lib/spirv-cross-cpp
+        #spirv/lib/spirv-cross-core)
 
 target_precompile_headers(${PROJECT_NAME} 
     PUBLIC public/pch.h PRIVATE private/sgs_pch.h)
