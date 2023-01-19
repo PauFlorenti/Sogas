@@ -32,7 +32,6 @@ namespace Sogas
         std::string albedo_name = j.value("albedo", "");
         albedo = albedo_name.empty() ? CResourceManager::Get()->GetResource("white.text")->As<Texture>() : CResourceManager::Get()->GetResource(albedo_name)->As<Texture>();
 
-        /*
         std::string normal_name = j.value("normal", "");
         normal = normal_name.empty() ? CResourceManager::Get()->GetResource("white.text")->As<Texture>() : CResourceManager::Get()->GetResource(normal_name)->As<Texture>();
 
@@ -41,8 +40,6 @@ namespace Sogas
 
         std::string emissive_name = j.value("emissive", "");
         emissive = emissive_name.empty() ? CResourceManager::Get()->GetResource("white.text")->As<Texture>() : CResourceManager::Get()->GetResource(emissive_name)->As<Texture>();
-
-        */
         return true;
     }
 
@@ -50,6 +47,9 @@ namespace Sogas
     {
         auto renderer = CEngine::Get()->GetRenderModule()->GetGraphicsDevice();
         renderer->BindTexture(albedo, cmd.activePipeline, 0, 1);
+        renderer->BindTexture(normal, cmd.activePipeline, 1, 1);
+        renderer->BindTexture(metallic_roughness, cmd.activePipeline, 2, 1);
+        renderer->BindTexture(emissive, cmd.activePipeline, 3, 1);
     }
 
     template<>

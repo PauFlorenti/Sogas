@@ -48,7 +48,8 @@ namespace Sogas
 
                 if (InName == "white.text")
                 {
-                    render->CreateTexture(&desc, (void*)0xFFFF, InTexture);
+                    u32 data = 0xFFFFFFFF;
+                    render->CreateTexture(&desc, static_cast<void*>(&data), InTexture);
                 }
                 else if (InName == "black.text")
                 {

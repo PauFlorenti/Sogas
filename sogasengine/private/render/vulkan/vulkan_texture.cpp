@@ -68,8 +68,7 @@ namespace Vk
 
         if (desc->usage == Usage::READBACK || desc->usage == Usage::UPLOAD)
         {
-            //VkDeviceSize imageSize = imageInfo.extent.width * imageInfo.extent.height * imageInfo.extent.depth * imageInfo.arrayLayers * GetFormatStride(desc->format);
-            VkDeviceSize imageSize = imageInfo.extent.width * imageInfo.extent.height * 4;
+            VkDeviceSize imageSize = imageInfo.extent.width * imageInfo.extent.height * imageInfo.extent.depth * imageInfo.arrayLayers * GetFormatStride(desc->format);
 
             if (vkCreateImage(device->Handle, &imageInfo, nullptr, &internalState->handle) != VK_SUCCESS) {
                 SFATAL("Could not create image.");

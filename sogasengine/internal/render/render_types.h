@@ -293,7 +293,7 @@ namespace Sogas
         {
             Attachment att;
             att.texture = texture;
-            att.loadop = loadop;
+            att.loadop  = loadop;
             att.storeop = storeop;
             return att;
         }
