@@ -58,6 +58,7 @@ namespace Sogas
         i32 width, height;
         CApplication::Get()->GetWindowSize(&width, &height);
 
+        // TODO make swapchain unique ??
         swapchain = std::make_shared<Swapchain>();
         SwapchainDescriptor desc;
         desc.format = Format::R32G32B32A32_SFLOAT;
@@ -92,11 +93,6 @@ namespace Sogas
         psoDesc.vertexDeclaration = "PosNormalUvColor";
 
         renderer->CreatePipeline(&psoDesc, &pipeline, &swapchain->renderpass);
-        //renderer->CreateDescriptorSet(&descriptorSets[0], &pipeline);
-        //renderer->CreateDescriptorSet(&descriptorSets[1], &pipeline);
-
-        // Should bind resources by name.
-        //renderer->UpdateDescriptorSet(&pipeline);
         return true;
     }
 

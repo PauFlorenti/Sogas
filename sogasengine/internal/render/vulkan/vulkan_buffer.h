@@ -7,13 +7,14 @@ namespace Sogas
 namespace Vk
 {
     class VulkanDevice;
-
+    
     class VulkanBuffer
     {
     public:
         VulkanBuffer() = default;
-        VulkanBuffer(VulkanBuffer&) = delete;
+        VulkanBuffer(const VulkanBuffer&) = delete;
         VulkanBuffer(VulkanBuffer&&) = delete;
+        VulkanBuffer& operator=(const VulkanBuffer& other) = delete; 
 
         static void Create(
             const VulkanDevice* device, 
@@ -21,19 +22,18 @@ namespace Vk
             void* data, 
             GPUBuffer* buffer);
 
-        static VulkanBuffer* ToInternal(const GPUBuffer* InBuffer) {
-            return static_cast<VulkanBuffer*>(InBuffer->internalState.get());
+        static inline std::shared_ptr<VulkanBuffer> ToInternal(const GPUBuffer* InBuffer) {
+            return std::static_pointer_cast<VulkanBuffer>(InBuffer->internalState);
         }
 
-        const VkBuffer* GetHandle() const { return &handle; }
+        const VkBuffer*      GetHandle() const { return &handle; }
         const VkDeviceMemory GetMemory() const { return memory; }
 
         VkDescriptorBufferInfo descriptorInfo;
 
     private:
-        VkBuffer handle         = VK_NULL_HANDLE;
-        VkDeviceMemory memory   = VK_NULL_HANDLE;
+        VkBuffer        handle = VK_NULL_HANDLE;
+        VkDeviceMemory  memory = VK_NULL_HANDLE;
     };
-
 } // Vk
 } // Sogas

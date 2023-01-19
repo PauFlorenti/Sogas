@@ -129,8 +129,8 @@ namespace Vk
         colorBlendStateInfo.pAttachments    = &colorBlendAttachment;
         colorBlendStateInfo.logicOpEnable   = VK_FALSE;
 
-        VulkanShader* ps = VulkanShader::ToInternal(pipeline->descriptor.ps);
-        VulkanShader* vs = VulkanShader::ToInternal(pipeline->descriptor.vs);
+        auto ps = VulkanShader::ToInternal(pipeline->descriptor.ps);
+        auto vs = VulkanShader::ToInternal(pipeline->descriptor.vs);
 
         for (u32 i = 0; i < 8; i++)
         {

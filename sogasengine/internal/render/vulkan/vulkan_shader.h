@@ -12,10 +12,15 @@ namespace Vk
     class VulkanShader
     {
     public:
+        VulkanShader() = default;
+        VulkanShader(const VulkanShader&) = delete;
+        VulkanShader(VulkanShader&&) = delete;
+        const VulkanShader& operator=(const VulkanShader& other) = delete;
+
         static void Create(const VulkanDevice* device, ShaderStage stage, const char* InFilename, Shader* OutShader);
 
-        static VulkanShader* ToInternal(const Shader* InShader) {
-            return static_cast<VulkanShader*>(InShader->internalState.get());
+        static inline std::shared_ptr<VulkanShader> ToInternal(const Shader* InShader) {
+            return std::static_pointer_cast<VulkanShader>(InShader->internalState);
         }
 
         VkShaderModule shaderModule;

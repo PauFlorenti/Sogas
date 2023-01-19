@@ -12,17 +12,17 @@ namespace Vk
 
         VulkanSwapchain() = default;
         VulkanSwapchain(const VulkanSwapchain&) = delete;
-        VulkanSwapchain(const VulkanSwapchain&&) = delete;
+        VulkanSwapchain(VulkanSwapchain&&) = delete;
         ~VulkanSwapchain();
 
         static bool Create(
             const VkDevice& device, 
             const VkPhysicalDevice& gpu,
             const SwapchainDescriptor* descriptor, 
-            VulkanSwapchain* internalState);
+            std::shared_ptr<VulkanSwapchain> internalState);
 
-        static VulkanSwapchain* ToInternal(const Swapchain* InSwapchain) {
-            return static_cast<VulkanSwapchain*>(InSwapchain->internalState.get());
+        static inline std::shared_ptr<VulkanSwapchain> ToInternal(const Swapchain* InSwapchain) {
+            return std::static_pointer_cast<VulkanSwapchain>(InSwapchain->internalState);
         }
 
         VkSwapchainKHR              swapchain   = VK_NULL_HANDLE;

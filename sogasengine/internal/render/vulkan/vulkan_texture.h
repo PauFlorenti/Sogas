@@ -9,10 +9,10 @@ namespace Vk
     class VulkanTexture
     {
     public:
-
         VulkanTexture() = default;
-        VulkanTexture(VulkanTexture&) = delete;
+        VulkanTexture(const VulkanTexture&) = delete;
         VulkanTexture(VulkanTexture&&) = delete;
+        const VulkanTexture& operator=(const VulkanTexture& other) = delete;
 
         static void Create(
             const VulkanDevice* device,
@@ -20,8 +20,8 @@ namespace Vk
             void* data,
             Texture* texture);
 
-        static VulkanTexture* ToInternal(const Texture* InTexture) {
-            return static_cast<VulkanTexture*>(InTexture->internalState.get());
+        static inline std::shared_ptr<VulkanTexture> ToInternal(const Texture* InTexture) {
+            return std::static_pointer_cast<VulkanTexture>(InTexture->internalState);
         }
 
         static void TransitionLayout(
@@ -38,10 +38,9 @@ namespace Vk
             const u32& width, 
             const u32& height);
 
-    const VkImage GetHandle() const { return handle; }
-    const VkImageView GetImageView() const { return imageView; }
-
-    const VkSampler GetSampler();
+    const VkImage       GetHandle() const { return handle; }
+    const VkImageView   GetImageView() const { return imageView; }
+    const VkSampler     GetSampler();
 
     VkDescriptorImageInfo descriptorImageInfo;
         
@@ -52,6 +51,5 @@ namespace Vk
         VkDeviceMemory  memory      = VK_NULL_HANDLE;
         VkSampler       sampler     = VK_NULL_HANDLE;
     };
-    
 } // Vk
 } // Sogas

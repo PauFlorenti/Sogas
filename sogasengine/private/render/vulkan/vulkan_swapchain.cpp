@@ -13,7 +13,7 @@ namespace Vk
         const VkDevice& device,
         const VkPhysicalDevice& gpu,
         const SwapchainDescriptor* descriptor,
-        VulkanSwapchain* internalState
+        std::shared_ptr<VulkanSwapchain> internalState
     )
     {
         STRACE("\tCreating vulkan swapchain ...");

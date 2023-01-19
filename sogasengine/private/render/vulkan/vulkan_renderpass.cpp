@@ -4,9 +4,9 @@ namespace Sogas
 {
 namespace Vk
 {
-    VulkanRenderPass* VulkanRenderPass::ToInternalState(const RenderPass* InRenderpass)
+    std::shared_ptr<VulkanRenderPass> VulkanRenderPass::ToInternalState(const RenderPass* InRenderpass)
     {
-        return static_cast<VulkanRenderPass*>(InRenderpass->internalState.get());
+        return std::static_pointer_cast<VulkanRenderPass>(InRenderpass->internalState);
     }
 
     void VulkanRenderPass::Create(const VulkanDevice* /*device*/, const RenderPassDescriptor* /*desc*/, RenderPass* /*renderpass*/)

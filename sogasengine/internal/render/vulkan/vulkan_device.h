@@ -15,7 +15,10 @@ namespace Vk
         friend class VulkanShader;
         friend class VulkanTexture;
     public:
-        VulkanDevice(GraphicsAPI apiType, void* device);
+        explicit VulkanDevice(GraphicsAPI apiType, void* device);
+        VulkanDevice(const VulkanDevice&) = delete;
+        VulkanDevice(VulkanDevice&&) = delete;
+        const VulkanDevice& operator=(const VulkanDevice& other) = delete;
         ~VulkanDevice() override;
 
         GraphicsAPI getApiType() const { return api_type; }

@@ -183,7 +183,7 @@ namespace Sogas
                 i++;
             }
 
-            if (!VulkanSwapchain::Create(Handle, Gpu, &swapchain->descriptor, internalState.get()))
+            if (!VulkanSwapchain::Create(Handle, Gpu, &swapchain->descriptor, internalState))
             {
                 SERROR("Failed to create vulkan swapchain");
             }

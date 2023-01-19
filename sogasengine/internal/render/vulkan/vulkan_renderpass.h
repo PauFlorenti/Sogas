@@ -11,10 +11,11 @@ namespace Vk
     {
     public:
         VulkanRenderPass() = default;
-        VulkanRenderPass(VulkanRenderPass&) = delete;
+        VulkanRenderPass(const VulkanRenderPass&) = delete;
         VulkanRenderPass(VulkanRenderPass&&) = delete;
+        const VulkanRenderPass& operator=(const VulkanRenderPass& other) = delete;
 
-        static VulkanRenderPass* ToInternalState(const RenderPass* renderpass);
+        static inline std::shared_ptr<VulkanRenderPass> ToInternalState(const RenderPass* renderpass);
         static void Create(const VulkanDevice* device, const RenderPassDescriptor* desc, RenderPass* renderpass);
 
         VkRenderPass renderpass   = VK_NULL_HANDLE;
