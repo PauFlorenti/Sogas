@@ -24,6 +24,7 @@ namespace Sogas
     std::shared_ptr<Texture>     colorBuffer;
     //Texture     depthBuffer;
     AttachmentFramebuffer colorAttachment;
+    AttachmentFramebuffer depthAttachment;
     const u32   nLights = 10;
 
     std::vector<Vertex> quad = {
@@ -90,41 +91,29 @@ namespace Sogas
         renderer->CreateShader(ShaderStage::VERTEX, "quad.vert.spv", &presentShaders[0]);
         renderer->CreateShader(ShaderStage::FRAGMENT, "quad.frag.spv", &presentShaders[1]);
 
-        /*
-        TextureDescriptor colorDesc;
-        colorDesc.bindPoint     = BindPoint::RENDER_TARGET;
-        colorDesc.textureType   = TextureDescriptor::TEXTURE_TYPE_2D;
-        colorDesc.usage         = Usage::UPLOAD;
-        colorDesc.format        = Format::R8G8B8A8_SRGB;
-        colorDesc.width         = width;
-        colorDesc.height        = height;
-        colorDesc.depth         = 1;
-
-        TextureDescriptor depthDesc;
-        depthDesc.bindPoint     = BindPoint::DEPTH_STENCIL;
-        depthDesc.textureType   = TextureDescriptor::TEXTURE_TYPE_2D;
-        depthDesc.usage         = Usage::UPLOAD;
-        depthDesc.format        = Format::D24_UNORM_S8_UINT;
-        depthDesc.width         = width;
-        depthDesc.height        = height;
-        depthDesc.depth         = 1;
-        */
-        //renderer->CreateTexture(&colorDesc, nullptr, &colorBuffer);
-        //renderer->CreateTexture(&depthDesc, nullptr, &depthBuffer);
-        // 
         colorAttachment.format = Format::R8G8B8A8_SRGB;
         colorAttachment.usage = BindPoint::RENDER_TARGET;
         renderer->CreateAttachment(&colorAttachment);
 
+        depthAttachment.format = Format::D24_UNORM_S8_UINT;
+        depthAttachment.usage = BindPoint::DEPTH_STENCIL;
+        renderer->CreateAttachment(&depthAttachment);
+
         RenderPassDescriptor rpDesc;
         rpDesc.attachments.push_back(Attachment::RenderTarget(nullptr, &colorAttachment));
-        //rpDesc.attachments.push_back(Attachment::DepthStencil(&depthBuffer));
+        rpDesc.attachments.push_back(Attachment::DepthStencil(nullptr, &depthAttachment));
         renderer->CreateRenderPass(&rpDesc, &forwardRenderPass);
+
+        DepthStencilState depthState;
+        depthState.compareOp = CompareOperations::LESS_OR_EQUAL;
+        depthState.depthTestEnabled = true;
+        depthState.writeDepthEnabled = true;
         
         PipelineDescriptor fwdDesc;
         fwdDesc.vs = &forwardShaders[0];
         fwdDesc.ps = &forwardShaders[1];
         fwdDesc.vertexDeclaration = "PosNormalUvColor";
+        fwdDesc.depthStencilState = &depthState;
         renderer->CreatePipeline(&fwdDesc, &forwardPipeline, &forwardRenderPass);
 
         PipelineDescriptor psoDesc;
@@ -189,8 +178,6 @@ namespace Sogas
         renderer->BindPipeline(&forwardPipeline, cmd);
         renderer->BeginRenderPass(&forwardRenderPass, cmd);
 
-        //renderer->WaitCommand(cmd, swapchain.get());
-
         // Bind frame constants.
         renderer->BindBuffer(&constantBuffer, &forwardPipeline, 0, 0);
         renderer->BindBuffer(&lightBuffer, &forwardPipeline, 1, 0);
@@ -236,7 +223,6 @@ namespace Sogas
         renderer->BeginRenderPass(swapchain, presentCmd);
 
         // Bind textures
-        //renderer->BindTexture(&colorBuffer, &presentPipeline, 0, 0);
         renderer->BindAttachment(&colorAttachment, &presentPipeline, 0);
         renderer->UpdateDescriptorSet(&presentPipeline);
         renderer->BindDescriptor(presentCmd);
@@ -244,8 +230,6 @@ namespace Sogas
         renderer->BindIndexBuffer(&quadIdxBuffer, presentCmd);
         renderer->DrawIndexed(6, 0, presentCmd);
         renderer->EndRenderPass(presentCmd);
-        /*
-        */
 
         renderer->SubmitCommandBuffers();
     }

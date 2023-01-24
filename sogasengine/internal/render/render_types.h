@@ -350,7 +350,8 @@ namespace Sogas
 
         static Attachment DepthStencil(
             const Texture* texture = nullptr,
-            LoadOp loadop = LoadOp::DONTCARE,
+            const AttachmentFramebuffer* attachmentFramebuffer = nullptr,
+            LoadOp loadop = LoadOp::CLEAR,
             StoreOp storeop = StoreOp::DONTCARE,
             BindPoint initialLayout = BindPoint::DEPTH_STENCIL,
             BindPoint subpassLayout = BindPoint::DEPTH_STENCIL,
@@ -359,6 +360,7 @@ namespace Sogas
         {
             Attachment att;
             att.type            = Attachment::Type::DEPTH_STENCIL;
+            att.attachmentFramebuffer = attachmentFramebuffer;
             att.texture         = texture;
             att.loadop          = loadop;
             att.storeop         = storeop;
