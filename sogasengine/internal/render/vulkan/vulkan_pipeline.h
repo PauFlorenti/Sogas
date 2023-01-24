@@ -11,7 +11,7 @@ namespace Vk
     public:
         VulkanPipeline() = default;
         VulkanPipeline(const VulkanPipeline&) = delete;
-        VulkanPipeline(VulkanPipeline&&) = delete;
+        VulkanPipeline(VulkanPipeline&&) = delete; // TODO move operations should be allowed.
         const VulkanPipeline& operator=(const VulkanPipeline& other) = delete;
 
         static void Create(const VulkanDevice* device, const PipelineDescriptor* descriptor, Pipeline* pipeline, RenderPass* renderpass = nullptr);

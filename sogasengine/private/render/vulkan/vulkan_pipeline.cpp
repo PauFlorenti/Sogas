@@ -13,7 +13,7 @@ namespace Vk
     {
         std::vector<VkPipelineShaderStageCreateInfo> shaderStagesInfo;
 
-        auto addShaderStage = [&](Shader* shader) {
+        auto addShaderStage = [&](const Shader* shader) {
             auto internalState = std::static_pointer_cast<VulkanShader>(shader->internalState);
             if (internalState != nullptr)
             {
@@ -63,7 +63,6 @@ namespace Vk
         VkPipelineDynamicStateCreateInfo dynamicStateInfo = {VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};
         dynamicStateInfo.dynamicStateCount  = static_cast<u32>(dynamicState.size());
         dynamicStateInfo.pDynamicStates     = dynamicState.data();
-        
 
         VkPipelineVertexInputStateCreateInfo vertexInputStateInfo = {VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
         vertexInputStateInfo.vertexBindingDescriptionCount   = 0;
@@ -106,6 +105,7 @@ namespace Vk
         viewportStateInfo.scissorCount  = 1;
         viewportStateInfo.pScissors     = &scissors;
 
+        // TODO populate with information from pipeline descriptor.
         VkPipelineRasterizationStateCreateInfo rasterizationStateInfo = {VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO};
         rasterizationStateInfo.depthClampEnable         = VK_FALSE;
         rasterizationStateInfo.rasterizerDiscardEnable  = VK_FALSE;
@@ -114,6 +114,20 @@ namespace Vk
         rasterizationStateInfo.cullMode                 = VK_CULL_MODE_BACK_BIT;
         rasterizationStateInfo.frontFace                = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         rasterizationStateInfo.depthBiasEnable          = VK_FALSE;
+
+        VkPipelineDepthStencilStateCreateInfo depthStencilStateInfo = {VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
+        if (desc->depthStencilState != nullptr)
+        {
+            depthStencilStateInfo.depthTestEnable       = desc->depthStencilState->depthTestEnabled ? VK_TRUE : VK_FALSE;
+            depthStencilStateInfo.depthWriteEnable      = desc->depthStencilState->writeDepthEnabled ? VK_TRUE : VK_FALSE;
+            depthStencilStateInfo.stencilTestEnable     = desc->depthStencilState->stencilTestEnabled ? VK_TRUE : VK_FALSE;
+            depthStencilStateInfo.depthBoundsTestEnable = desc->depthStencilState->depthBoundTestEnabled ? VK_TRUE : VK_FALSE;
+            depthStencilStateInfo.depthCompareOp        = ConvertCompareOperation(desc->depthStencilState->compareOp);
+            depthStencilStateInfo.minDepthBounds        = desc->depthStencilState->minDepthBound;
+            depthStencilStateInfo.maxDepthBounds        = desc->depthStencilState->maxDepthBound;
+            depthStencilStateInfo.front                 = {}; // TODO check them out
+            depthStencilStateInfo.back                  = {};
+        }
 
         VkPipelineMultisampleStateCreateInfo multisampleStateInfo = {VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
         multisampleStateInfo.sampleShadingEnable  = VK_FALSE;
@@ -197,7 +211,7 @@ namespace Vk
         pipelineInfo.layout                 = internalState->pipelineLayout;
         pipelineInfo.pColorBlendState       = &colorBlendStateInfo;
         pipelineInfo.pDynamicState          = &dynamicStateInfo;
-        pipelineInfo.pDepthStencilState     = nullptr;
+        pipelineInfo.pDepthStencilState     = &depthStencilStateInfo;
         pipelineInfo.pInputAssemblyState    = &inputAssemblyInfo;
         pipelineInfo.pMultisampleState      = &multisampleStateInfo;
         pipelineInfo.pRasterizationState    = &rasterizationStateInfo;

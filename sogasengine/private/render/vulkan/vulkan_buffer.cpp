@@ -33,12 +33,12 @@ namespace Vk
         VkMemoryPropertyFlags memoryPropertyFlags = VK_MEMORY_PROPERTY_FLAG_BITS_MAX_ENUM;
         if (buffer->descriptor.usage == Usage::UPLOAD)
         {
-            bufferCreateInfo.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+            bufferCreateInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
             memoryPropertyFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
         }
         if (buffer->descriptor.usage == Usage::READBACK)
         {
-            bufferCreateInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+            bufferCreateInfo.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
             memoryPropertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
         }
 

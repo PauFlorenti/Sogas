@@ -9,9 +9,11 @@ namespace Vk
 
     class VulkanDevice : public GPU_device
     {
+        friend class VulkanAttachment;
         friend class VulkanBuffer;
         friend class VulkanDescriptorSet;
         friend class VulkanPipeline;
+        friend class VulkanRenderPass;
         friend class VulkanShader;
         friend class VulkanTexture;
     public:
@@ -30,9 +32,10 @@ namespace Vk
         void shutdown() override;
         CommandBuffer BeginCommandBuffer() override;
         void SubmitCommandBuffers() override;
-        void BeginRenderPass(Swapchain* swapchain, CommandBuffer cmd) override;
+        void BeginRenderPass(std::shared_ptr<Swapchain> swapchain, CommandBuffer cmd) override;
+        void BeginRenderPass(RenderPass* InRenderpass, CommandBuffer cmd) override;
         void EndRenderPass(CommandBuffer cmd) override;
-        void CreateSwapchain(const SwapchainDescriptor& desc, Swapchain* swapchain) override;
+        void CreateSwapchain(const SwapchainDescriptor& desc, std::shared_ptr<Swapchain> swapchain) override;
         void CreateBuffer(const GPUBufferDescriptor* desc, void* data, GPUBuffer* buffer) const override;
         void CreateTexture(const TextureDescriptor* desc, void* data, Texture* texture) const override;
         void CreateRenderPass(const RenderPassDescriptor* desc, RenderPass* renderpass) const override;
@@ -40,6 +43,7 @@ namespace Vk
         void CreateAttachment() const override {};
         void CreateShader(ShaderStage stage, const char* filename, Shader* shader) const override;
         void UpdateDescriptorSet(const Pipeline* InPipeline) const override;
+        void CreateAttachment(AttachmentFramebuffer* InAttachment) const override;
 
         // API calls ...
         void BindVertexBuffer(const GPUBuffer* buffer, CommandBuffer cmd) override;
@@ -47,12 +51,15 @@ namespace Vk
         void BindPipeline(const Pipeline* InPipeline, CommandBuffer& cmd) override;
         void BindDescriptor(CommandBuffer cmd) override;
         void BindBuffer(const GPUBuffer* InBuffer, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet, const u32 InOffset = 0) override;
-        void BindTexture(const Texture* InTexture, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet) override;
+        void BindTexture(const Texture* InTexture, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet = 0) override;
+        void BindAttachment(const AttachmentFramebuffer* InAttachment, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet = 0) override;
         void SetTopology(PrimitiveTopology topology) override;
         void Draw(const u32 count, const u32 offset, CommandBuffer cmd) override;
         void DrawIndexed(const u32 count, const u32 offset, CommandBuffer cmd) override;
         void PushConstants(const void* InData, const u32 InSize, CommandBuffer cmd) override;
         void UpdateBuffer(const GPUBuffer* InBuffer, const void* InData, const u32 InDataSize, const u32 InOffset, CommandBuffer cmd) override;
+        void WaitCommand(CommandBuffer& cmd, CommandBuffer& cmdToWait) override;
+        //void WaitCommand(CommandBuffer& cmd, Swapchain* swapchainToWait) override;
 
     private:
         VkInstance       Instance   = VK_NULL_HANDLE;
@@ -76,6 +83,9 @@ namespace Vk
         VkCommandPool   resourcesCommandPool[MAX_FRAMES_IN_FLIGHT];
         VkCommandBuffer resourcesCommandBuffer[MAX_FRAMES_IN_FLIGHT];
         VkFence         fence[MAX_FRAMES_IN_FLIGHT];
+
+        VkSemaphore beginSemaphore  = VK_NULL_HANDLE;
+        VkSemaphore endSemaphore    = VK_NULL_HANDLE;
 
         std::vector<std::unique_ptr<VulkanCommandBuffer>> commandBuffers;
         u32 commandBufferCounter{0};

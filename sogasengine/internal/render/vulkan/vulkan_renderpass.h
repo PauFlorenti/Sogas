@@ -15,12 +15,16 @@ namespace Vk
         VulkanRenderPass(VulkanRenderPass&&) = delete;
         const VulkanRenderPass& operator=(const VulkanRenderPass& other) = delete;
 
-        static inline std::shared_ptr<VulkanRenderPass> ToInternalState(const RenderPass* renderpass);
+        static inline std::shared_ptr<VulkanRenderPass> ToInternal(const RenderPass* InRenderpass) {
+            return std::static_pointer_cast<VulkanRenderPass>(InRenderpass->internalState);
+        }
+
         static void Create(const VulkanDevice* device, const RenderPassDescriptor* desc, RenderPass* renderpass);
 
-        VkRenderPass renderpass   = VK_NULL_HANDLE;
-        VkFramebuffer framebuffer = VK_NULL_HANDLE;
-        VkClearValue clearColor;
+        VkRenderPass            renderpass      = VK_NULL_HANDLE;
+        VkFramebuffer           framebuffer     = VK_NULL_HANDLE;
+        VkRenderPassBeginInfo   beginInfo       = {};
+        VkClearValue            clearColor[8]; // Maximum of 8 attachments at the moment.
     };
 
 } // Vk

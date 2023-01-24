@@ -26,8 +26,7 @@ namespace Vk
 
         static void TransitionLayout(
             const VulkanDevice* device,
-            VkImage& image,
-            VkFormat format,
+            const Texture* InTexture,
             VkImageLayout srcLayout,
             VkImageLayout dstLayout);
 

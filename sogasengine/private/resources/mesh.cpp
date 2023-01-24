@@ -18,7 +18,7 @@ namespace Sogas
 
         GPUBufferDescriptor vertexBufferDescriptor;
         vertexBufferDescriptor.bindPoint    = BindPoint::VERTEX;
-        vertexBufferDescriptor.usage        = Usage::READBACK;
+        vertexBufferDescriptor.usage        = Usage::UPLOAD;
         vertexBufferDescriptor.size         = static_cast<u64>(vs.size() * sizeof(Vertex));
         device.lock()->CreateBuffer(&vertexBufferDescriptor, vs.data(), &vertexBuffer);
 
@@ -28,7 +28,7 @@ namespace Sogas
             this->indexCount = static_cast<u32>(is.size());
             GPUBufferDescriptor indexBufferDescriptor;
             indexBufferDescriptor.bindPoint = BindPoint::INDEX;
-            indexBufferDescriptor.usage     = Usage::READBACK;
+            indexBufferDescriptor.usage     = Usage::UPLOAD;
             indexBufferDescriptor.size      = static_cast<u64>(indices.size() * sizeof(u32));
             device.lock()->CreateBuffer(&indexBufferDescriptor, is.data(), &indexBuffer);
         }

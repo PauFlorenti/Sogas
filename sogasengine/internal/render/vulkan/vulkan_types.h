@@ -353,12 +353,78 @@ namespace Vk {
             case Format::R8_USCALED:
                 return VK_FORMAT_R8_USCALED;
                 break;
+            case Format::S8_UINT:
+                return VK_FORMAT_S8_UINT;
+                break;
+            case Format::D32_SFLOAT:
+                return VK_FORMAT_D32_SFLOAT;
+                break;
+            case Format::D32_UNORM_S8_UINT:
+                return VK_FORMAT_D32_SFLOAT_S8_UINT;
+                break;
+            case Format::D24_UNORM_S8_UINT:
+                return VK_FORMAT_D24_UNORM_S8_UINT;
+                break;
+            case Format::D16_UNORM_S8_UINT:
+                return VK_FORMAT_D16_UNORM_S8_UINT;
             default:
                 SERROR("Trying to convert a non-valid format.");
                 return VK_FORMAT_UNDEFINED;
                 break;
             }
         }
+
+    constexpr VkCompareOp ConvertCompareOperation(CompareOperations operation)
+    {
+        switch (operation)
+        {
+        default:
+        case CompareOperations::NEVER:
+            return VK_COMPARE_OP_NEVER; 
+        case CompareOperations::LESS:
+            return VK_COMPARE_OP_LESS;
+        case CompareOperations::EQUAL:
+            return VK_COMPARE_OP_EQUAL;
+        case CompareOperations::LESS_OR_EQUAL:
+            return VK_COMPARE_OP_LESS_OR_EQUAL;
+        case CompareOperations::GREATER:
+            return VK_COMPARE_OP_GREATER;
+        case CompareOperations::NOT_EQUAL:
+            return VK_COMPARE_OP_NOT_EQUAL;
+        case CompareOperations::GREATER_OR_EQUAL:
+            return VK_COMPARE_OP_GREATER_OR_EQUAL;
+        case CompareOperations::ALWAYS:
+            return VK_COMPARE_OP_ALWAYS;
+        }
+    }
+
+    constexpr inline VkAttachmentLoadOp ConvertLoadOperation(Attachment::LoadOp InOperation)
+    {
+        switch (InOperation)
+        {
+            case Attachment::LoadOp::LOAD:
+                return VK_ATTACHMENT_LOAD_OP_LOAD;
+            case Attachment::LoadOp::CLEAR:
+                return VK_ATTACHMENT_LOAD_OP_CLEAR;
+            case Attachment::LoadOp::DONTCARE:
+                return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+            default:
+                return VK_ATTACHMENT_LOAD_OP_NONE_EXT;
+        }
+    }
+
+    constexpr inline VkAttachmentStoreOp ConvertStoreOperation(Attachment::StoreOp InOperation)
+    {
+        switch (InOperation)
+        {
+            case Attachment::StoreOp::STORE:
+                return VK_ATTACHMENT_STORE_OP_STORE;
+            case Attachment::StoreOp::DONTCARE:
+                return VK_ATTACHMENT_STORE_OP_DONT_CARE;
+            default:
+                return VK_ATTACHMENT_STORE_OP_NONE;
+        }
+    }
 
     constexpr VkShaderStageFlagBits ConvertShaderStage(ShaderStage stage)
     {
@@ -383,6 +449,22 @@ namespace Vk {
                 return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             case UniformType::SAMPLED:
                 return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        }
+    }
+
+    constexpr VkImageLayout ConvertImageLayout(BindPoint InLayout)
+    {
+        switch(InLayout)
+        {
+            case BindPoint::RENDER_TARGET:
+                return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            case BindPoint::DEPTH_STENCIL:
+                return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            case BindPoint::SHADER_SAMPLE:
+                return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            case BindPoint::NONE:
+            default:
+                return VK_IMAGE_LAYOUT_UNDEFINED;
         }
     }
 

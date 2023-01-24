@@ -89,34 +89,20 @@ namespace Vk
             imageCount = surfaceCapabilities.maxImageCount;
 
         VkSwapchainCreateInfoKHR swapchainCreateInfo = {VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR};
-        swapchainCreateInfo.surface = internalState->surface;
-        swapchainCreateInfo.imageFormat = internalState->surfaceFormat.format;
-        swapchainCreateInfo.imageColorSpace = internalState->surfaceFormat.colorSpace;
-        swapchainCreateInfo.imageExtent = internalState->extent;
-        swapchainCreateInfo.imageArrayLayers = 1;
-        swapchainCreateInfo.minImageCount = imageCount;
-        swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        swapchainCreateInfo.preTransform = surfaceCapabilities.currentTransform;
-        swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-        swapchainCreateInfo.presentMode = internalState->presentMode;
-        swapchainCreateInfo.clipped = VK_TRUE;
-        swapchainCreateInfo.oldSwapchain = internalState->swapchain;
+        swapchainCreateInfo.surface             = internalState->surface;
+        swapchainCreateInfo.imageFormat         = internalState->surfaceFormat.format;
+        swapchainCreateInfo.imageColorSpace     = internalState->surfaceFormat.colorSpace;
+        swapchainCreateInfo.imageExtent         = internalState->extent;
+        swapchainCreateInfo.imageArrayLayers    = 1;
+        swapchainCreateInfo.minImageCount       = imageCount;
+        swapchainCreateInfo.imageUsage          = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        swapchainCreateInfo.preTransform        = surfaceCapabilities.currentTransform;
+        swapchainCreateInfo.compositeAlpha      = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+        swapchainCreateInfo.presentMode         = internalState->presentMode;
+        swapchainCreateInfo.clipped             = VK_TRUE;
+        swapchainCreateInfo.oldSwapchain        = internalState->swapchain;
         // TODO should chose sharing mode depending on queueFamilyIndices ... probably passing VulkanDevice* into the function.
-        swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-        /*
-        u32 queueFamilyIndices[] = {GraphicsFamily, PresentFamily};
-        if (GraphicsFamily != PresentFamily)
-        {
-            swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-            swapchainCreateInfo.queueFamilyIndexCount = 2;
-            swapchainCreateInfo.pQueueFamilyIndices = queueFamilyIndices;
-        }
-        else
-        {
-            swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        }
-        */
+        swapchainCreateInfo.imageSharingMode    = VK_SHARING_MODE_EXCLUSIVE;
 
         if (vkCreateSwapchainKHR(device, &swapchainCreateInfo, nullptr, &internalState->swapchain) != VK_SUCCESS)
         {
@@ -151,12 +137,12 @@ namespace Vk
         subpass.pColorAttachments       = &colorAttachmentReference;
 
         VkSubpassDependency dependency = {};
-        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependency.dstSubpass = 0;
-        dependency.srcAccessMask = 0; 
-        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.srcSubpass           = VK_SUBPASS_EXTERNAL;
+        dependency.dstSubpass           = 0;
+        dependency.srcAccessMask        = 0; 
+        dependency.dstAccessMask        = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependency.srcStageMask         = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.dstStageMask         = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
         VkRenderPassCreateInfo renderPassInfo = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
         renderPassInfo.attachmentCount  = 1;
@@ -225,12 +211,12 @@ namespace Vk
 
         VkSemaphoreCreateInfo semaphoreInfo = {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
         
-        if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &internalState->swapchainStartSemaphore) != VK_SUCCESS) {
+        if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &internalState->presentCompleteSemaphore) != VK_SUCCESS) {
             SERROR("Failed to create swapchain start semaphore!");
             return false;
         }
 
-        if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &internalState->swapchainEndSemaphore) != VK_SUCCESS) {
+        if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &internalState->renderCompleteSemaphore) != VK_SUCCESS) {
             SERROR("Failed to create swapchain end semaphore!");
             return false;
         }

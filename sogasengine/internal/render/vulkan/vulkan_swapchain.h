@@ -21,7 +21,7 @@ namespace Vk
             const SwapchainDescriptor* descriptor, 
             std::shared_ptr<VulkanSwapchain> internalState);
 
-        static inline std::shared_ptr<VulkanSwapchain> ToInternal(const Swapchain* InSwapchain) {
+        static inline std::shared_ptr<VulkanSwapchain> ToInternal(const std::shared_ptr<Swapchain> InSwapchain) {
             return std::static_pointer_cast<VulkanSwapchain>(InSwapchain->internalState);
         }
 
@@ -36,8 +36,8 @@ namespace Vk
         std::vector<VkImageView>    imageViews;
         std::vector<VkFramebuffer>  framebuffers;
 
-        VkSemaphore swapchainStartSemaphore = VK_NULL_HANDLE;
-        VkSemaphore swapchainEndSemaphore   = VK_NULL_HANDLE;
+        VkSemaphore presentCompleteSemaphore = VK_NULL_HANDLE;
+        VkSemaphore renderCompleteSemaphore  = VK_NULL_HANDLE;
         VkFence swapchainFence[MAX_FRAMES_IN_FLIGHT];
 
         Texture                     texture;
