@@ -37,6 +37,7 @@ namespace Vk
         void EndRenderPass(CommandBuffer cmd) override;
         void CreateSwapchain(const SwapchainDescriptor& desc, std::shared_ptr<Swapchain> swapchain) override;
         void CreateBuffer(const GPUBufferDescriptor* desc, void* data, GPUBuffer* buffer) const override;
+        std::unique_ptr<Renderer::Buffer> CreateBuffer(Renderer::BufferDescriptor desc, void* data) const override;
         void CreateTexture(const TextureDescriptor* desc, void* data, Texture* texture) const override;
         void CreateRenderPass(const RenderPassDescriptor* desc, RenderPass* renderpass) const override;
         void CreatePipeline(const PipelineDescriptor* desc, Pipeline* pipeline, RenderPass* renderpass = nullptr) const override;
@@ -47,6 +48,7 @@ namespace Vk
 
         // API calls ...
         void BindVertexBuffer(const GPUBuffer* buffer, CommandBuffer cmd) override;
+        void BindVertexBuffer(const std::unique_ptr<Renderer::Buffer>& buffer, CommandBuffer cmd) override;
         void BindIndexBuffer(const GPUBuffer* buffer, CommandBuffer cmd) override;
         void BindPipeline(const Pipeline* InPipeline, CommandBuffer& cmd) override;
         void BindDescriptor(CommandBuffer cmd) override;

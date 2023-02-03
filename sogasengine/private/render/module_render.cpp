@@ -2,6 +2,7 @@
 #include "render/module_render.h"
 #include "render/render_device.h"
 #include "render/render_manager.h"
+#include "render/buffer.h"
 
 // ! TEMP
 #include "application.h"
@@ -18,11 +19,11 @@ namespace Sogas
     Shader      presentShaders[2];
     GPUBuffer   constantBuffer;
     GPUBuffer   lightBuffer;
-    GPUBuffer   quadBuffer;
+    //GPUBuffer   quadBuffer;
     GPUBuffer   quadIdxBuffer;
+    std::unique_ptr<Renderer::Buffer> quadBuffer;
 
     std::shared_ptr<Texture>     colorBuffer;
-    //Texture     depthBuffer;
     AttachmentFramebuffer colorAttachment;
     AttachmentFramebuffer depthAttachment;
     const u32   nLights = 10;
@@ -139,11 +140,13 @@ namespace Sogas
         lightBufferDesc.usage           = Usage::UPLOAD;
         renderer->CreateBuffer(&lightBufferDesc, nullptr, &lightBuffer);
 
-        GPUBufferDescriptor quadBufferDesc;
-        quadBufferDesc.size         = sizeof(Vertex) * quad.size();
-        quadBufferDesc.bindPoint    = BindPoint::VERTEX;
-        quadBufferDesc.usage        = Usage::UPLOAD;
-        renderer->CreateBuffer(&quadBufferDesc, quad.data(), &quadBuffer);
+        Renderer::BufferDescriptor quadBufferDesc;
+        quadBufferDesc.size         = quad.size();
+        quadBufferDesc.binding      = Renderer::BufferBindingPoint::Vertex;
+        quadBufferDesc.usage        = Renderer::BufferUsage::TRANSFER_DST;
+        quadBufferDesc.elementSize  = sizeof(Vertex);
+        quadBufferDesc.type         = Renderer::BufferType::Static;
+        quadBuffer = renderer->CreateBuffer(std::move(quadBufferDesc), quad.data());
 
         GPUBufferDescriptor quadIdxBufferDesc;
         quadIdxBufferDesc.size = sizeof(u32) * quadIdx.size();
@@ -226,7 +229,8 @@ namespace Sogas
         renderer->BindAttachment(&colorAttachment, &presentPipeline, 0);
         renderer->UpdateDescriptorSet(&presentPipeline);
         renderer->BindDescriptor(presentCmd);
-        renderer->BindVertexBuffer(&quadBuffer, presentCmd);
+        renderer->BindVertexBuffer(quadBuffer, presentCmd);
+        //renderer->BindVertexBuffer(&quadBuffer, presentCmd);
         renderer->BindIndexBuffer(&quadIdxBuffer, presentCmd);
         renderer->DrawIndexed(6, 0, presentCmd);
         renderer->EndRenderPass(presentCmd);

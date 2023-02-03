@@ -2,9 +2,9 @@
 
 #include "resources/resource.h"
 
-namespace Sogas 
+namespace Sogas
 {
-    
+
     enum class GraphicsAPI
     {
         Vulkan = 0,
@@ -125,26 +125,26 @@ namespace Sogas
 
     enum class Usage
     {
-        DEFAULT = 0,    // no CPU access, GPU read/write
-        UPLOAD = 1,     // CPU write, GPU read
-        READBACK = 2    // CPU read, GPU write
+        DEFAULT = 0, // no CPU access, GPU read/write
+        UPLOAD = 1,  // CPU write, GPU read
+        READBACK = 2 // CPU read, GPU write
     };
 
     enum class BindPoint
     {
-        NONE            = 0,
-        VERTEX          = 1 << 0,
-        INDEX           = 1 << 1,
-        UNIFORM         = 1 << 2,
-        RENDER_TARGET   = 1 << 3,
-        DEPTH_STENCIL   = 1 << 4,
-        SHADER_SAMPLE   = 1 << 5
+        NONE = 0,
+        VERTEX = 1 << 0,
+        INDEX = 1 << 1,
+        UNIFORM = 1 << 2,
+        RENDER_TARGET = 1 << 3,
+        DEPTH_STENCIL = 1 << 4,
+        SHADER_SAMPLE = 1 << 5
     };
 
     enum class ShaderStage
     {
         FRAGMENT = 0,
-        VERTEX, 
+        VERTEX,
         UNDEFINED,
         COUNT = UNDEFINED
     };
@@ -169,7 +169,8 @@ namespace Sogas
 
     struct TextureDescriptor
     {
-        enum TextureType {
+        enum TextureType
+        {
             TEXTURE_TYPE_1D,
             TEXTURE_TYPE_2D,
             TEXTURE_TYPE_3D
@@ -204,14 +205,14 @@ namespace Sogas
     struct DescriptorSet;
     struct Descriptor
     {
-        u32                 binding     = 0;
-        u32                 size        = 0;
-        u32                 offset      = 0;
-        u32                 count       = 0;
-        UniformType         uniformType = UniformType::UNIFORM;
-        ShaderStage         stage       = ShaderStage::UNDEFINED;
-        const GPUBuffer*    buffer      = nullptr;
-        const Texture*      texture     = nullptr;
+        u32 binding = 0;
+        u32 size = 0;
+        u32 offset = 0;
+        u32 count = 0;
+        UniformType uniformType = UniformType::UNIFORM;
+        ShaderStage stage = ShaderStage::UNDEFINED;
+        const GPUBuffer *buffer = nullptr;
+        const Texture *texture = nullptr;
     };
 
     enum CompareOperations
@@ -233,22 +234,22 @@ namespace Sogas
 
     struct DepthStencilState
     {
-        bool                depthTestEnabled        {false};
-        bool                writeDepthEnabled       {false};
-        bool                depthBoundTestEnabled   {false};
-        bool                stencilTestEnabled      {false};
-        f32                 minDepthBound           {0.0f};
-        f32                 maxDepthBound           {1.0f};
-        CompareOperations   compareOp               = CompareOperations::NEVER;
+        bool depthTestEnabled{false};
+        bool writeDepthEnabled{false};
+        bool depthBoundTestEnabled{false};
+        bool stencilTestEnabled{false};
+        f32 minDepthBound{0.0f};
+        f32 maxDepthBound{1.0f};
+        CompareOperations compareOp = CompareOperations::NEVER;
     };
 
     struct PipelineDescriptor
     {
-        const Shader*               vs                  = nullptr;
-        const Shader*               ps                  = nullptr;
-        const RasterizationState*   rasterizationState  = nullptr;
-        const DepthStencilState*    depthStencilState   = nullptr;
-        std::string                 vertexDeclaration   = "";
+        const Shader *vs = nullptr;
+        const Shader *ps = nullptr;
+        const RasterizationState *rasterizationState = nullptr;
+        const DepthStencilState *depthStencilState = nullptr;
+        std::string vertexDeclaration = "";
     };
 
     // GPU Resources
@@ -271,7 +272,7 @@ namespace Sogas
         constexpr bool IsBuffer() const { return resourceType == ResourceType::BUFFER; }
         constexpr bool IsTexture() const { return resourceType == ResourceType::TEXTURE; }
 
-        void* mapdata;
+        void *mapdata;
     };
 
     class GPU_device;
@@ -280,8 +281,8 @@ namespace Sogas
     {
         GPUBuffer()
         {
-            resourceType    = ResourceType::BUFFER;
-            mapdata         = nullptr;
+            resourceType = ResourceType::BUFFER;
+            mapdata = nullptr;
         };
 
         GPUBufferDescriptor descriptor;
@@ -290,8 +291,9 @@ namespace Sogas
 
     struct Texture : public GPUResource, public IResource
     {
-        Texture() {
-            resourceType    = ResourceType::TEXTURE;
+        Texture()
+        {
+            resourceType = ResourceType::TEXTURE;
         };
 
         TextureDescriptor descriptor;
@@ -306,12 +308,12 @@ namespace Sogas
             DEPTH_STENCIL
         } type = Type::RENDERTARGET;
 
-        const Texture*  texture         = nullptr;
-        const AttachmentFramebuffer* attachmentFramebuffer = nullptr;
-        BindPoint       initialLayout   = BindPoint::NONE;
-        BindPoint       subpassLayout   = BindPoint::NONE;
-        BindPoint       finalLayout     = BindPoint::NONE;
-        f32             clear[4]; // Clear attachment value.
+        const Texture *texture = nullptr;
+        const AttachmentFramebuffer *attachmentFramebuffer = nullptr;
+        BindPoint initialLayout = BindPoint::NONE;
+        BindPoint subpassLayout = BindPoint::NONE;
+        BindPoint finalLayout = BindPoint::NONE;
+        f32 clear[4]; // Clear attachment value.
 
         enum class LoadOp
         {
@@ -327,46 +329,44 @@ namespace Sogas
         } storeop = StoreOp::STORE;
 
         static Attachment RenderTarget(
-            const Texture* texture = nullptr,
-            const AttachmentFramebuffer* attachmentFramebuffer = nullptr,
+            const Texture *texture = nullptr,
+            const AttachmentFramebuffer *attachmentFramebuffer = nullptr,
             LoadOp loadop = LoadOp::CLEAR,
             StoreOp storeop = StoreOp::STORE,
             BindPoint initialLayout = BindPoint::NONE,
             BindPoint subpassLayout = BindPoint::RENDER_TARGET,
-            BindPoint finalLayout = BindPoint::SHADER_SAMPLE
-        )
+            BindPoint finalLayout = BindPoint::SHADER_SAMPLE)
         {
             Attachment att;
-            att.type            = Attachment::Type::RENDERTARGET;
-            att.texture         = texture;
+            att.type = Attachment::Type::RENDERTARGET;
+            att.texture = texture;
             att.attachmentFramebuffer = attachmentFramebuffer,
-            att.loadop          = loadop;
-            att.storeop         = storeop;
-            att.initialLayout   = initialLayout;
-            att.subpassLayout   = subpassLayout;
-            att.finalLayout     = finalLayout;
+            att.loadop = loadop;
+            att.storeop = storeop;
+            att.initialLayout = initialLayout;
+            att.subpassLayout = subpassLayout;
+            att.finalLayout = finalLayout;
             return att;
         }
 
         static Attachment DepthStencil(
-            const Texture* texture = nullptr,
-            const AttachmentFramebuffer* attachmentFramebuffer = nullptr,
+            const Texture *texture = nullptr,
+            const AttachmentFramebuffer *attachmentFramebuffer = nullptr,
             LoadOp loadop = LoadOp::CLEAR,
             StoreOp storeop = StoreOp::DONTCARE,
             BindPoint initialLayout = BindPoint::DEPTH_STENCIL,
             BindPoint subpassLayout = BindPoint::DEPTH_STENCIL,
-            BindPoint finalLayout = BindPoint::DEPTH_STENCIL
-        )
+            BindPoint finalLayout = BindPoint::DEPTH_STENCIL)
         {
             Attachment att;
-            att.type            = Attachment::Type::DEPTH_STENCIL;
+            att.type = Attachment::Type::DEPTH_STENCIL;
             att.attachmentFramebuffer = attachmentFramebuffer;
-            att.texture         = texture;
-            att.loadop          = loadop;
-            att.storeop         = storeop;
-            att.initialLayout   = initialLayout;
-            att.subpassLayout   = subpassLayout;
-            att.finalLayout     = finalLayout;
+            att.texture = texture;
+            att.loadop = loadop;
+            att.storeop = storeop;
+            att.initialLayout = initialLayout;
+            att.subpassLayout = subpassLayout;
+            att.finalLayout = finalLayout;
             return att;
         }
     };
@@ -395,9 +395,10 @@ namespace Sogas
         RenderPass renderpass;
         bool resized{false};
 
-        void SetSwapchainSize(const i32 InWidth, const i32 InHeight) {
-            descriptor.width    = InWidth;
-            descriptor.height   = InHeight;
+        void SetSwapchainSize(const i32 InWidth, const i32 InHeight)
+        {
+            descriptor.width = InWidth;
+            descriptor.height = InHeight;
         }
     };
 
@@ -418,8 +419,8 @@ namespace Sogas
 
     struct CommandBuffer
     {
-        void * internalState;
-        const Pipeline* activePipeline = nullptr;
+        void *internalState;
+        const Pipeline *activePipeline = nullptr;
     };
 
     struct Vertex
@@ -429,11 +430,12 @@ namespace Sogas
         glm::vec2 uvs;
         glm::vec4 color;
 
-        bool operator==(const Vertex& other) const {
-            return position == other.position && 
-                normal == other.normal &&
-                uvs == other.uvs &&
-                color == other.color;
+        bool operator==(const Vertex &other) const
+        {
+            return position == other.position &&
+                   normal == other.normal &&
+                   uvs == other.uvs &&
+                   color == other.color;
         }
     };
 

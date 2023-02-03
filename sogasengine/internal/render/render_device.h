@@ -1,9 +1,10 @@
 #pragma once
 
+#include "buffer.h"
 #include "render_types.h"
 
 // !TEMP should be removed
-#include "components/camera_component.h"
+//#include "components/camera_component.h"
 
 namespace Sogas 
 {
@@ -31,6 +32,7 @@ namespace Sogas
         virtual void EndRenderPass(CommandBuffer cmd) = 0;
         virtual void CreateSwapchain(const SwapchainDescriptor& desc, std::shared_ptr<Swapchain> swapchain) = 0;
         virtual void CreateBuffer(const GPUBufferDescriptor* desc, void* data, GPUBuffer* buffer) const = 0;
+        virtual std::unique_ptr<Renderer::Buffer> CreateBuffer(Renderer::BufferDescriptor desc, void* data) const = 0;
         virtual void CreateTexture(const TextureDescriptor* desc, void* data, Texture* texture) const = 0;
         virtual void CreateRenderPass(const RenderPassDescriptor* desc, RenderPass* renderpass) const = 0;
         virtual void CreatePipeline(const PipelineDescriptor* desc, Pipeline* pipeline, RenderPass* renderpass = nullptr) const = 0;
@@ -42,6 +44,7 @@ namespace Sogas
         // API calls
         // This are commands that will execute when submitCommands is called.
         virtual void BindVertexBuffer(const GPUBuffer* buffer, CommandBuffer cmd) = 0;
+        virtual void BindVertexBuffer(const std::unique_ptr<Renderer::Buffer>& buffer, CommandBuffer cmd) = 0;
         virtual void BindIndexBuffer(const GPUBuffer* buffer, CommandBuffer cmd) = 0;
         virtual void BindPipeline(const Pipeline* InPipeline, CommandBuffer& cmd) = 0;
         virtual void BindDescriptor(CommandBuffer cmd) = 0;

@@ -22,6 +22,8 @@ namespace Vk
             void* data, 
             GPUBuffer* buffer);
 
+        static std::unique_ptr<Renderer::Buffer> Create(const VulkanDevice* device, Renderer::BufferDescriptor desc, void* data);
+
         static inline std::shared_ptr<VulkanBuffer> ToInternal(const GPUBuffer* InBuffer) {
             return std::static_pointer_cast<VulkanBuffer>(InBuffer->internalState);
         }

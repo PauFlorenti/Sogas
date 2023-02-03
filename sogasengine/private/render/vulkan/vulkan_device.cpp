@@ -148,7 +148,7 @@ namespace Sogas
         {
         }
 
-        void VulkanDevice::CreateSwapchain(const SwapchainDescriptor& desc, std::shared_ptr<Swapchain> swapchain)
+        void VulkanDevice::CreateSwapchain(const SwapchainDescriptor &desc, std::shared_ptr<Swapchain> swapchain)
         {
             auto internalState = std::static_pointer_cast<VulkanSwapchain>(swapchain->internalState);
 
@@ -157,8 +157,8 @@ namespace Sogas
                 internalState = std::make_shared<VulkanSwapchain>();
             }
 
-            swapchain->descriptor       = desc;
-            swapchain->internalState    = internalState;
+            swapchain->descriptor = desc;
+            swapchain->internalState = internalState;
 
             if (internalState->surface == VK_NULL_HANDLE)
             {
@@ -199,12 +199,14 @@ namespace Sogas
         {
             STRACE("Initializing Vulkan renderer ... ");
 
-            if (!CreateInstance()) {
+            if (!CreateInstance())
+            {
                 STRACE("\tFailed to create Vulkan Instance!");
                 return false;
             }
 
-            if (!CreateDevice()) {
+            if (!CreateDevice())
+            {
                 STRACE("\tFailed to create Vulkan Logical Device!");
                 return false;
             }
@@ -221,7 +223,8 @@ namespace Sogas
             STRACE("Shutting down Vulkan renderer ...");
 
             STRACE("\tDestroying Command Pool ...");
-            for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+            {
                 vkDestroyCommandPool(Handle, resourcesCommandPool[i], nullptr);
             }
 
@@ -268,7 +271,8 @@ namespace Sogas
         CommandBuffer VulkanDevice::BeginCommandBuffer()
         {
             u32 count = commandBufferCounter++;
-            if (count >= commandBuffers.size()) {
+            if (count >= commandBuffers.size())
+            {
                 commandBuffers.push_back(std::make_unique<VulkanCommandBuffer>());
             }
 
@@ -276,39 +280,43 @@ namespace Sogas
             cmd.internalState = commandBuffers[count].get();
             auto internalCmd = VulkanCommandBuffer::ToInternal(&cmd);
 
-            if (internalCmd->commandBuffers[GetFrameIndex()] == VK_NULL_HANDLE) {
+            if (internalCmd->commandBuffers[GetFrameIndex()] == VK_NULL_HANDLE)
+            {
 
-                for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) 
+                for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
                 {
                     VkCommandPoolCreateInfo commandPoolInfo = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
                     commandPoolInfo.queueFamilyIndex = GraphicsFamily; // TODO make it configurable
                     commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-                    if (vkCreateCommandPool(Handle, &commandPoolInfo, nullptr, &internalCmd->commandPools[i]) != VK_SUCCESS) {
+                    if (vkCreateCommandPool(Handle, &commandPoolInfo, nullptr, &internalCmd->commandPools[i]) != VK_SUCCESS)
+                    {
                         SERROR("Failed to create command pool.");
                         return {};
                     }
 
                     VkCommandBufferAllocateInfo allocInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
                     allocInfo.commandBufferCount = 1;
-                    allocInfo.commandPool        = VulkanCommandBuffer::ToInternal(&cmd)->commandPools[i];
-                    allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+                    allocInfo.commandPool = VulkanCommandBuffer::ToInternal(&cmd)->commandPools[i];
+                    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
-                    if (vkAllocateCommandBuffers(Handle, &allocInfo, &internalCmd->commandBuffers[i]) != VK_SUCCESS) {
+                    if (vkAllocateCommandBuffers(Handle, &allocInfo, &internalCmd->commandBuffers[i]) != VK_SUCCESS)
+                    {
                         SERROR("Failed to allocate command buffer");
                         return {};
                     }
 
                     VkDescriptorPoolSize poolSize;
-                    poolSize.descriptorCount    = 1;
-                    poolSize.type               = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                    poolSize.descriptorCount = 1;
+                    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 
                     VkDescriptorPoolCreateInfo descriptorPoolInfo = {VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
-                    descriptorPoolInfo.maxSets          = 1;
-                    descriptorPoolInfo.poolSizeCount    = 1;
-                    descriptorPoolInfo.pPoolSizes       = &poolSize;
+                    descriptorPoolInfo.maxSets = 1;
+                    descriptorPoolInfo.poolSizeCount = 1;
+                    descriptorPoolInfo.pPoolSizes = &poolSize;
 
-                    if (vkCreateDescriptorPool(Handle, &descriptorPoolInfo, nullptr, &internalCmd->descriptorPools[i]) != VK_SUCCESS) {
+                    if (vkCreateDescriptorPool(Handle, &descriptorPoolInfo, nullptr, &internalCmd->descriptorPools[i]) != VK_SUCCESS)
+                    {
                         SERROR("Failed to allocate descriptor pool.");
                         return {};
                     }
@@ -320,7 +328,8 @@ namespace Sogas
 
             VkCommandBufferBeginInfo beginInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
 
-            if (vkBeginCommandBuffer(VulkanCommandBuffer::ToInternal(&cmd)->commandBuffers[GetFrameIndex()], &beginInfo) != VK_SUCCESS) {
+            if (vkBeginCommandBuffer(VulkanCommandBuffer::ToInternal(&cmd)->commandBuffers[GetFrameIndex()], &beginInfo) != VK_SUCCESS)
+            {
                 SERROR("Begin command buffer failed.");
                 return {};
             }
@@ -334,17 +343,18 @@ namespace Sogas
 
             u32 nCommands = commandBufferCounter;
             commandBufferCounter = 0;
-            std::vector<VkCommandBuffer>        submitCommands;
-            std::vector<VkSemaphore>            signalSemaphores;
-            std::vector<VkSemaphore>            waitSemaphores;
-            std::shared_ptr<Swapchain>          swapchain;
-            std::vector<VkPipelineStageFlags>   waitStages = {};
+            std::vector<VkCommandBuffer> submitCommands;
+            std::vector<VkSemaphore> signalSemaphores;
+            std::vector<VkSemaphore> waitSemaphores;
+            std::shared_ptr<Swapchain> swapchain;
+            std::vector<VkPipelineStageFlags> waitStages = {};
 
             std::vector<VkFence> fences;
 
             for (u32 i = 0; i < nCommands; i++)
             {
-                if (vkEndCommandBuffer(commandBuffers.at(i)->commandBuffers[GetFrameIndex()]) != VK_SUCCESS) {
+                if (vkEndCommandBuffer(commandBuffers.at(i)->commandBuffers[GetFrameIndex()]) != VK_SUCCESS)
+                {
                     SFATAL("Failed to end command buffer");
                     SASSERT_MSG(false, "Failed to end command buffer.");
                 }
@@ -363,7 +373,7 @@ namespace Sogas
 
                 if (!commandBuffers.at(i)->commandsToWait.empty())
                 {
-                    for (auto& cmdToWait : commandBuffers.at(i)->commandsToWait)
+                    for (auto &cmdToWait : commandBuffers.at(i)->commandsToWait)
                     {
                         auto commandInternalState = VulkanCommandBuffer::ToInternal(&cmdToWait);
                         waitSemaphores.push_back(commandInternalState->semaphore);
@@ -372,21 +382,22 @@ namespace Sogas
                     commandBuffers.at(i)->commandsToWait.clear();
                 }
 
-                VkSubmitInfo submitInfo         = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
-                submitInfo.commandBufferCount   = static_cast<u32>(submitCommands.size());
-                submitInfo.pCommandBuffers      = submitCommands.data();
+                VkSubmitInfo submitInfo = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
+                submitInfo.commandBufferCount = static_cast<u32>(submitCommands.size());
+                submitInfo.pCommandBuffers = submitCommands.data();
                 submitInfo.signalSemaphoreCount = static_cast<u32>(signalSemaphores.size());
-                submitInfo.pSignalSemaphores    = signalSemaphores.data();
-                submitInfo.waitSemaphoreCount   = static_cast<u32>(waitSemaphores.size());
-                submitInfo.pWaitSemaphores      = waitSemaphores.data();
-                submitInfo.pWaitDstStageMask    = waitStages.data();
+                submitInfo.pSignalSemaphores = signalSemaphores.data();
+                submitInfo.waitSemaphoreCount = static_cast<u32>(waitSemaphores.size());
+                submitInfo.pWaitSemaphores = waitSemaphores.data();
+                submitInfo.pWaitDstStageMask = waitStages.data();
 
                 VkFence f;
                 VkFenceCreateInfo fenceInfo = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
                 vkCreateFence(Handle, &fenceInfo, nullptr, &f);
                 fences.push_back(f);
 
-                if (vkQueueSubmit(GraphicsQueue, 1, &submitInfo, fences.back()/*fence[GetFrameIndex()]*/) != VK_SUCCESS) { 
+                if (vkQueueSubmit(GraphicsQueue, 1, &submitInfo, fences.back() /*fence[GetFrameIndex()]*/) != VK_SUCCESS)
+                {
                     SASSERT_MSG(false, "Failed to submit graphics commands");
                 }
 
@@ -395,20 +406,20 @@ namespace Sogas
                 waitSemaphores.clear();
                 signalSemaphores.clear();
             }
-            
+
             if (swapchain)
             {
                 auto swapchainInternalState = VulkanSwapchain::ToInternal(swapchain);
                 VkPresentInfoKHR presentInfo = {VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
-                presentInfo.swapchainCount      = 1;
-                presentInfo.pSwapchains         = &swapchainInternalState->swapchain;
-                presentInfo.waitSemaphoreCount  = 1;
-                presentInfo.pWaitSemaphores     = &swapchainInternalState->renderCompleteSemaphore;
-                presentInfo.pImageIndices       = &swapchainInternalState->imageIndex;
+                presentInfo.swapchainCount = 1;
+                presentInfo.pSwapchains = &swapchainInternalState->swapchain;
+                presentInfo.waitSemaphoreCount = 1;
+                presentInfo.pWaitSemaphores = &swapchainInternalState->renderCompleteSemaphore;
+                presentInfo.pImageIndices = &swapchainInternalState->imageIndex;
 
                 VkResult res = vkQueuePresentKHR(GraphicsQueue, &presentInfo);
 
-                if ( res != VK_SUCCESS) 
+                if (res != VK_SUCCESS)
                 {
                     if (res == VK_SUBOPTIMAL_KHR || res == VK_ERROR_OUT_OF_DATE_KHR)
                     {
@@ -429,7 +440,7 @@ namespace Sogas
             {
                 vkWaitForFences(Handle, static_cast<u32>(fences.size()), fences.data(), VK_TRUE, UINT64_MAX);
 
-                for (auto& f : fences)
+                for (auto &f : fences)
                 {
                     vkDestroyFence(Handle, f, nullptr);
                 }
@@ -440,8 +451,8 @@ namespace Sogas
         {
             auto internalCommand = VulkanCommandBuffer::ToInternal(&cmd);
             auto internalSwapchain = VulkanSwapchain::ToInternal(InSwapchain);
-            internalCommand->activeRenderPass    = &internalSwapchain->renderpass;
-            internalCommand->swapchain           = InSwapchain;
+            internalCommand->activeRenderPass = &internalSwapchain->renderpass;
+            internalCommand->swapchain = InSwapchain;
 
             VkResult res = vkAcquireNextImageKHR(Handle, internalSwapchain->swapchain, UINT64_MAX, internalSwapchain->presentCompleteSemaphore, VK_NULL_HANDLE, &internalSwapchain->imageIndex);
             if (res != VK_SUCCESS)
@@ -468,12 +479,12 @@ namespace Sogas
 
             // Begin Render Pass
             VkViewport viewport{};
-            viewport.x          = 0;
-            viewport.y          = (f32)InSwapchain->descriptor.height;
-            viewport.width      = (f32)InSwapchain->descriptor.width;
-            viewport.height     = -(f32)InSwapchain->descriptor.height;
-            viewport.minDepth   = 0.0f;
-            viewport.maxDepth   = 1.0f;
+            viewport.x = 0;
+            viewport.y = (f32)InSwapchain->descriptor.height;
+            viewport.width = (f32)InSwapchain->descriptor.width;
+            viewport.height = -(f32)InSwapchain->descriptor.height;
+            viewport.minDepth = 0.0f;
+            viewport.maxDepth = 1.0f;
 
             vkCmdSetViewport(internalCommand->commandBuffers[GetFrameIndex()], 0, 1, &viewport);
 
@@ -487,31 +498,31 @@ namespace Sogas
             VkClearValue clearValue = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
 
             VkRenderPassBeginInfo renderpassBeginInfo = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
-            renderpassBeginInfo.renderPass          = std::static_pointer_cast<VulkanRenderPass>(internalCommand->activeRenderPass->internalState)->renderpass;
-            renderpassBeginInfo.clearValueCount     = 1;
-            renderpassBeginInfo.pClearValues        = &clearValue;
-            renderpassBeginInfo.framebuffer         = internalSwapchain->framebuffers.at(internalSwapchain->imageIndex);
-            renderpassBeginInfo.renderArea.extent   = internalSwapchain->extent;
-            renderpassBeginInfo.renderArea.offset   = {0, 0};
+            renderpassBeginInfo.renderPass = std::static_pointer_cast<VulkanRenderPass>(internalCommand->activeRenderPass->internalState)->renderpass;
+            renderpassBeginInfo.clearValueCount = 1;
+            renderpassBeginInfo.pClearValues = &clearValue;
+            renderpassBeginInfo.framebuffer = internalSwapchain->framebuffers.at(internalSwapchain->imageIndex);
+            renderpassBeginInfo.renderArea.extent = internalSwapchain->extent;
+            renderpassBeginInfo.renderArea.offset = {0, 0};
 
             vkCmdBeginRenderPass(internalCommand->commandBuffers[GetFrameIndex()], &renderpassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
         }
 
-        void VulkanDevice::BeginRenderPass(RenderPass* InRenderpass, CommandBuffer cmd)
+        void VulkanDevice::BeginRenderPass(RenderPass *InRenderpass, CommandBuffer cmd)
         {
             SASSERT(InRenderpass);
 
-            auto commandBufferInternalState                 = VulkanCommandBuffer::ToInternal(&cmd);
-            auto renderpassInternalState                    = VulkanRenderPass::ToInternal(InRenderpass);
-            commandBufferInternalState->activeRenderPass    = InRenderpass;
+            auto commandBufferInternalState = VulkanCommandBuffer::ToInternal(&cmd);
+            auto renderpassInternalState = VulkanRenderPass::ToInternal(InRenderpass);
+            commandBufferInternalState->activeRenderPass = InRenderpass;
 
             VkViewport viewport{};
-            viewport.x          = 0;
-            viewport.y          = (f32)480;
-            viewport.width      = (f32)640;
-            viewport.height     = -(f32)480;
-            viewport.minDepth   = 0.0f;
-            viewport.maxDepth   = 1.0f;
+            viewport.x = 0;
+            viewport.y = (f32)480;
+            viewport.width = (f32)640;
+            viewport.height = -(f32)480;
+            viewport.minDepth = 0.0f;
+            viewport.maxDepth = 1.0f;
 
             vkCmdSetViewport(commandBufferInternalState->commandBuffers[GetFrameIndex()], 0, 1, &viewport);
 
@@ -533,38 +544,43 @@ namespace Sogas
             vkCmdEndRenderPass(internalCmd->commandBuffers[GetFrameIndex()]);
         }
 
-        void VulkanDevice::CreateBuffer(const GPUBufferDescriptor* desc, void* data, GPUBuffer* buffer) const
+        void VulkanDevice::CreateBuffer(const GPUBufferDescriptor *desc, void *data, GPUBuffer *buffer) const
         {
             VulkanBuffer::Create(this, desc, data, buffer);
         }
 
-        void VulkanDevice::CreateTexture(const TextureDescriptor* desc, void* data, Texture* texture) const
+        std::unique_ptr<Renderer::Buffer> VulkanDevice::CreateBuffer(Renderer::BufferDescriptor desc, void* data) const
+        {
+            return VulkanBuffer::Create(this, desc, data);
+        }
+
+        void VulkanDevice::CreateTexture(const TextureDescriptor *desc, void *data, Texture *texture) const
         {
             VulkanTexture::Create(this, desc, data, texture);
         }
 
-        void VulkanDevice::CreateRenderPass(const RenderPassDescriptor* desc, RenderPass* renderpass) const
+        void VulkanDevice::CreateRenderPass(const RenderPassDescriptor *desc, RenderPass *renderpass) const
         {
             VulkanRenderPass::Create(this, desc, renderpass);
         }
 
-        void VulkanDevice::CreatePipeline(const PipelineDescriptor* desc, Pipeline* pipeline, RenderPass* renderpass) const
+        void VulkanDevice::CreatePipeline(const PipelineDescriptor *desc, Pipeline *pipeline, RenderPass *renderpass) const
         {
             VulkanPipeline::Create(this, desc, pipeline, renderpass);
         }
 
-        void VulkanDevice::CreateShader(ShaderStage stage, const char* filename, Shader* shader) const
+        void VulkanDevice::CreateShader(ShaderStage stage, const char *filename, Shader *shader) const
         {
             VulkanShader::Create(this, stage, filename, shader);
         }
 
-        void VulkanDevice::UpdateDescriptorSet(const Pipeline* InPipeline) const
+        void VulkanDevice::UpdateDescriptorSet(const Pipeline *InPipeline) const
         {
             auto pipelineInternalState = VulkanPipeline::ToInternal(InPipeline);
-            for (auto& descriptorSet : pipelineInternalState->descriptorSets[GetFrameIndex()])
+            for (auto &descriptorSet : pipelineInternalState->descriptorSets[GetFrameIndex()])
             {
                 auto descriptorSetInternalState = VulkanDescriptorSet::ToInternal(&descriptorSet);
-                if (descriptorSet.dirty) 
+                if (descriptorSet.dirty)
                 {
                     vkUpdateDescriptorSets(Handle, static_cast<u32>(descriptorSetInternalState->writes.size()), descriptorSetInternalState->writes.data(), 0, nullptr);
                     descriptorSet.dirty = false;
@@ -572,39 +588,48 @@ namespace Sogas
             }
         }
 
-        void VulkanDevice::CreateAttachment(AttachmentFramebuffer* InAttachment) const 
+        void VulkanDevice::CreateAttachment(AttachmentFramebuffer *InAttachment) const
         {
             SASSERT(InAttachment);
             VulkanAttachment::Create(this, InAttachment);
         }
 
-        void VulkanDevice::BindVertexBuffer(const GPUBuffer* buffer, CommandBuffer cmd)
+        void VulkanDevice::BindVertexBuffer(const GPUBuffer *buffer, CommandBuffer cmd)
         {
             SASSERT(buffer);
             SASSERT(buffer->IsValid());
             SASSERT(buffer->IsBuffer());
 
-            const VulkanBuffer* internalBuffer = static_cast<VulkanBuffer*>(buffer->internalState.get());
+            const VulkanBuffer *internalBuffer = static_cast<VulkanBuffer *>(buffer->internalState.get());
             SASSERT(internalBuffer);
 
             VkDeviceSize offset = {0};
             vkCmdBindVertexBuffers(VulkanCommandBuffer::ToInternal(&cmd)->commandBuffers[GetFrameIndex()], 0, 1, internalBuffer->GetHandle(), &offset);
         }
 
-        void VulkanDevice::BindIndexBuffer(const GPUBuffer* buffer, CommandBuffer cmd)
+        void VulkanDevice::BindVertexBuffer(const std::unique_ptr<Renderer::Buffer>& buffer, CommandBuffer cmd)
+        {
+            SASSERT(buffer->isValid());
+            const auto internal_state = static_cast<VulkanBuffer*>(buffer->internal_state.get());
+
+            VkDeviceSize offset = {0};
+            vkCmdBindVertexBuffers(VulkanCommandBuffer::ToInternal(&cmd)->commandBuffers[GetFrameIndex()], 0, 1, internal_state->GetHandle(), &offset);
+        }
+
+        void VulkanDevice::BindIndexBuffer(const GPUBuffer *buffer, CommandBuffer cmd)
         {
             SASSERT(buffer);
             SASSERT(buffer->IsValid());
             SASSERT(buffer->IsBuffer());
 
-            const VulkanBuffer* internalBuffer = static_cast<VulkanBuffer*>(buffer->internalState.get());
+            const VulkanBuffer *internalBuffer = static_cast<VulkanBuffer *>(buffer->internalState.get());
             SASSERT(internalBuffer);
 
             VkDeviceSize offset = {0};
             vkCmdBindIndexBuffer(VulkanCommandBuffer::ToInternal(&cmd)->commandBuffers[GetFrameIndex()], *internalBuffer->GetHandle(), offset, VK_INDEX_TYPE_UINT32);
         }
 
-        void VulkanDevice::BindPipeline(const Pipeline* InPipeline, CommandBuffer& cmd)
+        void VulkanDevice::BindPipeline(const Pipeline *InPipeline, CommandBuffer &cmd)
         {
             SASSERT(InPipeline)
             auto pipelineInternalState = VulkanPipeline::ToInternal(InPipeline);
@@ -618,59 +643,59 @@ namespace Sogas
             auto commandBufferInternalState = VulkanCommandBuffer::ToInternal(&cmd);
             auto pipelineInternalState = VulkanPipeline::ToInternal(cmd.activePipeline);
 
-            for (auto& descriptorSet : pipelineInternalState->descriptorSets[GetFrameIndex()])
+            for (auto &descriptorSet : pipelineInternalState->descriptorSets[GetFrameIndex()])
             {
                 auto descriptorSetInternalState = VulkanDescriptorSet::ToInternal(&descriptorSet);
                 descriptorSetInternalState->BindDescriptor(commandBufferInternalState->commandBuffers[GetFrameIndex()]);
             }
         }
 
-        void VulkanDevice::BindBuffer(const GPUBuffer* InBuffer, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet, const u32 InOffset)
+        void VulkanDevice::BindBuffer(const GPUBuffer *InBuffer, const Pipeline *InPipeline, const u32 InSlot, const u32 InDescriptorSet, const u32 InOffset)
         {
-            auto bufferInternalState        = VulkanBuffer::ToInternal(InBuffer);
-            auto pipelineInternalState      = VulkanPipeline::ToInternal(InPipeline);
+            auto bufferInternalState = VulkanBuffer::ToInternal(InBuffer);
+            auto pipelineInternalState = VulkanPipeline::ToInternal(InPipeline);
             auto descriptorSetInternalState = VulkanDescriptorSet::ToInternal(&pipelineInternalState->descriptorSets[GetFrameIndex()].at(InDescriptorSet));
 
-            bufferInternalState->descriptorInfo.buffer  = *bufferInternalState->GetHandle();
-            bufferInternalState->descriptorInfo.offset  = InOffset;
-            bufferInternalState->descriptorInfo.range   = InBuffer->descriptor.size;
-            
+            bufferInternalState->descriptorInfo.buffer = *bufferInternalState->GetHandle();
+            bufferInternalState->descriptorInfo.offset = InOffset;
+            bufferInternalState->descriptorInfo.range = InBuffer->descriptor.size;
+
             VkWriteDescriptorSet write = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
-            write.descriptorCount   = 1;
-            write.dstBinding        = InSlot;
-            write.descriptorType    = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            write.dstSet            = descriptorSetInternalState->GetDescriptorSet();
-            write.pBufferInfo       = &bufferInternalState->descriptorInfo;
+            write.descriptorCount = 1;
+            write.dstBinding = InSlot;
+            write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            write.dstSet = descriptorSetInternalState->GetDescriptorSet();
+            write.pBufferInfo = &bufferInternalState->descriptorInfo;
 
             descriptorSetInternalState->writes.push_back(write);
 
             pipelineInternalState->descriptorSets[GetFrameIndex()].at(InDescriptorSet).dirty = true;
         }
 
-        void VulkanDevice::BindTexture(const Texture* InTexture, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet)
+        void VulkanDevice::BindTexture(const Texture *InTexture, const Pipeline *InPipeline, const u32 InSlot, const u32 InDescriptorSet)
         {
-            auto internalState              = VulkanTexture::ToInternal(InTexture);
-            auto pipelineInternalState      = VulkanPipeline::ToInternal(InPipeline);
+            auto internalState = VulkanTexture::ToInternal(InTexture);
+            auto pipelineInternalState = VulkanPipeline::ToInternal(InPipeline);
             auto descriptorSetInternalState = VulkanDescriptorSet::ToInternal(&pipelineInternalState->descriptorSets[GetFrameIndex()].at(InDescriptorSet));
 
-            internalState->descriptorImageInfo.imageView     = internalState->GetImageView();
-            internalState->descriptorImageInfo.sampler       = internalState->GetSampler();
-            internalState->descriptorImageInfo.imageLayout   = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            internalState->descriptorImageInfo.imageView = internalState->GetImageView();
+            internalState->descriptorImageInfo.sampler = internalState->GetSampler();
+            internalState->descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
             VkWriteDescriptorSet write = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
-            write.descriptorCount   = 1;
-            write.descriptorType    = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            write.dstBinding        = InSlot;
-            write.dstSet            = descriptorSetInternalState->GetDescriptorSet();
-            write.pImageInfo        = &internalState->descriptorImageInfo;
+            write.descriptorCount = 1;
+            write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            write.dstBinding = InSlot;
+            write.dstSet = descriptorSetInternalState->GetDescriptorSet();
+            write.pImageInfo = &internalState->descriptorImageInfo;
 
             descriptorSetInternalState->writes.push_back(write);
             pipelineInternalState->descriptorSets[GetFrameIndex()].at(InDescriptorSet).dirty = true;
         }
 
-        void VulkanDevice::BindAttachment(const AttachmentFramebuffer* InAttachment, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet)
+        void VulkanDevice::BindAttachment(const AttachmentFramebuffer *InAttachment, const Pipeline *InPipeline, const u32 InSlot, const u32 InDescriptorSet)
         {
-            auto pipelineInternalState      = VulkanPipeline::ToInternal(InPipeline);
+            auto pipelineInternalState = VulkanPipeline::ToInternal(InPipeline);
             auto descriptorSetInternalState = VulkanDescriptorSet::ToInternal(&pipelineInternalState->descriptorSets[GetFrameIndex()].at(InDescriptorSet));
             auto attachmentInternalState = VulkanAttachment::ToInternal(InAttachment);
 
@@ -707,7 +732,7 @@ namespace Sogas
 
         void VulkanDevice::SetTopology(PrimitiveTopology topology)
         {
-            VkCommandBuffer& cmd = resourcesCommandBuffer[GetFrameIndex()];
+            VkCommandBuffer &cmd = resourcesCommandBuffer[GetFrameIndex()];
             switch (topology)
             {
             case PrimitiveTopology::POINTLIST:
@@ -741,7 +766,7 @@ namespace Sogas
             vkCmdDrawIndexed(VulkanCommandBuffer::ToInternal(&cmd)->commandBuffers[GetFrameIndex()], count, 1, offset, 0, 0);
         }
 
-        void VulkanDevice::PushConstants(const void* InData, const u32 InSize, const CommandBuffer cmd)
+        void VulkanDevice::PushConstants(const void *InData, const u32 InSize, const CommandBuffer cmd)
         {
             auto vkcmd = VulkanCommandBuffer::ToInternal(&cmd);
             vkCmdPushConstants(
@@ -751,23 +776,23 @@ namespace Sogas
                 0, InSize, InData);
         }
 
-        void VulkanDevice::UpdateBuffer(const GPUBuffer* InBuffer, const void* InData, const u32 InDataSize, const u32 InOffset, CommandBuffer /*cmd*/)
+        void VulkanDevice::UpdateBuffer(const GPUBuffer *InBuffer, const void *InData, const u32 InDataSize, const u32 InOffset, CommandBuffer /*cmd*/)
         {
             auto bufferInternalState = VulkanBuffer::ToInternal(InBuffer);
-            void* data;
+            void *data;
             vkMapMemory(Handle, bufferInternalState->GetMemory(), InOffset, InDataSize, 0, &data);
             std::memcpy(data, InData, InDataSize);
             vkUnmapMemory(Handle, bufferInternalState->GetMemory());
         }
 
-        void VulkanDevice::WaitCommand(CommandBuffer& cmd, CommandBuffer& cmdToWait)
+        void VulkanDevice::WaitCommand(CommandBuffer &cmd, CommandBuffer &cmdToWait)
         {
             auto commandInternalState = VulkanCommandBuffer::ToInternal(&cmd);
             commandInternalState->commandsToWait.push_back(cmdToWait);
         }
 
         /*
-        void VulkanDevice::WaitCommand(CommandBuffer& cmd, Swapchain* swapchainToWait) 
+        void VulkanDevice::WaitCommand(CommandBuffer& cmd, Swapchain* swapchainToWait)
         {
             auto cmdInternalState = VulkanCommandBuffer::ToInternal(&cmd);
             cmdInternalState->swapchain = swapchainToWait;
@@ -870,7 +895,7 @@ namespace Sogas
             for (u32 queueFamily : uniqueQueueFamilies)
             {
                 VkDeviceQueueCreateInfo createInfo = {VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};
-                createInfo.queueCount       = 1;
+                createInfo.queueCount = 1;
                 createInfo.queueFamilyIndex = queueFamily;
                 createInfo.pQueuePriorities = &queuePriority;
                 queueCreateInfos.push_back(createInfo);
@@ -880,12 +905,12 @@ namespace Sogas
             VkPhysicalDeviceFeatures deviceFeatures{};
             deviceFeatures.wideLines = VK_TRUE;
 
-            VkDeviceCreateInfo deviceCreateInfo         = {VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
-            deviceCreateInfo.queueCreateInfoCount       = static_cast<u32>(queueCreateInfos.size());
-            deviceCreateInfo.pQueueCreateInfos          = queueCreateInfos.data();
-            deviceCreateInfo.enabledExtensionCount      = static_cast<u32>(requiredDeviceExtensions.size());
-            deviceCreateInfo.ppEnabledExtensionNames    = requiredDeviceExtensions.data();
-            deviceCreateInfo.pEnabledFeatures           = &deviceFeatures;
+            VkDeviceCreateInfo deviceCreateInfo = {VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
+            deviceCreateInfo.queueCreateInfoCount = static_cast<u32>(queueCreateInfos.size());
+            deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
+            deviceCreateInfo.enabledExtensionCount = static_cast<u32>(requiredDeviceExtensions.size());
+            deviceCreateInfo.ppEnabledExtensionNames = requiredDeviceExtensions.data();
+            deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
 
             if (validationLayersEnabled)
             {
@@ -963,20 +988,21 @@ namespace Sogas
         void VulkanDevice::CreateCommandResources()
         {
             STRACE("\tCreating Command Pool ...");
-            VkCommandPoolCreateInfo createInfo  = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
-            createInfo.queueFamilyIndex         = GraphicsFamily;
-            createInfo.flags                    = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+            VkCommandPoolCreateInfo createInfo = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+            createInfo.queueFamilyIndex = GraphicsFamily;
+            createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-            for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+            {
                 if (vkCreateCommandPool(Handle, &createInfo, nullptr, &resourcesCommandPool[i]) != VK_SUCCESS)
                 {
                     throw std::runtime_error("Failed to create command pool!");
                 }
 
                 VkCommandBufferAllocateInfo allocInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
-                allocInfo.commandPool           = resourcesCommandPool[i];
-                allocInfo.commandBufferCount    = 1;
-                allocInfo.level                 = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+                allocInfo.commandPool = resourcesCommandPool[i];
+                allocInfo.commandBufferCount = 1;
+                allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
                 if (vkAllocateCommandBuffers(Handle, &allocInfo, &resourcesCommandBuffer[i]) != VK_SUCCESS)
                 {
@@ -984,12 +1010,13 @@ namespace Sogas
                 }
 
                 VkFenceCreateInfo fenceInfo = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
-                
-                if (vkCreateFence(Handle, &fenceInfo, nullptr, &fence[i]) != VK_SUCCESS) { 
+
+                if (vkCreateFence(Handle, &fenceInfo, nullptr, &fence[i]) != VK_SUCCESS)
+                {
                     SFATAL("Failed to create frame fence.");
                     return;
                 }
             }
         }
-} // Vk
+    } // Vk
 } // Sogas
