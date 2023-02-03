@@ -1,4 +1,5 @@
 #include "engine.h"
+#include "render/buffer.h"
 #include "render/module_render.h"
 #include "resources/mesh.h"
 
@@ -8,29 +9,31 @@ namespace Sogas
     {
         device = CEngine::Get()->GetRenderModule()->GetGraphicsDevice();
 
-        SASSERT( !vs.empty() );
-        SASSERT( topology != PrimitiveTopology::UNDEFINED );
-        Topology        = topology;
-        Indexed         = false;
-        this->vertices  = vs;
-        this->indices   = is;
+        SASSERT(!vs.empty());
+        SASSERT(topology != PrimitiveTopology::UNDEFINED);
+        Topology = topology;
+        Indexed = false;
+        this->vertices = vs;
+        this->indices = is;
         this->vertexCount = static_cast<u32>(vs.size());
 
-        GPUBufferDescriptor vertexBufferDescriptor;
-        vertexBufferDescriptor.bindPoint    = BindPoint::VERTEX;
-        vertexBufferDescriptor.usage        = Usage::UPLOAD;
-        vertexBufferDescriptor.size         = static_cast<u64>(vs.size() * sizeof(Vertex));
-        device.lock()->CreateBuffer(&vertexBufferDescriptor, vs.data(), &vertexBuffer);
+        Renderer::BufferDescriptor vertexBufferDescriptor;
+        vertexBufferDescriptor.binding = Renderer::BufferBindingPoint::Vertex;
+        vertexBufferDescriptor.usage = Renderer::BufferUsage::TRANSFER_DST;
+        vertexBufferDescriptor.size = vs.size();
+        vertexBufferDescriptor.elementSize = sizeof(Vertex);
+        vertexBuffer = device.lock()->CreateBuffer(vertexBufferDescriptor, vs.data());
 
         if (!is.empty())
         {
             Indexed = true;
             this->indexCount = static_cast<u32>(is.size());
-            GPUBufferDescriptor indexBufferDescriptor;
-            indexBufferDescriptor.bindPoint = BindPoint::INDEX;
-            indexBufferDescriptor.usage     = Usage::UPLOAD;
-            indexBufferDescriptor.size      = static_cast<u64>(indices.size() * sizeof(u32));
-            device.lock()->CreateBuffer(&indexBufferDescriptor, is.data(), &indexBuffer);
+            Renderer::BufferDescriptor indexBufferDescriptor;
+            indexBufferDescriptor.binding = Renderer::BufferBindingPoint::Index;
+            indexBufferDescriptor.usage = Renderer::BufferUsage::TRANSFER_DST;
+            indexBufferDescriptor.size = indices.size();
+            indexBufferDescriptor.elementSize = sizeof(u32);
+            indexBuffer = device.lock()->CreateBuffer(indexBufferDescriptor, is.data());
         }
 
         return true;
@@ -38,10 +41,10 @@ namespace Sogas
 
     void CMesh::Activate(CommandBuffer cmd) const
     {
-        device.lock()->BindVertexBuffer(&vertexBuffer, cmd);
+        device.lock()->BindVertexBuffer(vertexBuffer, cmd);
 
         if (Indexed)
-            device.lock()->BindIndexBuffer(&indexBuffer, cmd);
+            device.lock()->BindIndexBuffer(indexBuffer, cmd);
     }
 
     void CMesh::Render(CommandBuffer cmd) const
@@ -51,4 +54,4 @@ namespace Sogas
         else
             device.lock()->Draw(static_cast<u32>(vertices.size()), vertexOffset, cmd);
     }
-} // Sogas
+} // namespace Sogas

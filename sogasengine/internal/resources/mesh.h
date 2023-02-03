@@ -5,12 +5,16 @@
 
 namespace Sogas
 {
+    namespace Renderer
+    {
+        class Buffer;
+    } // namespace Renderer
     class CMesh : public IResource
     {
     public:
         bool Create(
-            std::vector<Vertex> vertices, 
-            std::vector<u32> indices, 
+            std::vector<Vertex> vertices,
+            std::vector<u32> indices,
             PrimitiveTopology topology);
 
         void Activate(CommandBuffer cmd) const;
@@ -21,12 +25,12 @@ namespace Sogas
         u32 indexCount = 0;
         u32 indexOffset = 0;
 
-        GPUBuffer vertexBuffer;
-        GPUBuffer indexBuffer;
+        std::unique_ptr<Renderer::Buffer> vertexBuffer;
+        std::unique_ptr<Renderer::Buffer> indexBuffer;
         PrimitiveTopology Topology = PrimitiveTopology::UNDEFINED;
         bool Indexed = false;
 
-        void* data;
+        void *data;
         std::weak_ptr<GPU_device> device;
 
     private:
@@ -36,4 +40,4 @@ namespace Sogas
         // AABB
         // Mesh group
     };
-} // Sogas
+} // namespace Sogas

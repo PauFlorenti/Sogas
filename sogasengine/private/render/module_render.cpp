@@ -12,27 +12,26 @@
 
 namespace Sogas
 {
-    Pipeline    forwardPipeline; // Forward pipeline
-    Pipeline    presentPipeline;
-    RenderPass  forwardRenderPass;
-    Shader      forwardShaders[2]; // 0 vs, 1 ps
-    Shader      presentShaders[2];
-    GPUBuffer   constantBuffer;
-    GPUBuffer   lightBuffer;
-    //GPUBuffer   quadBuffer;
-    GPUBuffer   quadIdxBuffer;
+    Pipeline forwardPipeline; // Forward pipeline
+    Pipeline presentPipeline;
+    RenderPass forwardRenderPass;
+    Shader forwardShaders[2]; // 0 vs, 1 ps
+    Shader presentShaders[2];
+    std::unique_ptr<Renderer::Buffer> constantBuffer;
+    std::unique_ptr<Renderer::Buffer> lightBuffer;
+    std::unique_ptr<Renderer::Buffer> quadIdxBuffer;
     std::unique_ptr<Renderer::Buffer> quadBuffer;
 
-    std::shared_ptr<Texture>     colorBuffer;
+    std::shared_ptr<Texture> colorBuffer;
     AttachmentFramebuffer colorAttachment;
     AttachmentFramebuffer depthAttachment;
-    const u32   nLights = 10;
+    const u32 nLights = 10;
 
     std::vector<Vertex> quad = {
-        {{ 1.0f,  1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
-        {{-1.0f,  1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{-1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
         {{-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
-        {{ 1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
     };
 
     std::vector<u32> quadIdx = {0, 1, 2, 2, 3, 0};
@@ -53,10 +52,10 @@ namespace Sogas
 
     struct Light
     {
-        glm::vec3   color;
-        f32         intensity;
-        glm::vec3   position;
-        f32         radius;
+        glm::vec3 color;
+        f32 intensity;
+        glm::vec3 position;
+        f32 radius;
     };
 
     Light lights[nLights];
@@ -67,7 +66,7 @@ namespace Sogas
         glm::vec4 color;
     };
 
-    bool CRenderModule::Start () 
+    bool CRenderModule::Start()
     {
         // Start ImGui
 
@@ -82,7 +81,7 @@ namespace Sogas
         swapchain = std::make_shared<Swapchain>();
         SwapchainDescriptor desc;
         desc.format = Format::R32G32B32A32_SFLOAT;
-        desc.width  = width;
+        desc.width = width;
         desc.height = height;
         renderer->CreateSwapchain(desc, swapchain);
 
@@ -109,7 +108,7 @@ namespace Sogas
         depthState.compareOp = CompareOperations::LESS_OR_EQUAL;
         depthState.depthTestEnabled = true;
         depthState.writeDepthEnabled = true;
-        
+
         PipelineDescriptor fwdDesc;
         fwdDesc.vs = &forwardShaders[0];
         fwdDesc.ps = &forwardShaders[1];
@@ -124,53 +123,56 @@ namespace Sogas
         renderer->CreatePipeline(&psoDesc, &presentPipeline, &swapchain->renderpass);
 
         PushConstantDescriptor modelPushConstant;
-        modelPushConstant.offset        = 0;
-        modelPushConstant.size          = sizeof(ConstantsMesh);
-        modelPushConstant.stage         = ShaderStage::VERTEX;
+        modelPushConstant.offset = 0;
+        modelPushConstant.size = sizeof(ConstantsMesh);
+        modelPushConstant.stage = ShaderStage::VERTEX;
 
-        GPUBufferDescriptor constantBufferDesc;
-        constantBufferDesc.size         = sizeof(ConstantsCamera);
-        constantBufferDesc.bindPoint    = BindPoint::UNIFORM;
-        constantBufferDesc.usage        = Usage::UPLOAD;
-        renderer->CreateBuffer(&constantBufferDesc, nullptr, &constantBuffer);
+        Renderer::BufferDescriptor constantBufferDesc;
+        constantBufferDesc.size = 1;
+        constantBufferDesc.elementSize = sizeof(ConstantsCamera);
+        constantBufferDesc.binding = Renderer::BufferBindingPoint::Uniform;
+        constantBufferDesc.usage = Renderer::BufferUsage::TRANSFER_DST;
+        constantBuffer = renderer->CreateBuffer(constantBufferDesc, nullptr);
 
-        GPUBufferDescriptor lightBufferDesc;
-        lightBufferDesc.size            = sizeof(Light) * nLights;
-        lightBufferDesc.bindPoint       = BindPoint::UNIFORM;
-        lightBufferDesc.usage           = Usage::UPLOAD;
-        renderer->CreateBuffer(&lightBufferDesc, nullptr, &lightBuffer);
+        Renderer::BufferDescriptor lightBufferDesc;
+        lightBufferDesc.size = nLights;
+        lightBufferDesc.elementSize = sizeof(Light);
+        lightBufferDesc.binding = Renderer::BufferBindingPoint::Uniform;
+        lightBufferDesc.usage = Renderer::BufferUsage::TRANSFER_DST;
+        lightBuffer = renderer->CreateBuffer(lightBufferDesc, nullptr);
 
         Renderer::BufferDescriptor quadBufferDesc;
-        quadBufferDesc.size         = quad.size();
-        quadBufferDesc.binding      = Renderer::BufferBindingPoint::Vertex;
-        quadBufferDesc.usage        = Renderer::BufferUsage::TRANSFER_DST;
-        quadBufferDesc.elementSize  = sizeof(Vertex);
-        quadBufferDesc.type         = Renderer::BufferType::Static;
+        quadBufferDesc.size = quad.size();
+        quadBufferDesc.binding = Renderer::BufferBindingPoint::Vertex;
+        quadBufferDesc.usage = Renderer::BufferUsage::TRANSFER_DST;
+        quadBufferDesc.elementSize = sizeof(Vertex);
+        quadBufferDesc.type = Renderer::BufferType::Static;
         quadBuffer = renderer->CreateBuffer(std::move(quadBufferDesc), quad.data());
 
-        GPUBufferDescriptor quadIdxBufferDesc;
-        quadIdxBufferDesc.size = sizeof(u32) * quadIdx.size();
-        quadIdxBufferDesc.bindPoint = BindPoint::INDEX;
-        quadIdxBufferDesc.usage = Usage::UPLOAD;
-        renderer->CreateBuffer(&quadIdxBufferDesc, quadIdx.data(), &quadIdxBuffer);
+        Renderer::BufferDescriptor quadIdxBufferDesc;
+        quadIdxBufferDesc.size = quadIdx.size();
+        quadIdxBufferDesc.elementSize = sizeof(u32);
+        quadIdxBufferDesc.binding = Renderer::BufferBindingPoint::Index;
+        quadIdxBufferDesc.usage = Renderer::BufferUsage::TRANSFER_DST;
+        quadIdxBuffer = renderer->CreateBuffer(quadIdxBufferDesc, quadIdx.data());
 
         return true;
     }
 
-    void CRenderModule::Stop() 
+    void CRenderModule::Stop()
     {
         renderer->shutdown();
     }
 
-    void CRenderModule::Update(f32 /*dt*/) 
+    void CRenderModule::Update(f32 /*dt*/)
     {
     }
 
-    void CRenderModule::Render() 
+    void CRenderModule::Render()
     {
     }
 
-    void CRenderModule::RenderInMenu() 
+    void CRenderModule::RenderInMenu()
     {
     }
 
@@ -182,33 +184,32 @@ namespace Sogas
         renderer->BeginRenderPass(&forwardRenderPass, cmd);
 
         // Bind frame constants.
-        renderer->BindBuffer(&constantBuffer, &forwardPipeline, 0, 0);
-        renderer->BindBuffer(&lightBuffer, &forwardPipeline, 1, 0);
+        renderer->BindBuffer(constantBuffer, &forwardPipeline, 0, 0);
+        renderer->BindBuffer(lightBuffer, &forwardPipeline, 1, 0);
 
         // Update constants per frame data.
-        CEntity* eCamera = getEntityByName("camera");
+        CEntity *eCamera = getEntityByName("camera");
         SASSERT(eCamera);
-        TCompCamera* cCamera = eCamera->Get<TCompCamera>();
+        TCompCamera *cCamera = eCamera->Get<TCompCamera>();
         SASSERT(cCamera);
 
         ConstantsCamera cameraCtes;
-        cameraCtes.camera_view              = cCamera->GetView();
-        cameraCtes.camera_projection        = cCamera->GetProjection();
-        cameraCtes.camera_view_projection   = cCamera->GetViewProjection();
-        renderer->UpdateBuffer(&constantBuffer, &cameraCtes, sizeof(ConstantsCamera), 0, cmd);
+        cameraCtes.camera_view = cCamera->GetView();
+        cameraCtes.camera_projection = cCamera->GetProjection();
+        cameraCtes.camera_view_projection = cCamera->GetViewProjection();
+        renderer->UpdateBuffer(constantBuffer, &cameraCtes, sizeof(ConstantsCamera), 0, cmd);
 
         u32 i = 0;
-        GetObjectManager<TCompPointLight>()->ForEach([&](TCompPointLight* light)
-        {
+        GetObjectManager<TCompPointLight>()->ForEach([&](TCompPointLight *light)
+                                                     {
             Light l;
             l.color     = light->color;
             l.position  = light->position;
             l.intensity = light->intensity;
             l.radius    = light->radius;
 
-            renderer->UpdateBuffer(&lightBuffer, &l, sizeof(Light), sizeof(Light) * i, cmd);
-            i++;
-        });
+            renderer->UpdateBuffer(lightBuffer, &l, sizeof(Light), sizeof(Light) * i, cmd);
+            i++; });
 
         // Bind constants per frame.
         renderer->BindDescriptor(cmd);
@@ -230,8 +231,7 @@ namespace Sogas
         renderer->UpdateDescriptorSet(&presentPipeline);
         renderer->BindDescriptor(presentCmd);
         renderer->BindVertexBuffer(quadBuffer, presentCmd);
-        //renderer->BindVertexBuffer(&quadBuffer, presentCmd);
-        renderer->BindIndexBuffer(&quadIdxBuffer, presentCmd);
+        renderer->BindIndexBuffer(quadIdxBuffer, presentCmd);
         renderer->DrawIndexed(6, 0, presentCmd);
         renderer->EndRenderPass(presentCmd);
 

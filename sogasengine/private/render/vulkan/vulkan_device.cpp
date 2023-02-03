@@ -549,9 +549,10 @@ namespace Sogas
             VulkanBuffer::Create(this, desc, data, buffer);
         }
 
-        std::unique_ptr<Renderer::Buffer> VulkanDevice::CreateBuffer(Renderer::BufferDescriptor desc, void* data) const
+        std::unique_ptr<Renderer::Buffer> VulkanDevice::CreateBuffer(Renderer::BufferDescriptor desc, void *data) const
         {
-            return VulkanBuffer::Create(this, desc, data);
+            auto buffer = VulkanBuffer::Create(this, desc, data);
+            return buffer;
         }
 
         void VulkanDevice::CreateTexture(const TextureDescriptor *desc, void *data, Texture *texture) const
@@ -594,35 +595,23 @@ namespace Sogas
             VulkanAttachment::Create(this, InAttachment);
         }
 
-        void VulkanDevice::BindVertexBuffer(const GPUBuffer *buffer, CommandBuffer cmd)
+        void VulkanDevice::BindVertexBuffer(const std::unique_ptr<Renderer::Buffer>& buffer, CommandBuffer cmd)
         {
             SASSERT(buffer);
-            SASSERT(buffer->IsValid());
-            SASSERT(buffer->IsBuffer());
+            SASSERT(buffer->isValid());
 
-            const VulkanBuffer *internalBuffer = static_cast<VulkanBuffer *>(buffer->internalState.get());
+            const VulkanBuffer *internalBuffer = static_cast<VulkanBuffer *>(buffer->internal_state.get());
             SASSERT(internalBuffer);
 
             VkDeviceSize offset = {0};
             vkCmdBindVertexBuffers(VulkanCommandBuffer::ToInternal(&cmd)->commandBuffers[GetFrameIndex()], 0, 1, internalBuffer->GetHandle(), &offset);
         }
 
-        void VulkanDevice::BindVertexBuffer(const std::unique_ptr<Renderer::Buffer>& buffer, CommandBuffer cmd)
+        void VulkanDevice::BindIndexBuffer(const std::unique_ptr<Renderer::Buffer> &buffer, CommandBuffer cmd)
         {
             SASSERT(buffer->isValid());
-            const auto internal_state = static_cast<VulkanBuffer*>(buffer->internal_state.get());
 
-            VkDeviceSize offset = {0};
-            vkCmdBindVertexBuffers(VulkanCommandBuffer::ToInternal(&cmd)->commandBuffers[GetFrameIndex()], 0, 1, internal_state->GetHandle(), &offset);
-        }
-
-        void VulkanDevice::BindIndexBuffer(const GPUBuffer *buffer, CommandBuffer cmd)
-        {
-            SASSERT(buffer);
-            SASSERT(buffer->IsValid());
-            SASSERT(buffer->IsBuffer());
-
-            const VulkanBuffer *internalBuffer = static_cast<VulkanBuffer *>(buffer->internalState.get());
+            const auto internalBuffer = static_cast<VulkanBuffer *>(buffer->internal_state.get());
             SASSERT(internalBuffer);
 
             VkDeviceSize offset = {0};
@@ -650,7 +639,7 @@ namespace Sogas
             }
         }
 
-        void VulkanDevice::BindBuffer(const GPUBuffer *InBuffer, const Pipeline *InPipeline, const u32 InSlot, const u32 InDescriptorSet, const u32 InOffset)
+        void VulkanDevice::BindBuffer(const std::unique_ptr<Renderer::Buffer> &InBuffer, const Pipeline *InPipeline, const u32 InSlot, const u32 InDescriptorSet, const u32 InOffset)
         {
             auto bufferInternalState = VulkanBuffer::ToInternal(InBuffer);
             auto pipelineInternalState = VulkanPipeline::ToInternal(InPipeline);
@@ -658,7 +647,7 @@ namespace Sogas
 
             bufferInternalState->descriptorInfo.buffer = *bufferInternalState->GetHandle();
             bufferInternalState->descriptorInfo.offset = InOffset;
-            bufferInternalState->descriptorInfo.range = InBuffer->descriptor.size;
+            bufferInternalState->descriptorInfo.range = InBuffer->getSizeInBytes();
 
             VkWriteDescriptorSet write = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
             write.descriptorCount = 1;
@@ -776,7 +765,7 @@ namespace Sogas
                 0, InSize, InData);
         }
 
-        void VulkanDevice::UpdateBuffer(const GPUBuffer *InBuffer, const void *InData, const u32 InDataSize, const u32 InOffset, CommandBuffer /*cmd*/)
+        void VulkanDevice::UpdateBuffer(const std::unique_ptr<Renderer::Buffer> &InBuffer, const void *InData, const u32 InDataSize, const u32 InOffset, CommandBuffer /*cmd*/)
         {
             auto bufferInternalState = VulkanBuffer::ToInternal(InBuffer);
             void *data;

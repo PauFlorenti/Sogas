@@ -43,19 +43,18 @@ namespace Sogas
 
         // API calls
         // This are commands that will execute when submitCommands is called.
-        virtual void BindVertexBuffer(const GPUBuffer* buffer, CommandBuffer cmd) = 0;
         virtual void BindVertexBuffer(const std::unique_ptr<Renderer::Buffer>& buffer, CommandBuffer cmd) = 0;
-        virtual void BindIndexBuffer(const GPUBuffer* buffer, CommandBuffer cmd) = 0;
+        virtual void BindIndexBuffer(const std::unique_ptr<Renderer::Buffer>& buffer, CommandBuffer cmd) = 0;
         virtual void BindPipeline(const Pipeline* InPipeline, CommandBuffer& cmd) = 0;
         virtual void BindDescriptor(CommandBuffer cmd) = 0;
-        virtual void BindBuffer(const GPUBuffer* InBuffer, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet, const u32 InOffset = 0) = 0;
+        virtual void BindBuffer(const std::unique_ptr<Renderer::Buffer>& InBuffer, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet, const u32 InOffset = 0) = 0;
         virtual void BindTexture(const Texture* InTexture, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet = 0) = 0;
         virtual void BindAttachment(const AttachmentFramebuffer* InAttachment, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet = 0) = 0;
         virtual void SetTopology(PrimitiveTopology topology) = 0;
         virtual void Draw(const u32 count, const u32 offset, CommandBuffer cmd) = 0;
         virtual void DrawIndexed(const u32 count, const u32 offset, CommandBuffer cmd) = 0;
         virtual void PushConstants(const void* InData, const u32 Size, CommandBuffer cmd) = 0;
-        virtual void UpdateBuffer(const GPUBuffer* InBuffer, const void* InData, const u32 InDataSize, const u32 InOffset, CommandBuffer cmd) = 0;
+        virtual void UpdateBuffer(const std::unique_ptr<Renderer::Buffer>& InBuffer, const void* InData, const u32 InDataSize, const u32 InOffset, CommandBuffer cmd) = 0;
         virtual void WaitCommand(CommandBuffer& cmd, CommandBuffer& cmdToWait) = 0;
         //virtual void WaitCommand(CommandBuffer& cmd, Swapchain* swapchainToWait) = 0;
         

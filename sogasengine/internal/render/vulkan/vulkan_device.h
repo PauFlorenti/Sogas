@@ -47,19 +47,18 @@ namespace Vk
         void CreateAttachment(AttachmentFramebuffer* InAttachment) const override;
 
         // API calls ...
-        void BindVertexBuffer(const GPUBuffer* buffer, CommandBuffer cmd) override;
         void BindVertexBuffer(const std::unique_ptr<Renderer::Buffer>& buffer, CommandBuffer cmd) override;
-        void BindIndexBuffer(const GPUBuffer* buffer, CommandBuffer cmd) override;
+        void BindIndexBuffer(const std::unique_ptr<Renderer::Buffer>& buffer, CommandBuffer cmd) override;
         void BindPipeline(const Pipeline* InPipeline, CommandBuffer& cmd) override;
         void BindDescriptor(CommandBuffer cmd) override;
-        void BindBuffer(const GPUBuffer* InBuffer, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet, const u32 InOffset = 0) override;
+        void BindBuffer(const std::unique_ptr<Renderer::Buffer>& InBuffer, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet, const u32 InOffset = 0) override;
         void BindTexture(const Texture* InTexture, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet = 0) override;
         void BindAttachment(const AttachmentFramebuffer* InAttachment, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet = 0) override;
         void SetTopology(PrimitiveTopology topology) override;
         void Draw(const u32 count, const u32 offset, CommandBuffer cmd) override;
         void DrawIndexed(const u32 count, const u32 offset, CommandBuffer cmd) override;
         void PushConstants(const void* InData, const u32 InSize, CommandBuffer cmd) override;
-        void UpdateBuffer(const GPUBuffer* InBuffer, const void* InData, const u32 InDataSize, const u32 InOffset, CommandBuffer cmd) override;
+        void UpdateBuffer(const std::unique_ptr<Renderer::Buffer>& InBuffer, const void* InData, const u32 InDataSize, const u32 InOffset, CommandBuffer cmd) override;
         void WaitCommand(CommandBuffer& cmd, CommandBuffer& cmdToWait) override;
         //void WaitCommand(CommandBuffer& cmd, Swapchain* swapchainToWait) override;
 

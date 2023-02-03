@@ -5,6 +5,7 @@
 
 // TODO should not be used here
 #include "render/render_types.h"
+#include "render/buffer.h"
 
 namespace Sogas
 {
@@ -21,7 +22,7 @@ namespace Sogas
         void Load(const json& j);
         void DebutInMenu(){};
         void RenderDebug(){};
-        bool Activate(const GPUBuffer* InBuffer, const u32 InLightNumber, CommandBuffer cmd);
+        bool Activate(const std::unique_ptr<Renderer::Buffer>& InBuffer, const u32 InLightNumber, CommandBuffer cmd);
         const glm::vec3 GetPosition();
     };
 } // Sogas

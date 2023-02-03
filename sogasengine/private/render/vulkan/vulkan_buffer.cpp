@@ -175,12 +175,12 @@ namespace Sogas
 
         std::unique_ptr<Renderer::Buffer> VulkanBuffer::Create(const VulkanDevice *device, Renderer::BufferDescriptor desc, void *data)
         {
-            std::unique_ptr<Renderer::Buffer> buffer = std::make_unique<Renderer::Buffer>();
+            std::unique_ptr<Renderer::Buffer> buffer = std::make_unique<Renderer::Buffer>(desc);
             auto internal_state = std::make_shared<VulkanBuffer>();
             buffer->internal_state = internal_state;
 
             VkBufferCreateInfo buffer_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
-            buffer_info.size = desc.size * desc.elementSize;
+            buffer_info.size = buffer->getSizeInBytes();
 
             if (desc.binding == Renderer::BufferBindingPoint::Vertex)
             {

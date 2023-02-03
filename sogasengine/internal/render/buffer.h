@@ -42,10 +42,12 @@ namespace Sogas
         {
         public:
             Buffer() = default;
+            Buffer(BufferDescriptor desc);
             Buffer(const Buffer &) = delete;
             const Buffer &operator=(const Buffer &) = delete;
             Buffer(Buffer &&other);
             Buffer &operator=(Buffer &&other);
+            ~Buffer();
 
             size_t getSizeInBytes() const;
             bool isEmpty() const;
@@ -53,6 +55,7 @@ namespace Sogas
             void reset();
 
             std::shared_ptr<void> internal_state;
+
         private:
             u64 sizeInBytes{0};
             std::weak_ptr<GPU_device> device;
