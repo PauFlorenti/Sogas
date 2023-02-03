@@ -157,16 +157,6 @@ namespace Sogas
 
     // Resource descriptors
 
-    struct Shader;
-    struct Pipeline;
-
-    struct GPUBufferDescriptor
-    {
-        u64 size;
-        BindPoint bindPoint;
-        Usage usage;
-    };
-
     struct TextureDescriptor
     {
         enum TextureType
@@ -200,7 +190,6 @@ namespace Sogas
         ShaderStage stage = ShaderStage::UNDEFINED;
     };
 
-    struct GPUBuffer;
     struct Texture;
     struct DescriptorSet;
     struct Descriptor
@@ -211,7 +200,6 @@ namespace Sogas
         u32 count = 0;
         UniformType uniformType = UniformType::UNIFORM;
         ShaderStage stage = ShaderStage::UNDEFINED;
-        const GPUBuffer *buffer = nullptr;
         const Texture *texture = nullptr;
     };
 
@@ -243,6 +231,7 @@ namespace Sogas
         CompareOperations compareOp = CompareOperations::NEVER;
     };
 
+    struct Shader;
     struct PipelineDescriptor
     {
         const Shader *vs = nullptr;
@@ -273,20 +262,6 @@ namespace Sogas
         constexpr bool IsTexture() const { return resourceType == ResourceType::TEXTURE; }
 
         void *mapdata;
-    };
-
-    class GPU_device;
-
-    struct GPUBuffer : public GPUResource
-    {
-        GPUBuffer()
-        {
-            resourceType = ResourceType::BUFFER;
-            mapdata = nullptr;
-        };
-
-        GPUBufferDescriptor descriptor;
-        std::weak_ptr<GPU_device> device;
     };
 
     struct Texture : public GPUResource, public IResource

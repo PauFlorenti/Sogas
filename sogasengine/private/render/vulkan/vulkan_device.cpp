@@ -544,11 +544,6 @@ namespace Sogas
             vkCmdEndRenderPass(internalCmd->commandBuffers[GetFrameIndex()]);
         }
 
-        void VulkanDevice::CreateBuffer(const GPUBufferDescriptor *desc, void *data, GPUBuffer *buffer) const
-        {
-            VulkanBuffer::Create(this, desc, data, buffer);
-        }
-
         std::unique_ptr<Renderer::Buffer> VulkanDevice::CreateBuffer(Renderer::BufferDescriptor desc, void *data) const
         {
             auto buffer = VulkanBuffer::Create(this, desc, data);

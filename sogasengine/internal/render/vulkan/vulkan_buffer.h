@@ -14,13 +14,7 @@ namespace Vk
         VulkanBuffer() = default;
         VulkanBuffer(const VulkanBuffer&) = delete;
         VulkanBuffer(VulkanBuffer&&) = delete;
-        VulkanBuffer& operator=(const VulkanBuffer& other) = delete; 
-
-        static void Create(
-            const VulkanDevice* device, 
-            const GPUBufferDescriptor* desc, 
-            void* data, 
-            GPUBuffer* buffer);
+        VulkanBuffer& operator=(const VulkanBuffer& other) = delete;
 
         static std::unique_ptr<Renderer::Buffer> Create(const VulkanDevice* device, Renderer::BufferDescriptor desc, void* data);
 

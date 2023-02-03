@@ -36,7 +36,6 @@ namespace Vk
         void BeginRenderPass(RenderPass* InRenderpass, CommandBuffer cmd) override;
         void EndRenderPass(CommandBuffer cmd) override;
         void CreateSwapchain(const SwapchainDescriptor& desc, std::shared_ptr<Swapchain> swapchain) override;
-        void CreateBuffer(const GPUBufferDescriptor* desc, void* data, GPUBuffer* buffer) const override;
         std::unique_ptr<Renderer::Buffer> CreateBuffer(Renderer::BufferDescriptor desc, void* data) const override;
         void CreateTexture(const TextureDescriptor* desc, void* data, Texture* texture) const override;
         void CreateRenderPass(const RenderPassDescriptor* desc, RenderPass* renderpass) const override;

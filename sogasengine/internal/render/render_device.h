@@ -31,7 +31,6 @@ namespace Sogas
         virtual void BeginRenderPass(RenderPass* InRenderpass, CommandBuffer cmd) = 0;
         virtual void EndRenderPass(CommandBuffer cmd) = 0;
         virtual void CreateSwapchain(const SwapchainDescriptor& desc, std::shared_ptr<Swapchain> swapchain) = 0;
-        virtual void CreateBuffer(const GPUBufferDescriptor* desc, void* data, GPUBuffer* buffer) const = 0;
         virtual std::unique_ptr<Renderer::Buffer> CreateBuffer(Renderer::BufferDescriptor desc, void* data) const = 0;
         virtual void CreateTexture(const TextureDescriptor* desc, void* data, Texture* texture) const = 0;
         virtual void CreateRenderPass(const RenderPassDescriptor* desc, RenderPass* renderpass) const = 0;
