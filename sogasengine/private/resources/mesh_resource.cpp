@@ -1,7 +1,7 @@
 #include "resources/mesh.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
-#include <tinyobjloader/tiny_obj_loader.h>
+#include <tiny_obj_loader.h>
 
 template<> struct std::hash<Sogas::Vertex>
 {

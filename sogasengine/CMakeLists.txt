@@ -1,57 +1,66 @@
+include(FetchContent)
 
 project(SogasEngine LANGUAGES CXX)
 
-file(GLOB_RECURSE 
-    SOURCES 
-        private/*.cpp 
-        private/entity/*.cpp
-        private/modules/*.cpp 
-        private/render/*.cpp 
-        private/render/vulkan/*.cpp 
-        private/resources/*.cpp
-        private/handle/*.cpp)
+file(GLOB_RECURSE
+    SOURCES
+    private/*.cpp
+    private/entity/*.cpp
+    private/modules/*.cpp
+    private/render/*.cpp
+    private/render/vulkan/*.cpp
+    private/resources/*.cpp
+    private/handle/*.cpp)
 
 find_package(Vulkan REQUIRED)
 
-add_library(${PROJECT_NAME} STATIC 
-    PRIVATE 
-        ${SOURCES})
+add_subdirectory(external/vulkan)
+add_subdirectory(external/tinyobjloader)
+add_subdirectory(external/glfw)
+add_subdirectory(external/glm)
 
-if(MSVC) 
-    target_compile_options(${PROJECT_NAME} 
-        PRIVATE 
-            -W4 -WX)
-else()
-    target_compile_options(${PROJECT_NAME} 
-        PRIVATE 
-            -Wall -Wextra -Wshadow -Wconversion -Wpedantic -Werror -verbose -MTd)
-endif()
+add_library(${PROJECT_NAME} STATIC
+    PRIVATE
+    ${SOURCES})
 
-target_include_directories(${PROJECT_NAME} 
-    PUBLIC 
-        ${CMAKE_CURRENT_SOURCE_DIR}/public
-        ${CMAKE_CURRENT_SOURCE_DIR}/external
-        ${Vulkan_INCLUDE_DIRS}
-    PRIVATE 
-        ${CMAKE_CURRENT_SOURCE_DIR}/private
-        ${CMAKE_CURRENT_SOURCE_DIR}/internal)
+message("${glm_SOURCE_DIR}/include")
 
-target_link_directories(${PROJECT_NAME}
+target_include_directories(${PROJECT_NAME}
     PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/external)
+    ${CMAKE_CURRENT_SOURCE_DIR}/public
+    ${CMAKE_CURRENT_SOURCE_DIR}/external
+    ${glm_SOURCE_DIR}
+    ${GLFW_SOURCE_DIR}/include
+    ${Vulkan-Headers_SOURCE_DIR}/include
+    PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/private
+    ${CMAKE_CURRENT_SOURCE_DIR}/internal
+    ${tinyobjloader_SOURCE_DIR}
+    )
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
-        ${Vulkan_LIBRARIES}
-        GLFW/lib/glfw3
-        spirv/lib/spirv-cross-cored)
-        #spirv/lib/spirv-cross-reflect
-        #spirv/lib/spirv-cross-glsl
-        #spirv/lib/spirv-cross-cpp
-        #spirv/lib/spirv-cross-core)
+    ${Vulkan_LIBRARIES}
+    ${GLFW_BINARY_DIR}/src/${CMAKE_BUILD_TYPE}/glfw3.lib
+    spirv/lib/spirv-cross-cored)
 
-target_precompile_headers(${PROJECT_NAME} 
-    PUBLIC public/pch.h PRIVATE private/sgs_pch.h)
+if(MSVC)
+    target_compile_options(${PROJECT_NAME}
+        PRIVATE
+        -W4 -WX)
+else()
+    target_compile_options(${PROJECT_NAME}
+        PRIVATE
+        -Wall -Wextra -Wshadow -Wconversion -Wpedantic -Werror -verbose -MTd)
+endif()
+
+target_link_directories(${PROJECT_NAME}
+    PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/external)
+
+target_precompile_headers(${PROJECT_NAME}
+    PUBLIC public/pch.h
+    PRIVATE private/sgs_pch.h)
 
 file(COPY data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/..)
 file(GLOB SHADERS private/shaders/bin/*.spv)
