@@ -1,16 +1,28 @@
 
-#include "render/vulkan/vulkan_buffer.h"
-#include "render/vulkan/vulkan_device.h"
+#include "vulkan/vulkan_buffer.h"
+#include "vulkan/vulkan_device.h"
 
 namespace Sogas
 {
     namespace Vk
     {
+        VulkanBuffer::VulkanBuffer(const VulkanDevice* device) : gpu_device(device)
+        {
+            SASSERT(gpu_device != nullptr);
+        }
+
+        VulkanBuffer::~VulkanBuffer()
+        {
+            SASSERT(gpu_device != nullptr);
+            vkDestroyBuffer(gpu_device->Handle, handle, nullptr);
+            vkFreeMemory(gpu_device->Handle, memory, nullptr);
+        }
+
         std::unique_ptr<Renderer::Buffer> VulkanBuffer::Create(const VulkanDevice *device, Renderer::BufferDescriptor desc, void *data)
         {
             std::unique_ptr<Renderer::Buffer> buffer = std::make_unique<Renderer::Buffer>(desc);
-            auto internal_state = std::make_shared<VulkanBuffer>();
-            buffer->internal_state = internal_state;
+            auto internal_state = std::make_shared<VulkanBuffer>(device);
+            buffer->device_buffer = internal_state;
 
             VkBufferCreateInfo buffer_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
             buffer_info.size = buffer->getSizeInBytes();
@@ -53,7 +65,7 @@ namespace Sogas
             if (vkCreateBuffer(device->Handle, &buffer_info, nullptr, &internal_state->handle) != VK_SUCCESS)
             {
                 SERROR("Failed to create buffer.");
-                buffer->internal_state.reset();
+                // buffer->internal_state.reset();
                 return buffer;
             }
 
@@ -67,7 +79,7 @@ namespace Sogas
             if (vkAllocateMemory(device->Handle, &allocateInfo, nullptr, &internal_state->memory))
             {
                 SERROR("Failed to allocate buffer memory.");
-                buffer->internal_state.reset();
+                // buffer->internal_state.reset();
                 return buffer;
             }
 
@@ -75,7 +87,7 @@ namespace Sogas
 
             if (data != nullptr)
             {
-                VulkanBuffer stagingBuffer;
+                VulkanBuffer stagingBuffer(device);
                 VkBufferCreateInfo stagingBufferInfo{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
 
                 if (device->GraphicsFamily != device->PresentFamily)
@@ -95,7 +107,7 @@ namespace Sogas
                 if (vkCreateBuffer(device->Handle, &stagingBufferInfo, nullptr, &stagingBuffer.handle) != VK_SUCCESS)
                 {
                     SERROR("Failed to create staging buffer.");
-                    buffer->internal_state.reset();
+                    // buffer->internal_state.reset();
                     return buffer;
                 }
 
@@ -109,7 +121,7 @@ namespace Sogas
                 if (vkAllocateMemory(device->Handle, &stagingMemoryAllocationInfo, nullptr, &stagingBuffer.memory) != VK_SUCCESS)
                 {
                     SERROR("Failed to allocate staging buffer memory.");
-                    buffer->internal_state.reset();
+                    // buffer->internal_state.reset();
                     return buffer;
                 }
 
@@ -129,7 +141,7 @@ namespace Sogas
                 if (vkAllocateCommandBuffers(device->Handle, &commandBufferAllocateInfo, &cmd) != VK_SUCCESS)
                 {
                     SERROR("Failed to allocate command buffer.");
-                    buffer->internal_state.reset();
+                    // buffer->internal_state.reset();
                     return buffer;
                 }
 
@@ -138,7 +150,7 @@ namespace Sogas
                 if (vkBeginCommandBuffer(cmd, &beginInfo) != VK_SUCCESS)
                 {
                     SERROR("Failed to begin recording the command buffer.");
-                    buffer->internal_state.reset();
+                    // buffer->internal_state.reset();
                     return buffer;
                 }
 
@@ -152,7 +164,7 @@ namespace Sogas
                 if (vkEndCommandBuffer(cmd) != VK_SUCCESS)
                 {
                     SERROR("Failed to finish recording the copy command buffer.");
-                    buffer->internal_state.reset();
+                    // buffer->internal_state.reset();
                     return buffer;
                 }
 
@@ -163,24 +175,21 @@ namespace Sogas
                 if (vkQueueSubmit(device->GraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
                 {
                     SERROR("Failed to submit copy buffer commands.");
-                    buffer->internal_state.reset();
+                    // buffer->internal_state.reset();
                     return buffer;
                 }
 
                 if (vkQueueWaitIdle(device->GraphicsQueue) != VK_SUCCESS)
                 {
                     SERROR("Failed waiting graphics queue to submit copy buffer commands.");
-                    buffer->internal_state.reset();
+                    // buffer->internal_state.reset();
                     return buffer;
                 }
 
                 vkFreeCommandBuffers(device->Handle, device->resourcesCommandPool[device->GetFrameIndex()], 1, &cmd);
-                vkDestroyBuffer(device->Handle, stagingBuffer.handle, nullptr);
-                vkFreeMemory(device->Handle, stagingBuffer.memory, nullptr);
             }
 
             return buffer;
         }
-
     } // namespace Vk
 } // namespace Sogas

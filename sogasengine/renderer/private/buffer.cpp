@@ -1,4 +1,5 @@
-#include "render/buffer.h"
+#include "buffer.h"
+#include "render_device.h"
 
 namespace Sogas
 {
@@ -21,9 +22,9 @@ namespace Sogas
                 return *this;
             }
 
-            internal_state.reset();
-            internal_state = std::move(other.internal_state);
-            other.internal_state.reset();
+            device_buffer.reset();
+            device_buffer = std::move(other.device_buffer);
+            other.device_buffer.reset();
             sizeInBytes = other.sizeInBytes;
             device = std::move(other.device);
             other.device.reset();
@@ -32,8 +33,6 @@ namespace Sogas
 
         Buffer::~Buffer()
         {
-            internal_state.reset();
-            device.reset();
             sizeInBytes = 0;
         }
 
@@ -44,7 +43,7 @@ namespace Sogas
 
         bool Buffer::isEmpty() const
         {
-            return internal_state.get() == nullptr;
+            return false;//device_buffer. == nullptr;
         }
 
         bool Buffer::isValid() const
@@ -54,7 +53,8 @@ namespace Sogas
 
         void Buffer::reset()
         {
-            internal_state.reset();
+            sizeInBytes = 0;
+            device_buffer.reset();
         }
 
     } // namespace Renderer

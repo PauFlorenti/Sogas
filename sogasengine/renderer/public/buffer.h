@@ -1,5 +1,7 @@
 #pragma once
 
+#include "device_buffer.h"
+
 namespace Sogas
 {
     namespace Renderer
@@ -54,8 +56,8 @@ namespace Sogas
             bool isValid() const;
             void reset();
 
-            std::shared_ptr<void> internal_state;
-
+            // TODO This should not be public.
+            std::shared_ptr<DeviceBuffer> device_buffer;
         private:
             u64 sizeInBytes{0};
             std::weak_ptr<GPU_device> device;

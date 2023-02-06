@@ -1,7 +1,9 @@
 #pragma once
 
-#define GLFW_INCLUDE_VULKAN
+//#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+
+struct GLFWwindow;
 
 namespace Sogas
 {
@@ -39,4 +41,4 @@ namespace Sogas
     private:
         virtual void InitInstance();
     };
-} // Sogas
+} // namespace Sogas

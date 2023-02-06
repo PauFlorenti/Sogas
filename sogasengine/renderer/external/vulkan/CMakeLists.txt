@@ -1,7 +1,7 @@
 
 include(FetchContent)
 
-#find_package(Vulkan)
+find_package(Vulkan)
 
 if(NOT Vulkan_FOUND OR NOT DEFINED Vulkan_FOUND)
 

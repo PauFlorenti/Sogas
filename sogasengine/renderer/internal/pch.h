@@ -13,10 +13,6 @@
 #include <unordered_map>
 #include <vector>
 
-// external
-#include <nlohmann/json.hpp>
-using json = nlohmann::json;
-
 #pragma warning (disable : 4201 )
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -29,6 +25,4 @@ using json = nlohmann::json;
 
 // application
 #include "defines.h"
-#include "../logger/public/logger.h"
-#include "read_json.h"
-#include "math_utils.h"
+#include "logger.h"

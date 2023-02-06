@@ -1,6 +1,7 @@
 #pragma once
 
-#include "resources/resource.h"
+// TODO FIX THIS
+#include "../internal/resources/resource.h"
 
 namespace Sogas
 {

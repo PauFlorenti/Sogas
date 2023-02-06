@@ -1,7 +1,7 @@
-#include "render/vulkan/vulkan_attachment.h"
-#include "render/vulkan/vulkan_device.h"
-#include "render/vulkan/vulkan_renderpass.h"
-#include "render/vulkan/vulkan_texture.h"
+#include "vulkan/vulkan_attachment.h"
+#include "vulkan/vulkan_device.h"
+#include "vulkan/vulkan_renderpass.h"
+#include "vulkan/vulkan_texture.h"
 
 namespace Sogas
 {

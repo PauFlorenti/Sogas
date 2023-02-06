@@ -1,5 +1,5 @@
-#include "render/vulkan/vulkan_renderpass.h"
-#include "render/vulkan/vulkan_swapchain.h"
+#include "vulkan/vulkan_renderpass.h"
+#include "vulkan/vulkan_swapchain.h"
 
 namespace Sogas
 {

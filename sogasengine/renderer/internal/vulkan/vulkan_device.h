@@ -1,7 +1,7 @@
 #pragma once
 
 #include "vulkan_types.h"
-#include "render/vulkan/vulkan_commandbuffer.h"
+#include "vulkan_commandbuffer.h"
 
 namespace Sogas {
 namespace Vk
@@ -17,7 +17,7 @@ namespace Vk
         friend class VulkanShader;
         friend class VulkanTexture;
     public:
-        explicit VulkanDevice(GraphicsAPI apiType, void* device);
+        explicit VulkanDevice(GraphicsAPI apiType, void* device, std::vector<const char*> extensions);
         VulkanDevice(const VulkanDevice&) = delete;
         VulkanDevice(VulkanDevice&&) = delete;
         const VulkanDevice& operator=(const VulkanDevice& other) = delete;
@@ -35,8 +35,8 @@ namespace Vk
         void BeginRenderPass(std::shared_ptr<Swapchain> swapchain, CommandBuffer cmd) override;
         void BeginRenderPass(RenderPass* InRenderpass, CommandBuffer cmd) override;
         void EndRenderPass(CommandBuffer cmd) override;
-        void CreateSwapchain(const SwapchainDescriptor& desc, std::shared_ptr<Swapchain> swapchain) override;
-        std::unique_ptr<Renderer::Buffer> CreateBuffer(Renderer::BufferDescriptor desc, void* data) const override;
+        void CreateSwapchain(const SwapchainDescriptor& desc, std::shared_ptr<Swapchain> swapchain, GLFWwindow* window) override;
+        std::shared_ptr<Renderer::Buffer> CreateBuffer(Renderer::BufferDescriptor desc, void* data) const override;
         void CreateTexture(const TextureDescriptor* desc, void* data, Texture* texture) const override;
         void CreateRenderPass(const RenderPassDescriptor* desc, RenderPass* renderpass) const override;
         void CreatePipeline(const PipelineDescriptor* desc, Pipeline* pipeline, RenderPass* renderpass = nullptr) const override;
@@ -46,25 +46,27 @@ namespace Vk
         void CreateAttachment(AttachmentFramebuffer* InAttachment) const override;
 
         // API calls ...
-        void BindVertexBuffer(const std::unique_ptr<Renderer::Buffer>& buffer, CommandBuffer cmd) override;
-        void BindIndexBuffer(const std::unique_ptr<Renderer::Buffer>& buffer, CommandBuffer cmd) override;
+        void SetWindowSize(std::shared_ptr<Swapchain> InSwapchain, const u32& width, const u32& height) override;
+        void BindVertexBuffer(const std::shared_ptr<Renderer::Buffer>& buffer, CommandBuffer cmd) override;
+        void BindIndexBuffer(const std::shared_ptr<Renderer::Buffer>& buffer, CommandBuffer cmd) override;
         void BindPipeline(const Pipeline* InPipeline, CommandBuffer& cmd) override;
         void BindDescriptor(CommandBuffer cmd) override;
-        void BindBuffer(const std::unique_ptr<Renderer::Buffer>& InBuffer, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet, const u32 InOffset = 0) override;
+        void BindBuffer(const std::shared_ptr<Renderer::Buffer>& InBuffer, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet, const u32 InOffset = 0) override;
         void BindTexture(const Texture* InTexture, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet = 0) override;
         void BindAttachment(const AttachmentFramebuffer* InAttachment, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet = 0) override;
         void SetTopology(PrimitiveTopology topology) override;
         void Draw(const u32 count, const u32 offset, CommandBuffer cmd) override;
         void DrawIndexed(const u32 count, const u32 offset, CommandBuffer cmd) override;
         void PushConstants(const void* InData, const u32 InSize, CommandBuffer cmd) override;
-        void UpdateBuffer(const std::unique_ptr<Renderer::Buffer>& InBuffer, const void* InData, const u32 InDataSize, const u32 InOffset, CommandBuffer cmd) override;
+        void UpdateBuffer(const std::shared_ptr<Renderer::Buffer>& InBuffer, const void* InData, const u32 InDataSize, const u32 InOffset, CommandBuffer cmd) override;
         void WaitCommand(CommandBuffer& cmd, CommandBuffer& cmdToWait) override;
-        //void WaitCommand(CommandBuffer& cmd, Swapchain* swapchainToWait) override;
 
     private:
         VkInstance       Instance   = VK_NULL_HANDLE;
         VkDevice         Handle     = VK_NULL_HANDLE;
         VkPhysicalDevice Gpu        = VK_NULL_HANDLE;
+
+        std::vector<const char*> glfwExtensions;
 
         VkDebugUtilsMessengerEXT DebugMessenger = VK_NULL_HANDLE;
 
@@ -89,8 +91,6 @@ namespace Vk
 
         std::vector<std::unique_ptr<VulkanCommandBuffer>> commandBuffers;
         u32 commandBufferCounter{0};
-
-        CHandle MainCamera;
 
         bool CreateInstance();
         void SetupDebugMessenger();

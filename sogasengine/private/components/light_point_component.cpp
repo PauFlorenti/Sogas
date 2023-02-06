@@ -4,6 +4,7 @@
 // TODO should not be referenced here.
 #include "engine.h"
 #include "render/module_render.h"
+#include "render_device.h"
 
 namespace Sogas
 {
@@ -25,7 +26,7 @@ namespace Sogas
         enabled     = j.value("enabled", enabled);
     }
 
-    bool TCompPointLight::Activate(const std::unique_ptr<Renderer::Buffer>& InBuffer, const u32 InLightNumber, CommandBuffer cmd)
+    bool TCompPointLight::Activate(const std::shared_ptr<Renderer::Buffer>& InBuffer, const u32 InLightNumber, CommandBuffer cmd)
     {
         if (intensity == 0.0f || enabled == false)
             return false;

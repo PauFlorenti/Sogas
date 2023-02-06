@@ -1,4 +1,4 @@
-#include "render/vulkan/vulkan_vertex_declaration.h"
+#include "vulkan/vulkan_vertex_declaration.h"
 
 namespace Sogas {
 namespace Vk

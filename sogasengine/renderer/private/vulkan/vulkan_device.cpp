@@ -1,20 +1,19 @@
 
-#include "render/vulkan/vulkan_device.h"
+#include "vulkan/vulkan_device.h"
 
-#include "application.h"
-#define GLFW_EXPOSE_NATIVE_WIN32
-#include "GLFW/glfw3native.h"
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
 
-#include "render/vulkan/vulkan_attachment.h"
-#include "render/vulkan/vulkan_buffer.h"
-#include "render/vulkan/vulkan_commandbuffer.h"
-#include "render/vulkan/vulkan_descriptorSet.h"
-#include "render/vulkan/vulkan_pipeline.h"
-#include "render/vulkan/vulkan_renderpass.h"
-#include "render/vulkan/vulkan_shader.h"
-#include "render/vulkan/vulkan_types.h"
-#include "render/vulkan/vulkan_texture.h"
-#include "render/vulkan/vulkan_swapchain.h"
+#include "vulkan/vulkan_attachment.h"
+#include "vulkan/vulkan_buffer.h"
+#include "vulkan/vulkan_commandbuffer.h"
+#include "vulkan/vulkan_descriptorSet.h"
+#include "vulkan/vulkan_pipeline.h"
+#include "vulkan/vulkan_renderpass.h"
+#include "vulkan/vulkan_shader.h"
+#include "vulkan/vulkan_types.h"
+#include "vulkan/vulkan_texture.h"
+#include "vulkan/vulkan_swapchain.h"
 
 namespace Sogas
 {
@@ -31,24 +30,6 @@ namespace Sogas
 #else
         const bool validationLayersEnabled = true;
 #endif
-
-        static std::vector<const char *> GetRequiredExtensions()
-        {
-            // Getting GLFW required instance extensions.
-            u32 glfwExtensionCount = 0;
-            const char **glfwExtensions;
-
-            glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-            std::vector<const char *> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-
-            if (validationLayersEnabled)
-            {
-                extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-            }
-
-            return extensions;
-        }
 
         static VkResult CreateDebugUtilsMessengerEXT(
             VkInstance instance,
@@ -139,7 +120,8 @@ namespace Sogas
             // Is Device suitable ??
         }
 
-        VulkanDevice::VulkanDevice(GraphicsAPI apiType, void * /*device*/)
+        VulkanDevice::VulkanDevice(GraphicsAPI apiType, void * /*device*/, std::vector<const char*> extensions)
+        : glfwExtensions(std::move(extensions))
         {
             api_type = apiType;
         }
@@ -148,8 +130,9 @@ namespace Sogas
         {
         }
 
-        void VulkanDevice::CreateSwapchain(const SwapchainDescriptor &desc, std::shared_ptr<Swapchain> swapchain)
+        void VulkanDevice::CreateSwapchain(const SwapchainDescriptor &desc, std::shared_ptr<Swapchain> swapchain, GLFWwindow* window)
         {
+            SASSERT(window);
             auto internalState = std::static_pointer_cast<VulkanSwapchain>(swapchain->internalState);
 
             if (swapchain->internalState == nullptr)
@@ -164,7 +147,7 @@ namespace Sogas
             {
                 // Surface creation
                 STRACE("\tCreating vulkan window surface handle ...");
-                if (glfwCreateWindowSurface(Instance, CApplication::Get()->GetWindow(), nullptr, &internalState->surface) != VK_SUCCESS)
+                if (glfwCreateWindowSurface(Instance, window, nullptr, &internalState->surface) != VK_SUCCESS)
                 {
                     SERROR("\tFailed to create VkSurface.");
                     return;
@@ -471,10 +454,12 @@ namespace Sogas
 
             if (InSwapchain->resized)
             {
-                i32 width, height;
-                CApplication::Get()->GetWindowSize(&width, &height);
-                InSwapchain->SetSwapchainSize(width, height);
-                InSwapchain->resized = false;
+                return;
+                // i32 width, height;
+                // glfwGetWindowSize(window, &width, &height);
+                // //CApplication::Get()->GetWindowSize(&width, &height);
+                // InSwapchain->SetSwapchainSize(width, height);
+                // InSwapchain->resized = false;
             }
 
             // Begin Render Pass
@@ -544,7 +529,7 @@ namespace Sogas
             vkCmdEndRenderPass(internalCmd->commandBuffers[GetFrameIndex()]);
         }
 
-        std::unique_ptr<Renderer::Buffer> VulkanDevice::CreateBuffer(Renderer::BufferDescriptor desc, void *data) const
+        std::shared_ptr<Renderer::Buffer> VulkanDevice::CreateBuffer(Renderer::BufferDescriptor desc, void *data) const
         {
             auto buffer = VulkanBuffer::Create(this, desc, data);
             return buffer;
@@ -590,23 +575,32 @@ namespace Sogas
             VulkanAttachment::Create(this, InAttachment);
         }
 
-        void VulkanDevice::BindVertexBuffer(const std::unique_ptr<Renderer::Buffer>& buffer, CommandBuffer cmd)
+        void VulkanDevice::SetWindowSize(std::shared_ptr<Swapchain> InSwapchain, const u32& width, const u32& height)
+        {
+            if (InSwapchain->resized || (InSwapchain->descriptor.width != width, InSwapchain->descriptor.height != height))
+            {
+                InSwapchain->SetSwapchainSize(width, height);
+                InSwapchain->resized = false;
+            }
+        }
+
+        void VulkanDevice::BindVertexBuffer(const std::shared_ptr<Renderer::Buffer>& buffer, CommandBuffer cmd)
         {
             SASSERT(buffer);
             SASSERT(buffer->isValid());
 
-            const VulkanBuffer *internalBuffer = static_cast<VulkanBuffer *>(buffer->internal_state.get());
+            const auto internalBuffer = VulkanBuffer::ToInternal(buffer->device_buffer);
             SASSERT(internalBuffer);
 
             VkDeviceSize offset = {0};
             vkCmdBindVertexBuffers(VulkanCommandBuffer::ToInternal(&cmd)->commandBuffers[GetFrameIndex()], 0, 1, internalBuffer->GetHandle(), &offset);
         }
 
-        void VulkanDevice::BindIndexBuffer(const std::unique_ptr<Renderer::Buffer> &buffer, CommandBuffer cmd)
+        void VulkanDevice::BindIndexBuffer(const std::shared_ptr<Renderer::Buffer> &buffer, CommandBuffer cmd)
         {
             SASSERT(buffer->isValid());
 
-            const auto internalBuffer = static_cast<VulkanBuffer *>(buffer->internal_state.get());
+            const auto internalBuffer = VulkanBuffer::ToInternal(buffer->device_buffer);
             SASSERT(internalBuffer);
 
             VkDeviceSize offset = {0};
@@ -634,9 +628,9 @@ namespace Sogas
             }
         }
 
-        void VulkanDevice::BindBuffer(const std::unique_ptr<Renderer::Buffer> &InBuffer, const Pipeline *InPipeline, const u32 InSlot, const u32 InDescriptorSet, const u32 InOffset)
+        void VulkanDevice::BindBuffer(const std::shared_ptr<Renderer::Buffer> &InBuffer, const Pipeline *InPipeline, const u32 InSlot, const u32 InDescriptorSet, const u32 InOffset)
         {
-            auto bufferInternalState = VulkanBuffer::ToInternal(InBuffer);
+            auto bufferInternalState = VulkanBuffer::ToInternal(InBuffer->device_buffer);
             auto pipelineInternalState = VulkanPipeline::ToInternal(InPipeline);
             auto descriptorSetInternalState = VulkanDescriptorSet::ToInternal(&pipelineInternalState->descriptorSets[GetFrameIndex()].at(InDescriptorSet));
 
@@ -760,9 +754,9 @@ namespace Sogas
                 0, InSize, InData);
         }
 
-        void VulkanDevice::UpdateBuffer(const std::unique_ptr<Renderer::Buffer> &InBuffer, const void *InData, const u32 InDataSize, const u32 InOffset, CommandBuffer /*cmd*/)
+        void VulkanDevice::UpdateBuffer(const std::shared_ptr<Renderer::Buffer> &InBuffer, const void *InData, const u32 InDataSize, const u32 InOffset, CommandBuffer /*cmd*/)
         {
-            auto bufferInternalState = VulkanBuffer::ToInternal(InBuffer);
+            auto bufferInternalState = VulkanBuffer::ToInternal(InBuffer->device_buffer);
             void *data;
             vkMapMemory(Handle, bufferInternalState->GetMemory(), InOffset, InDataSize, 0, &data);
             std::memcpy(data, InData, InDataSize);
@@ -774,14 +768,6 @@ namespace Sogas
             auto commandInternalState = VulkanCommandBuffer::ToInternal(&cmd);
             commandInternalState->commandsToWait.push_back(cmdToWait);
         }
-
-        /*
-        void VulkanDevice::WaitCommand(CommandBuffer& cmd, Swapchain* swapchainToWait)
-        {
-            auto cmdInternalState = VulkanCommandBuffer::ToInternal(&cmd);
-            cmdInternalState->swapchain = swapchainToWait;
-        }
-        */
 
         bool VulkanDevice::CreateInstance()
         {
@@ -814,15 +800,18 @@ namespace Sogas
             }
             std::cout << "\t-- \t -- \t -- \n";
 
-            // Get required extensions for application.
-            auto extensions = GetRequiredExtensions();
+            SASSERT(glfwExtensions.empty() == false);
+            if (validationLayersEnabled)
+            {
+                glfwExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+            }
 
             // Print the selected extensions ...
 
             VkInstanceCreateInfo instanceCreateInfo = {VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO};
             instanceCreateInfo.pApplicationInfo = &applicationInfo;
-            instanceCreateInfo.enabledExtensionCount = static_cast<u32>(extensions.size());
-            instanceCreateInfo.ppEnabledExtensionNames = extensions.data();
+            instanceCreateInfo.enabledExtensionCount = static_cast<u32>(glfwExtensions.size());
+            instanceCreateInfo.ppEnabledExtensionNames = glfwExtensions.data();
             instanceCreateInfo.enabledLayerCount = validationLayersEnabled ? static_cast<u32>(validationLayers.size()) : 0;
             instanceCreateInfo.ppEnabledLayerNames = validationLayersEnabled ? validationLayers.data() : nullptr;
 
@@ -965,7 +954,7 @@ namespace Sogas
 
             if (CreateDebugUtilsMessengerEXT(Instance, &debugMessengerCreateInfo, nullptr, &DebugMessenger) != VK_SUCCESS)
             {
-                throw std::runtime_error("Failed to seupt debug messenger!");
+                throw std::runtime_error("Failed to setup debug messenger!");
             }
         }
 

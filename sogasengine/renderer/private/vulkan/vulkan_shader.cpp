@@ -1,5 +1,5 @@
-#include "render/vulkan/vulkan_device.h"
-#include "render/vulkan/vulkan_shader.h"
+#include "vulkan/vulkan_device.h"
+#include "vulkan/vulkan_shader.h"
 #include <spirv/src/spirv_cross.hpp>
 
 namespace Sogas

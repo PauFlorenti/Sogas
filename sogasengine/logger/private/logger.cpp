@@ -9,7 +9,7 @@ void FormatString(char* out, const char* format, ...)
     char buffer[LOG_BUFFER_SIZE];
     va_list args;
     va_start(args, format);
-    i32 written = vsnprintf(buffer, LOG_BUFFER_SIZE, format, args);
+    int32_t written = vsnprintf(buffer, LOG_BUFFER_SIZE, format, args);
     va_end(args);
 
     memcpy(out, buffer, written);
@@ -30,14 +30,14 @@ void LogMessage(LogLevel level, const char* message, ...)
     FormatString(buffer, "%s%s\n", LogTypes[level], buffer);
 
     HANDLE hndl = GetStdHandle(STD_OUTPUT_HANDLE);
-    static u8 levels[5] = {64, 4, 6, 2, 15};
+    static uint8_t levels[5] = {64, 4, 6, 2, 15};
     SetConsoleTextAttribute(hndl, levels[level]);
-    u64 length = strlen(buffer);
+    uint64_t length = strlen(buffer);
     LPDWORD nWritten = 0;
     WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), buffer, (DWORD)length, nWritten, NULL);
 }
 
-void ReportAssert(const char* expr, const char* message, const char* file, i32 line, ...)
+void ReportAssert(const char* expr, const char* message, const char* file, int32_t line, ...)
 {
     va_list args;
     va_start(args, message);

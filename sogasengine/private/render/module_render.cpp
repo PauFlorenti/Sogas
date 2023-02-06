@@ -1,8 +1,8 @@
 
+#include "buffer.h"
+#include "render_device.h"
 #include "render/module_render.h"
-#include "render/render_device.h"
 #include "render/render_manager.h"
-#include "render/buffer.h"
 
 // ! TEMP
 #include "application.h"
@@ -17,10 +17,10 @@ namespace Sogas
     RenderPass forwardRenderPass;
     Shader forwardShaders[2]; // 0 vs, 1 ps
     Shader presentShaders[2];
-    std::unique_ptr<Renderer::Buffer> constantBuffer;
-    std::unique_ptr<Renderer::Buffer> lightBuffer;
-    std::unique_ptr<Renderer::Buffer> quadIdxBuffer;
-    std::unique_ptr<Renderer::Buffer> quadBuffer;
+    std::shared_ptr<Renderer::Buffer> constantBuffer;
+    std::shared_ptr<Renderer::Buffer> lightBuffer;
+    std::shared_ptr<Renderer::Buffer> quadIdxBuffer;
+    std::shared_ptr<Renderer::Buffer> quadBuffer;
 
     std::shared_ptr<Texture> colorBuffer;
     AttachmentFramebuffer colorAttachment;
@@ -71,7 +71,10 @@ namespace Sogas
         // Start ImGui
 
         // Start selected renderer. Vulkan only at the moment and by default.
-        renderer = GPU_device::create(GraphicsAPI::Vulkan, nullptr);
+        u32 extensionsCount = 0;
+        const char **extensions = glfwGetRequiredInstanceExtensions(&extensionsCount);
+        std::vector<const char *> extensions_vector(extensions, extensions + extensionsCount);
+        renderer = GPU_device::create(GraphicsAPI::Vulkan, nullptr, extensions_vector);
         renderer->Init();
 
         i32 width, height;
@@ -83,7 +86,7 @@ namespace Sogas
         desc.format = Format::R32G32B32A32_SFLOAT;
         desc.width = width;
         desc.height = height;
-        renderer->CreateSwapchain(desc, swapchain);
+        renderer->CreateSwapchain(desc, swapchain, CApplication::Get()->GetWindow());
 
         // Create shaders
         renderer->CreateShader(ShaderStage::VERTEX, "forward.vert.spv", &forwardShaders[0]);
@@ -161,11 +164,21 @@ namespace Sogas
 
     void CRenderModule::Stop()
     {
+        constantBuffer->~Buffer();
+        lightBuffer->~Buffer();
+        quadIdxBuffer->~Buffer();
+        quadBuffer->~Buffer();
         renderer->shutdown();
     }
 
     void CRenderModule::Update(f32 /*dt*/)
     {
+        if (swapchain->resized)
+        {
+            i32 width, height;
+            glfwGetWindowSize(CApplication::Get()->GetWindow(), &width, &height);
+            renderer->SetWindowSize(swapchain, width, height);
+        }
     }
 
     void CRenderModule::Render()

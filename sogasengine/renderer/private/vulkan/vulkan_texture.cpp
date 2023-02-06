@@ -1,7 +1,7 @@
 
-#include "render/vulkan/vulkan_buffer.h"
-#include "render/vulkan/vulkan_device.h"
-#include "render/vulkan/vulkan_texture.h"
+#include "vulkan/vulkan_buffer.h"
+#include "vulkan/vulkan_device.h"
+#include "vulkan/vulkan_texture.h"
 
 // TODO Texture transition function abstraction
 // TODO BufferCopyToImage function abstraction

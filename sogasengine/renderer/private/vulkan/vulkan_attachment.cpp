@@ -1,5 +1,5 @@
-#include "render/vulkan/vulkan_attachment.h"
-#include "render/vulkan/vulkan_device.h"
+#include "vulkan/vulkan_attachment.h"
+#include "vulkan/vulkan_device.h"
 
 namespace Sogas
 {

@@ -1,6 +1,6 @@
-#include "render/vulkan/vulkan_descriptorSet.h"
-#include "render/vulkan/vulkan_device.h"
-#include "render/vulkan/vulkan_pipeline.h"
+#include "vulkan/vulkan_descriptorSet.h"
+#include "vulkan/vulkan_device.h"
+#include "vulkan/vulkan_pipeline.h"
 
 namespace Sogas
 {

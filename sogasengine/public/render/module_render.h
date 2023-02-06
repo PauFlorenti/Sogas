@@ -1,10 +1,11 @@
 #pragma once
 
 #include "modules/module.h"
-#include "render/vulkan/vulkan_device.h"
 
 namespace Sogas
 {
+    class GPU_device;
+    struct Swapchain;
     class CRenderModule : public IModule
     {
     public:
@@ -24,4 +25,4 @@ namespace Sogas
         std::shared_ptr<GPU_device> renderer;
         std::shared_ptr<Swapchain> swapchain;
     };
-} // Sogas
+} // namespace Sogas

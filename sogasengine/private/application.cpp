@@ -50,6 +50,7 @@ namespace Sogas
     void CApplication::Shutdown()
     {
         STRACE("Shutting down ... ");
+        CEngine::Get()->Shutdown();
         STRACE("Terminating GLFW ... ");
         glfwDestroyWindow(window);
         glfwTerminate();

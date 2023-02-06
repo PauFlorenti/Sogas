@@ -1,7 +1,7 @@
 #pragma once
 
 #include "resource.h"
-#include "render/render_types.h"
+#include "render_types.h"
 
 namespace Sogas
 {

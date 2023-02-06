@@ -1,7 +1,7 @@
 #pragma once
 
 #include "resource.h"
-#include "render/render_device.h"
+#include "render_device.h"
 
 namespace Sogas
 {
@@ -25,8 +25,8 @@ namespace Sogas
         u32 indexCount = 0;
         u32 indexOffset = 0;
 
-        std::unique_ptr<Renderer::Buffer> vertexBuffer;
-        std::unique_ptr<Renderer::Buffer> indexBuffer;
+        std::shared_ptr<Renderer::Buffer> vertexBuffer;
+        std::shared_ptr<Renderer::Buffer> indexBuffer;
         PrimitiveTopology Topology = PrimitiveTopology::UNDEFINED;
         bool Indexed = false;
 

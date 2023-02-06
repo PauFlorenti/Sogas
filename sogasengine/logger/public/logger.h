@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstdint>
+#include <cstdio>
+
 #define LOG_WARN_ENABLED true
 #define LOG_ERROR_ENABLED true
 #define LOG_ERROR_ENABLED true
@@ -23,7 +26,7 @@ enum LogLevel
 
 void LogMessage(LogLevel level, const char* message, ...);
 
-void ReportAssert(const char* expr, const char* message, const char* file, i32 line, ...);
+void ReportAssert(const char* expr, const char* message, const char* file, int32_t line, ...);
 
 #define SFATAL(message, ...) LogMessage(LOG_LEVEL_FATAL, message, ##__VA_ARGS__);
 #define SERROR(message, ...) LogMessage(LOG_LEVEL_ERROR, message, ##__VA_ARGS__);

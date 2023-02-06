@@ -1,6 +1,6 @@
 #pragma once
 
-#include "render/render_device.h"
+#include "render_device.h"
 #include <vulkan/vulkan.h>
 #include "vulkan_vertex_declaration.h"
 

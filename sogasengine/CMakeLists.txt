@@ -8,24 +8,19 @@ file(GLOB_RECURSE
     private/entity/*.cpp
     private/modules/*.cpp
     private/render/*.cpp
-    private/render/vulkan/*.cpp
     private/resources/*.cpp
     private/handle/*.cpp)
 
-add_subdirectory(external/vulkan)
 add_subdirectory(external/tinyobjloader)
 add_subdirectory(external/glfw)
 add_subdirectory(external/glm)
 
-message("Vulkan libs path: ${Vulkan_LIBRARY}")
-message("Vulkan include path: ${Vulkan_INCLUDE_DIR}")
+add_subdirectory(logger)
+add_subdirectory(renderer)
 
 add_library(${PROJECT_NAME} STATIC
     PRIVATE
     ${SOURCES})
-
-#add_dependencies(glfw Vulkan-Loader)
-#add_dependencies(${PROJECT_NAME} external/vulkan)
 
 target_include_directories(${PROJECT_NAME}
     PUBLIC
@@ -33,18 +28,24 @@ target_include_directories(${PROJECT_NAME}
     ${CMAKE_CURRENT_SOURCE_DIR}/external
     ${glm_SOURCE_DIR}
     ${GLFW_SOURCE_DIR}/include
-    ${Vulkan_INCLUDE_DIR}
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/private
     ${CMAKE_CURRENT_SOURCE_DIR}/internal
+    ${CMAKE_CURRENT_SOURCE_DIR}/renderer/public
+    ${CMAKE_CURRENT_SOURCE_DIR}/logger/public
     ${tinyobjloader_SOURCE_DIR}
-    )
+)
+
+target_link_directories(${PROJECT_NAME}
+    PRIVATE
+    ${GLFW_BINARY_DIR}/src/${CMAKE_BUILD_TYPE})
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
-    ${Vulkan_LIBRARY}
+    logger
+    renderer
     ${GLFW_BINARY_DIR}/src/${CMAKE_BUILD_TYPE}/glfw3.lib
-    spirv/lib/spirv-cross-cored)
+)
 
 if(MSVC)
     target_compile_options(${PROJECT_NAME}
@@ -66,5 +67,4 @@ target_precompile_headers(${PROJECT_NAME}
 
 file(COPY data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/..)
 file(GLOB SHADERS private/shaders/bin/*.spv)
-#message(${SHADERS})
 file(COPY ${SHADERS} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/../data/shaders)
