@@ -12,12 +12,15 @@ file(GLOB_RECURSE
     private/resources/*.cpp
     private/handle/*.cpp)
 
-#find_package(Vulkan REQUIRED)
+find_package(Vulkan)
 
 add_subdirectory(external/vulkan)
 add_subdirectory(external/tinyobjloader)
 add_subdirectory(external/glfw)
 add_subdirectory(external/glm)
+
+message("Vulkan libs path: ${Vulkan_LIBRARY}")
+message("Vulkan include path: ${Vulkan_INCLUDE_DIR}")
 
 add_library(${PROJECT_NAME} STATIC
     PRIVATE
