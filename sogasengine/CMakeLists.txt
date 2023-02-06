@@ -12,8 +12,6 @@ file(GLOB_RECURSE
     private/resources/*.cpp
     private/handle/*.cpp)
 
-#find_package(Vulkan)
-
 add_subdirectory(external/vulkan)
 add_subdirectory(external/tinyobjloader)
 add_subdirectory(external/glfw)
@@ -25,6 +23,9 @@ message("Vulkan include path: ${Vulkan_INCLUDE_DIR}")
 add_library(${PROJECT_NAME} STATIC
     PRIVATE
     ${SOURCES})
+
+#add_dependencies(glfw Vulkan-Loader)
+#add_dependencies(${PROJECT_NAME} external/vulkan)
 
 target_include_directories(${PROJECT_NAME}
     PUBLIC
