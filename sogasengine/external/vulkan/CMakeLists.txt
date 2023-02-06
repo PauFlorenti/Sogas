@@ -1,7 +1,7 @@
 
 include(FetchContent)
 
-if(NOT Vulkan_FOUND)
+if(NOT Vulkan_FOUND OR NOT DEFINED Vulkan_FOUND)
     FetchContent_Declare(
         Vulkan-Headers
         GIT_REPOSITORY https://github.com/KhronosGroup/Vulkan-Headers.git
@@ -16,7 +16,14 @@ if(NOT Vulkan_FOUND)
         GIT_TAG main
     )
 
-    set(Vulkan_LIBRARR ${Vulkan-Loader_BINARY_DIR}/loader/${CMAKE_BUILD_TYPE}/vulkan-1.lib PARENT_SCOPE)
+    set(Vulkan_LIBRARY ${Vulkan-Loader_BINARY_DIR}/loader/${CMAKE_BUILD_TYPE}/vulkan-1.lib PARENT_SCOPE)
+
+    set(Vulkan_FOUND true)
+
+    message("Fetching vulkan from github source ...")
+    message("Vulkan found status ${Vulkan_FOUND}")
+    message("Vulkan libs: ${Vulkan_LIBRARY}")
+    message("Vulkan includes: ${Vulkan_INCLUDE_DIR}")
 
     FetchContent_MakeAvailable(Vulkan-Headers Vulkan-Loader)
-endif(NOT Vulkan_FOUND)
+endif(NOT Vulkan_FOUND OR NOT DEFINED Vulkan_FOUND)
