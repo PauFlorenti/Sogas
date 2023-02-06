@@ -1,13 +1,18 @@
 
 cmake_minimum_required(VERSION 3.24.2)
+
 project(Sogas
     VERSION 1.0.0
     DESCRIPTION "Sogas Engine"
     LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17) 
+set(CMAKE_CXX_STANDARD 17)
 
-if(MSVC) 
+if (NOT DEFINED CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug)
+endif (NOT DEFINED CMAKE_BUILD_TYPE)
+
+if(MSVC)
     set(CMAKE_EXE_LINKER_FLAGS
         "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:msvcrt")
 endif()
