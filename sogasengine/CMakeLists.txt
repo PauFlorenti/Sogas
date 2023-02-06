@@ -38,7 +38,7 @@ target_include_directories(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
-    ${Vulkan_LIBRARIES}
+    ${Vulkan_LIBRARY}
     ${GLFW_BINARY_DIR}/src/${CMAKE_BUILD_TYPE}/glfw3.lib
     spirv/lib/spirv-cross-cored)
 

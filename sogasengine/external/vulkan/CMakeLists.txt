@@ -16,7 +16,7 @@ if(NOT Vulkan_FOUND)
         GIT_TAG main
     )
 
-    set(Vulkan_LIBRARIES ${Vulkan-Loader_BINARY_DIR}/loader/${CMAKE_BUILD_TYPE}/vulkan-1.lib PARENT_SCOPE)
+    set(Vulkan_LIBRARR ${Vulkan-Loader_BINARY_DIR}/loader/${CMAKE_BUILD_TYPE}/vulkan-1.lib PARENT_SCOPE)
     set(Vulkan_FOUND true)
     message("Vulkan found ${Vulkan_FOUND}")
     message("Vulkan libraries path at ... ${Vulkan_LIBRARIES}")
