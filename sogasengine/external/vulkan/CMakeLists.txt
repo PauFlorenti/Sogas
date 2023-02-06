@@ -6,8 +6,20 @@ if(NOT Vulkan_FOUND)
         Vulkan-Headers
         GIT_REPOSITORY https://github.com/KhronosGroup/Vulkan-Headers.git
         GIT_TAG v1.3.240
-        FIND_PACKAGE_ARGS NAMES Vulkan
     )
 
-    FetchContent_MakeAvailable(Vulkan-Headers)
+    set(Vulkan_INCLUDE_DIR ${Vulkan-Headers_SOURCE_DIR}/include PARENT_SCOPE)
+
+    FetchContent_Declare(
+        Vulkan-Loader
+        GIT_REPOSITORY https://github.com/KhronosGroup/Vulkan-Loader.git
+        GIT_TAG main
+    )
+
+    set(Vulkan_LIBRARIES ${Vulkan-Loader_BINARY_DIR}/loader/${CMAKE_BUILD_TYPE}/vulkan-1.lib PARENT_SCOPE)
+    set(Vulkan_FOUND true)
+    message("Vulkan found ${Vulkan_FOUND}")
+    message("Vulkan libraries path at ... ${Vulkan_LIBRARIES}")
+
+    FetchContent_MakeAvailable(Vulkan-Headers Vulkan-Loader)
 endif(NOT Vulkan_FOUND)

@@ -1,9 +1,9 @@
 
 include(FetchContent)
 
-set(GLFW_BUILD_DOCS:BOOL=OFF)
-set(GLFW_BUILD_EXAMPLES:BOOL=OFF)
-set(GLFW_BUILD_TESTS:BOOL=OFF)
+set(GLFW_BUILD_DOCS OFF)
+set(GLFW_BUILD_EXAMPLES OFF)
+set(GLFW_BUILD_TESTS OFF)
 
 FetchContent_Declare(
     glfw

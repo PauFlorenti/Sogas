@@ -23,15 +23,13 @@ add_library(${PROJECT_NAME} STATIC
     PRIVATE
     ${SOURCES})
 
-message("${glm_SOURCE_DIR}/include")
-
 target_include_directories(${PROJECT_NAME}
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/public
     ${CMAKE_CURRENT_SOURCE_DIR}/external
     ${glm_SOURCE_DIR}
     ${GLFW_SOURCE_DIR}/include
-    ${Vulkan-Headers_SOURCE_DIR}/include
+    ${Vulkan_INCLUDE_DIR}
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/private
     ${CMAKE_CURRENT_SOURCE_DIR}/internal
@@ -64,5 +62,5 @@ target_precompile_headers(${PROJECT_NAME}
 
 file(COPY data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/..)
 file(GLOB SHADERS private/shaders/bin/*.spv)
-message(${SHADERS})
+#message(${SHADERS})
 file(COPY ${SHADERS} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/../data/shaders)
