@@ -12,7 +12,7 @@ file(GLOB_RECURSE
     private/resources/*.cpp
     private/handle/*.cpp)
 
-find_package(Vulkan)
+#find_package(Vulkan)
 
 add_subdirectory(external/vulkan)
 add_subdirectory(external/tinyobjloader)
