@@ -1,7 +1,6 @@
 #pragma once
 
 #include "handle_manager.h"
-#include "logger.h"
 
 namespace Sogas
 {

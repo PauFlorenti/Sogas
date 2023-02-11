@@ -18,6 +18,8 @@ namespace Vk
         VulkanBuffer& operator=(const VulkanBuffer& other) = delete;
         ~VulkanBuffer();
 
+        void Release() override;
+
         static std::unique_ptr<Renderer::Buffer> Create(const VulkanDevice* device, Renderer::BufferDescriptor desc, void* data);
 
         static inline std::shared_ptr<VulkanBuffer> ToInternal(const std::shared_ptr<Renderer::DeviceBuffer> InBuffer) {
@@ -31,7 +33,7 @@ namespace Vk
 
         VkDescriptorBufferInfo descriptorInfo;
     private:
-        const VulkanDevice*     gpu_device = nullptr;
+        const VulkanDevice*     device = nullptr;
         VkBuffer                handle = VK_NULL_HANDLE;
         VkDeviceMemory          memory = VK_NULL_HANDLE;
     };

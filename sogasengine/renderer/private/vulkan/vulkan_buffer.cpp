@@ -6,16 +6,21 @@ namespace Sogas
 {
     namespace Vk
     {
-        VulkanBuffer::VulkanBuffer(const VulkanDevice* device) : gpu_device(device)
+        VulkanBuffer::VulkanBuffer(const VulkanDevice* device) : device(device)
         {
-            SASSERT(gpu_device != nullptr);
+            SASSERT(device != nullptr);
         }
 
         VulkanBuffer::~VulkanBuffer()
         {
-            SASSERT(gpu_device != nullptr);
-            vkDestroyBuffer(gpu_device->Handle, handle, nullptr);
-            vkFreeMemory(gpu_device->Handle, memory, nullptr);
+            Release();
+        }
+
+        void VulkanBuffer::Release()
+        {
+            SASSERT(device != nullptr);
+            vkDestroyBuffer(device->Handle, handle, nullptr);
+            vkFreeMemory(device->Handle, memory, nullptr);
         }
 
         std::unique_ptr<Renderer::Buffer> VulkanBuffer::Create(const VulkanDevice *device, Renderer::BufferDescriptor desc, void *data)

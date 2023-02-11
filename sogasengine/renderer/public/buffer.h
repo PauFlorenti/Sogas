@@ -51,10 +51,11 @@ namespace Sogas
             Buffer &operator=(Buffer &&other);
             ~Buffer();
 
+            void Release();
+
             size_t getSizeInBytes() const;
             bool isEmpty() const;
             bool isValid() const;
-            void reset();
 
             // TODO This should not be public.
             std::shared_ptr<DeviceBuffer> device_buffer;

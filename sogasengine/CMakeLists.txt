@@ -24,15 +24,16 @@ add_library(${PROJECT_NAME} STATIC
 
 target_include_directories(${PROJECT_NAME}
     PUBLIC
+    .
     ${CMAKE_CURRENT_SOURCE_DIR}/public
     ${CMAKE_CURRENT_SOURCE_DIR}/external
     ${glm_SOURCE_DIR}
     ${GLFW_SOURCE_DIR}/include
     PRIVATE
+    .
+    #${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/private
     ${CMAKE_CURRENT_SOURCE_DIR}/internal
-    ${CMAKE_CURRENT_SOURCE_DIR}/renderer/public
-    ${CMAKE_CURRENT_SOURCE_DIR}/logger/public
     ${tinyobjloader_SOURCE_DIR}
 )
 

@@ -7,8 +7,7 @@ namespace Sogas
         class DeviceBuffer
         {
         public:
-            virtual ~DeviceBuffer() {};
-            //virtual void Reset() = 0;
+            virtual void Release() = 0;
         };
     } // namespace Renderer
 } // namesapce Sogas

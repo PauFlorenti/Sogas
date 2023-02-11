@@ -10,7 +10,7 @@ namespace Sogas
         virtual const char* GetExtension(const i32 i) const = 0;
         virtual u32 GetNumResourceTypeExtensions() { return 1; }
         virtual const char* GetName() const = 0;
-        virtual IResource* Create(const std::string& name) const = 0;
+        virtual IResource* Create(std::string name) const = 0;
     };
 
     template< typename T >
@@ -30,7 +30,7 @@ namespace Sogas
         const std::string GetFullPath() const { return FullPath; }
 
         void SetResourceType(const IResourceType* ResourceType) { Type = std::move(ResourceType); }
-        void SetResourceName(const std::string& ResourceName) { Name = std::move(ResourceName); }
+        void SetResourceName(std::string ResourceName) { Name = std::move(ResourceName); }
 
         virtual void Destroy() {};
 

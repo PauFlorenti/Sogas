@@ -33,7 +33,7 @@ namespace Sogas
 
         Buffer::~Buffer()
         {
-            sizeInBytes = 0;
+            Release();
         }
 
         size_t Buffer::getSizeInBytes() const
@@ -43,7 +43,7 @@ namespace Sogas
 
         bool Buffer::isEmpty() const
         {
-            return false;//device_buffer. == nullptr;
+            return (device_buffer.get() == nullptr) || (device_buffer.use_count() == 0);
         }
 
         bool Buffer::isValid() const
@@ -51,10 +51,11 @@ namespace Sogas
             return !isEmpty();
         }
 
-        void Buffer::reset()
+        void Buffer::Release()
         {
-            sizeInBytes = 0;
+            device.reset();
             device_buffer.reset();
+            sizeInBytes = 0;
         }
 
     } // namespace Renderer

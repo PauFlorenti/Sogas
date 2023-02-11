@@ -14,10 +14,10 @@ namespace Sogas
         const u32 extensionNumber = 2;
         std::string extensions[2] = {".png", ".text"};
 
-        bool LoadTexture(Texture* InTexture, const std::string& InName) const
+        bool LoadTexture(Texture* InTexture, std::string InName) const
         {
 
-            GPU_device* render = CEngine::Get()->GetRenderModule()->GetGraphicsDevice().get();
+            Renderer::GPU_device* render = CEngine::Get()->GetRenderModule()->GetGraphicsDevice().get();
             SASSERT(render);
 
             size_t extensionIndex = InName.find_last_of(".");
@@ -26,8 +26,9 @@ namespace Sogas
             TextureDescriptor desc;
             if (extension == extensions[0])
             {
+                const auto filename = std::move(CEngine::FindFile(InName));
                 i32 width, height, channels;
-                stbi_uc* pixels = stbi_load(InName.c_str(), &width, &height, &channels, STBI_rgb_alpha);
+                stbi_uc* pixels = stbi_load(filename.c_str(), &width, &height, &channels, STBI_rgb_alpha);
                 SASSERT(pixels);
 
                 desc.textureType    = TextureDescriptor::TEXTURE_TYPE_2D;
@@ -76,10 +77,10 @@ namespace Sogas
 
         const char* GetName() const override { return "Texture"; }
 
-        IResource* Create( const std::string& InName ) const override
+        IResource* Create( std::string InName ) const override
         {
             Texture* texture = new Texture();
-            if (LoadTexture(texture, InName))
+            if (LoadTexture(texture, std::move(InName)))
             {
                 return texture;
             }

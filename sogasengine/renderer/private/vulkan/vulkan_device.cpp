@@ -550,9 +550,9 @@ namespace Sogas
             VulkanPipeline::Create(this, desc, pipeline, renderpass);
         }
 
-        void VulkanDevice::CreateShader(ShaderStage stage, const char *filename, Shader *shader) const
+        void VulkanDevice::CreateShader(ShaderStage stage, std::string filename, Shader *shader) const
         {
-            VulkanShader::Create(this, stage, filename, shader);
+            VulkanShader::Create(this, stage, std::move(filename), shader);
         }
 
         void VulkanDevice::UpdateDescriptorSet(const Pipeline *InPipeline) const

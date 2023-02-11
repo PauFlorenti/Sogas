@@ -7,7 +7,7 @@ namespace Sogas {
 namespace Vk
 {
 
-    class VulkanDevice : public GPU_device
+    class VulkanDevice : public Renderer::GPU_device
     {
         friend class VulkanAttachment;
         friend class VulkanBuffer;
@@ -41,7 +41,7 @@ namespace Vk
         void CreateRenderPass(const RenderPassDescriptor* desc, RenderPass* renderpass) const override;
         void CreatePipeline(const PipelineDescriptor* desc, Pipeline* pipeline, RenderPass* renderpass = nullptr) const override;
         void CreateAttachment() const override {};
-        void CreateShader(ShaderStage stage, const char* filename, Shader* shader) const override;
+        void CreateShader(ShaderStage stage, std::string filename, Shader* shader) const override;
         void UpdateDescriptorSet(const Pipeline* InPipeline) const override;
         void CreateAttachment(AttachmentFramebuffer* InAttachment) const override;
 

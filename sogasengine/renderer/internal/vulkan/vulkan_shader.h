@@ -17,7 +17,7 @@ namespace Vk
         VulkanShader(VulkanShader&&) = delete;
         const VulkanShader& operator=(const VulkanShader& other) = delete;
 
-        static void Create(const VulkanDevice* device, ShaderStage stage, const char* InFilename, Shader* OutShader);
+        static void Create(const VulkanDevice* device, ShaderStage stage, std::string InFilename, Shader* OutShader);
 
         static inline std::shared_ptr<VulkanShader> ToInternal(const Shader* InShader) {
             return std::static_pointer_cast<VulkanShader>(InShader->internalState);

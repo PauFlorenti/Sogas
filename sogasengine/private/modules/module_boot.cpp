@@ -6,7 +6,7 @@ namespace Sogas
 
     static void PaserScene(const std::string filename)
     {
-        json j = LoadJson(filename);
+        json j = LoadJson(CEngine::FindFile(filename));
 
         SASSERT(j.is_array());
 
@@ -40,7 +40,7 @@ namespace Sogas
 
     bool CModuleBoot::Start()
     {
-        json j = LoadJson("../../data/boot.json");
+        json j = LoadJson(std::move(CEngine::FindFile("boot.json")));
         auto scenes = j["scenes_to_load"].get<std::vector<std::string>>();
         for(auto s : scenes)
         {

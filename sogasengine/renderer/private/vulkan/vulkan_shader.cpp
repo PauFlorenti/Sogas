@@ -24,11 +24,10 @@ namespace Vk
         return buffer;
     }
 
-    void VulkanShader::Create(const VulkanDevice* device, ShaderStage InStage, const char* InFilename, Shader* OutShader)
+    void VulkanShader::Create(const VulkanDevice* device, ShaderStage InStage, std::string InFilename, Shader* OutShader)
     {
         std::string name = InFilename;
-        std::string filename = "../../data/shaders/" + name;
-        auto code = ReadShaderFile(filename);
+        auto code = ReadShaderFile(name);
         SASSERT(!code.empty());
 
         spirv_cross::Compiler comp(code);

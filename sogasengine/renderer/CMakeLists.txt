@@ -19,8 +19,7 @@ target_include_directories(renderer
     PRIVATE
     .
     ${CMAKE_CURRENT_SOURCE_DIR}/external
-    ${CMAKE_CURRENT_SOURCE_DIR}/../external
-    ${CMAKE_CURRENT_SOURCE_DIR}/../logger/public
+    ${CMAKE_CURRENT_SOURCE_DIR}/..
     ${glm_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/internal
     ${GLFW_SOURCE_DIR}/include

@@ -3,33 +3,36 @@
 
 namespace Sogas
 {
-    std::shared_ptr<GPU_device> createVulkanDevice(void* device, std::vector<const char*> glfwExtensions)
+    namespace Renderer
     {
-        return std::make_shared<Vk::VulkanDevice>(GraphicsAPI::Vulkan, device, glfwExtensions);
-    }
-
-    std::shared_ptr<GPU_device> createOpenGLDevice(void* /*device*/)
-    {
-        return nullptr;
-    }
-
-    std::shared_ptr<GPU_device> GPU_device::create(GraphicsAPI api, void* /*device*/, std::vector<const char*> extensions)
-    {
-        switch (api)
+        std::shared_ptr<GPU_device> createVulkanDevice(void *device, std::vector<const char *> glfwExtensions)
         {
-        case GraphicsAPI::Vulkan:
-        {
-            std::shared_ptr<GPU_device> device(createVulkanDevice(nullptr, extensions));
-            return device;
-            break;
+            return std::make_shared<Vk::VulkanDevice>(GraphicsAPI::Vulkan, device, glfwExtensions);
         }
-        case GraphicsAPI::OpenGL:
-            return createOpenGLDevice(nullptr);
-            break;
-        default:
-            SFATAL("No valid api provided.");
+
+        std::shared_ptr<GPU_device> createOpenGLDevice(void * /*device*/)
+        {
             return nullptr;
-            break;
         }
-    }     
+
+        std::shared_ptr<GPU_device> GPU_device::create(GraphicsAPI api, void * /*device*/, std::vector<const char *> extensions)
+        {
+            switch (api)
+            {
+            case GraphicsAPI::Vulkan:
+            {
+                std::shared_ptr<GPU_device> device(createVulkanDevice(nullptr, extensions));
+                return device;
+                break;
+            }
+            case GraphicsAPI::OpenGL:
+                return createOpenGLDevice(nullptr);
+                break;
+            default:
+                SFATAL("No valid api provided.");
+                return nullptr;
+                break;
+            }
+        }
+    } // namespace Renderer
 } // namespace Sogas

@@ -105,7 +105,7 @@ namespace Sogas
         return LoadColor(j, attr);
     }
 
-    json LoadJson(const std::string& filename)
+    json LoadJson(std::string filename)
     {
         json j;
         std::ifstream ifs(filename.c_str());

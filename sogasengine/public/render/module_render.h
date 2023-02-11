@@ -1,10 +1,10 @@
 #pragma once
 
 #include "modules/module.h"
+#include "renderer/public/render_device.h"
 
 namespace Sogas
 {
-    class GPU_device;
     struct Swapchain;
     class CRenderModule : public IModule
     {
@@ -17,12 +17,12 @@ namespace Sogas
         void Render() override;
         void RenderInMenu() override;
 
-        std::shared_ptr<GPU_device> GetGraphicsDevice() const { return renderer; }
+        std::shared_ptr<Renderer::GPU_device> GetGraphicsDevice() const { return renderer; }
 
         void DoFrame();
 
     private:
-        std::shared_ptr<GPU_device> renderer;
+        std::shared_ptr<Renderer::GPU_device> renderer;
         std::shared_ptr<Swapchain> swapchain;
     };
 } // namespace Sogas

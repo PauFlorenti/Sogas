@@ -4,7 +4,7 @@ namespace Sogas
 {
     bool CEntityModule::Start() 
     { 
-        json j = LoadJson("../../data/components.json");
+        json j = LoadJson(std::move(CEngine::FindFile("components.json")));
 
         std::map<std::string, u32> ComponentSizes = j["sizes"];
         i32 defaultSize = ComponentSizes["default"];

@@ -18,8 +18,9 @@ namespace Sogas
 {
     class CMeshResource : public IResourceType
     {
-        bool LoadMesh( CMesh* mesh, const std::string& name ) const
+        bool LoadMesh( CMesh* mesh, std::string filename ) const
         {
+            auto name = CEngine::FindFile(std::move(filename));
             // Load data
             tinyobj::attrib_t attrib;
             std::vector<tinyobj::shape_t> shapes;
@@ -103,10 +104,10 @@ namespace Sogas
         }
 
         const char* GetName() const override { return "Mesh"; }
-        IResource* Create( const std::string& name ) const override
+        IResource* Create( std::string name ) const override
         {
             CMesh* mesh = new CMesh();
-            if(LoadMesh(mesh, name))
+            if(LoadMesh(mesh, std::move(name)))
                 return mesh;
             return nullptr;
         }

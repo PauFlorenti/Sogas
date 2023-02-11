@@ -7,6 +7,13 @@ namespace Sogas
     class CEntityModule;
     class CRenderModule;
 
+    const std::string search_paths[] = {
+        "../data/",
+        "../data/shaders/",
+        "../../data/",
+        "../../data/shaders/"
+    };
+
     class CEngine
     {
     public:
@@ -19,6 +26,8 @@ namespace Sogas
                 engine = new CEngine();
             return engine;
         }
+
+        static const std::string FindFile(std::string filename);
 
         bool Init();
         void DoFrame();

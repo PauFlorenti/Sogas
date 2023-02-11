@@ -14,6 +14,6 @@ namespace Sogas
     glm::vec4 LoadColor(const json& j, const char* attr);
     glm::vec4 LoadColor(const json& j, const char* attr, const glm::vec4 defaultValue);
 
-    json LoadJson(const std::string& filename);
+    json LoadJson(std::string filename);
 
 } // Sogas

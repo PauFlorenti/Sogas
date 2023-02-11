@@ -31,7 +31,7 @@ namespace Sogas
         bool Indexed = false;
 
         void *data;
-        std::weak_ptr<GPU_device> device;
+        std::weak_ptr<Renderer::GPU_device> device;
 
     private:
         std::string name;

@@ -8,9 +8,9 @@ namespace Sogas
 {
     class Material_resource : public IResourceType
     {
-        bool LoadMaterial(Material* InMaterial, const std::string& InName) const
+        bool LoadMaterial(Material* InMaterial, std::string InName) const
         {
-            json j = LoadJson(InName);
+            json j = LoadJson(std::move(CEngine::FindFile(InName)));
             InMaterial->CreateFromJson(j);
             return true;
         }
@@ -18,10 +18,10 @@ namespace Sogas
     public:
         const char* GetExtension( const i32 /*i*/ ) const override {return ".mat";}
         const char* GetName() const override { return "Material"; }
-        IResource* Create( const std::string& InName ) const override
+        IResource* Create( std::string InName ) const override
         {
             Material* material = new Material();
-            if (LoadMaterial(material, InName))
+            if (LoadMaterial(material, std::move(InName)))
                 return material;
             return nullptr;
         }

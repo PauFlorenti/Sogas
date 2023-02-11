@@ -16,7 +16,36 @@ namespace Sogas
 
     CEngine::CEngine()
     {
+    }
 
+    const std::string CEngine::FindFile(std::string filename)
+    {
+        std::ifstream stream;
+
+        {
+            stream.open(filename.c_str());
+            if(stream.is_open())
+            {
+                return filename;
+            }
+        }
+
+        for (const auto& dir : search_paths)
+        {
+            std::string path = dir + filename;
+            stream.open(path);
+            if (stream.is_open())
+            {
+                return path;
+            }
+        }
+
+        SWARNING("File %s not found in the following directories:", filename.c_str());
+        for (const auto &dir : search_paths)
+        {
+            SWARNING("  %s", dir.c_str());
+        }
+        return {};
     }
 
     bool CEngine::Init()

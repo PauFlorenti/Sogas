@@ -6,8 +6,8 @@ namespace Sogas
     void CModuleManager::Boot()
     {
         // Read from configuration file the boot modules.
-        ParseModules("../../data/modules.json");
-        ParseGameStates("../../data/gamestates.json");
+        ParseModules(std::move(CEngine::FindFile("modules.json")));
+        ParseGameStates(std::move(CEngine::FindFile("gamestates.json")));
 
         if(!BootGameState.empty())
         {
@@ -145,7 +145,7 @@ namespace Sogas
         UpdateModules.clear();
         RenderModules.clear();
 
-        auto j = LoadJson(filename);
+        auto j = LoadJson(std::move(filename));
         
         json jUpdateList = j["update"];
         json jRenderList = j["render"];
@@ -177,7 +177,7 @@ namespace Sogas
     {
         RegisteredGameStates.clear();
 
-        json j = LoadJson(filename);
+        json j = LoadJson(std::move(filename));
 
         BootGameState = j["boot"].get<std::string>();
 
