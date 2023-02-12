@@ -132,7 +132,6 @@ namespace Sogas
 
         void ForwardPipeline::render(std::shared_ptr<Swapchain> swapchain)
         {
-            /*
             // Start drawing.
             CommandBuffer cmd = renderer->BeginCommandBuffer();
             renderer->BindPipeline(&pipeline, cmd);
@@ -191,7 +190,6 @@ namespace Sogas
             renderer->EndRenderPass(presentCmd);
 
             renderer->SubmitCommandBuffers();
-            */
         }
 
         void ForwardPipeline::present()

@@ -23,6 +23,7 @@ namespace Sogas
             const VkImage GetImage() const { return image; }
             const VkImageView GetImageView() const { return imageView; }
             const VkFormat GetFormat() const { return format; }
+            const VkSampler GetSampler();
 
             void Destroy();
 
@@ -33,6 +34,7 @@ namespace Sogas
             VkImage image = VK_NULL_HANDLE;
             VkImageView imageView = VK_NULL_HANDLE;
             VkDeviceMemory memory = VK_NULL_HANDLE;
+            VkSampler       sampler     = VK_NULL_HANDLE;
             VkFormat format;
         };
     } // namespace Vk

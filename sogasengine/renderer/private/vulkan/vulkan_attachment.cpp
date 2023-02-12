@@ -5,6 +5,12 @@ namespace Sogas
 {
     namespace Vk
     {
+
+        namespace
+        {
+
+        }
+
         void VulkanAttachment::Create(const VulkanDevice *InDevice, AttachmentFramebuffer *InAttachment)
         {
             std::shared_ptr<VulkanAttachment> internalState = std::make_shared<VulkanAttachment>();
@@ -82,18 +88,45 @@ namespace Sogas
             }
         }
 
+        const VkSampler VulkanAttachment::GetSampler()
+        {
+            if (sampler != VK_NULL_HANDLE)
+            {
+                return sampler;
+            }
+
+            VkSamplerCreateInfo samplerInfo = {VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
+            samplerInfo.magFilter = VK_FILTER_NEAREST;
+            samplerInfo.minFilter = VK_FILTER_NEAREST;
+            samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+            samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+            samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+            samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+            samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+            samplerInfo.mipLodBias = 0.0f;
+            samplerInfo.maxAnisotropy = 1.0f;
+            samplerInfo.minLod = 0.0f;
+            samplerInfo.maxLod = 1.0f;
+
+            vkCreateSampler(device, &samplerInfo, nullptr, &sampler);
+
+            return sampler;
+        }
+
         void VulkanAttachment::Destroy()
         {
             {
                 vkFreeMemory(device, memory, nullptr);
                 vkDestroyImageView(device, imageView, nullptr);
                 vkDestroyImage(device, image, nullptr);
+                vkDestroySampler(device, sampler, nullptr);
             }
 
             device = VK_NULL_HANDLE;
             image = VK_NULL_HANDLE;
             imageView = VK_NULL_HANDLE;
             memory = VK_NULL_HANDLE;
+            sampler = VK_NULL_HANDLE;
         }
 
     } // namespace Vk

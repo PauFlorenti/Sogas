@@ -652,25 +652,9 @@ namespace Sogas
             auto descriptorSetInternalState = VulkanDescriptorSet::ToInternal(&pipelineInternalState->descriptorSets[GetFrameIndex()].at(InDescriptorSet));
             auto attachmentInternalState = VulkanAttachment::ToInternal(InAttachment);
 
-            VkSampler sampler;
-            VkSamplerCreateInfo samplerInfo = {VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
-            samplerInfo.magFilter = VK_FILTER_NEAREST;
-            samplerInfo.minFilter = VK_FILTER_NEAREST;
-            samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-            samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-            samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-            samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-            samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-            samplerInfo.mipLodBias = 0.0f;
-            samplerInfo.maxAnisotropy = 1.0f;
-            samplerInfo.minLod = 0.0f;
-            samplerInfo.maxLod = 1.0f;
-
-            vkCreateSampler(Handle, &samplerInfo, nullptr, &sampler);
-
             attachmentInternalState->imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             attachmentInternalState->imageInfo.imageView = attachmentInternalState->GetImageView();
-            attachmentInternalState->imageInfo.sampler = sampler;
+            attachmentInternalState->imageInfo.sampler = attachmentInternalState->GetSampler();
 
             VkWriteDescriptorSet write = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
             write.descriptorCount = 1;
