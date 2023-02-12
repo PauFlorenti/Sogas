@@ -247,6 +247,7 @@ namespace Sogas
     struct GPUBase
     {
         std::shared_ptr<void> internalState;
+        virtual void Destroy() {internalState.reset();};
         bool IsValid() const { return internalState.get() != nullptr; }
     };
 
@@ -271,6 +272,13 @@ namespace Sogas
         {
             resourceType = ResourceType::TEXTURE;
         };
+
+        ~Texture() { Destroy(); }
+
+        void Destroy() override
+        {
+            internalState.reset();
+        }
 
         TextureDescriptor descriptor;
     };
@@ -385,6 +393,13 @@ namespace Sogas
 
     struct Shader : public GPUBase
     {
+        ~Shader() { Destroy(); }
+
+        void Destroy() override
+        {
+            internalState.reset();
+        }
+
         ShaderStage stage = ShaderStage::COUNT;
     };
 

@@ -43,7 +43,7 @@ namespace Sogas
 
         bool Buffer::isEmpty() const
         {
-            return (device_buffer.get() == nullptr) || (device_buffer.use_count() == 0);
+            return device_buffer == false;
         }
 
         bool Buffer::isValid() const

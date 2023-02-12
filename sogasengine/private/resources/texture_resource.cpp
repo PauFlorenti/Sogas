@@ -94,4 +94,4 @@ namespace Sogas
         static TextureResource factory;
         return &factory;
     }
-} // Sogas
+} // namespace Sogas

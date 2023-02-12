@@ -84,7 +84,9 @@ namespace Sogas
 
     void CEngine::Shutdown()
     {
-        RenderModule->Stop();
+        ReleasePrimitives();
+        CResourceManager::Get()->Destroy();
+        ModuleManager.Clear();
     }
 
     void CEngine::update(const f32 dt)
@@ -93,4 +95,4 @@ namespace Sogas
         ModuleManager.Update(dt);
     }
 
-} // Sogas
+} // namespace Sogas

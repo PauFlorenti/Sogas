@@ -7,6 +7,7 @@ namespace Sogas
     class CHandleManager
     {
         static const u32 MaxTotalObjectsAllowed = 1 << CHandle::nBitsIndex;
+        static bool bHandleToDestroy;
 
         struct ExternalData
         {
@@ -88,4 +89,4 @@ namespace Sogas
         void DumpInternals() const;
     };
 
-} // Sogas
+} // namespace Sogas

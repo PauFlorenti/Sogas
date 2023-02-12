@@ -29,7 +29,7 @@ namespace Sogas
         RegisteredModules[Module->GetName()] = Module;
 
         const bool ok = Module->DoStart();
-        if(!ok)
+        if (ok)
         {
             Services.push_back(Module);
         }
@@ -128,9 +128,9 @@ namespace Sogas
 
     void CModuleManager::StopModules(VModules& Modules)
     {
-        for(auto module : Modules)
+        for(auto module = Modules.rbegin(); module != Modules.rend(); ++module)
         {
-            module->DoStop();
+            (*module)->DoStop();
         }
     }
 

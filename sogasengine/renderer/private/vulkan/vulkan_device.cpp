@@ -120,17 +120,18 @@ namespace Sogas
             // Is Device suitable ??
         }
 
-        VulkanDevice::VulkanDevice(GraphicsAPI apiType, void * /*device*/, std::vector<const char*> extensions)
-        : glfwExtensions(std::move(extensions))
+        VulkanDevice::VulkanDevice(GraphicsAPI apiType, void * /*device*/, std::vector<const char *> extensions)
+            : glfwExtensions(std::move(extensions))
         {
             api_type = apiType;
         }
 
         VulkanDevice::~VulkanDevice()
         {
+            shutdown();
         }
 
-        void VulkanDevice::CreateSwapchain(const SwapchainDescriptor &desc, std::shared_ptr<Swapchain> swapchain, GLFWwindow* window)
+        void VulkanDevice::CreateSwapchain(const SwapchainDescriptor &desc, std::shared_ptr<Swapchain> swapchain, GLFWwindow *window)
         {
             SASSERT(window);
             auto internalState = std::static_pointer_cast<VulkanSwapchain>(swapchain->internalState);
@@ -167,7 +168,7 @@ namespace Sogas
                 i++;
             }
 
-            if (!VulkanSwapchain::Create(Handle, Gpu, &swapchain->descriptor, internalState))
+            if (!VulkanSwapchain::Create(this, &swapchain->descriptor, internalState))
             {
                 SERROR("Failed to create vulkan swapchain");
             }
@@ -209,40 +210,14 @@ namespace Sogas
             for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
             {
                 vkDestroyCommandPool(Handle, resourcesCommandPool[i], nullptr);
+                vkDestroyFence(Handle, fence[i], nullptr);
             }
 
-            STRACE("\tDestroying Framebuffer ...");
-            /*for (auto &framebuffer : SwapchainFramebuffers)
-            {
-                vkDestroyFramebuffer(Device, framebuffer, nullptr);
-            }
+            vkDestroySemaphore(Handle, beginSemaphore, nullptr);
+            vkDestroySemaphore(Handle, endSemaphore, nullptr);
 
-            STRACE("\tDestroying Graphics pipeline ...");
-            vkDestroyPipeline(Handle, Pipeline, nullptr);
-            STRACE("\tDestroying Render Pass ...");
-            vkDestroyRenderPass(Handle, RenderPass, nullptr);
-            STRACE("\tDestroying Graphics pipeline layout ...");
-            vkDestroyPipelineLayout(Handle, PipelineLayout, nullptr);
-            */
-
-            /*
-            STRACE("\tDestroying all images and image views ...");
-            for (auto &imageView : SwapchainImageViews)
-            {
-                vkDestroyImageView(Device, imageView, nullptr);
-            }
-            for (auto &image : SwapchainImages)
-            {
-                vkDestroyImage(Device, image, nullptr);
-            }
-
-            vkDestroySwapchainKHR(Device, Swapchain, nullptr);
             STRACE("\tDestroying Vulkan logical device ...");
             vkDestroyDevice(Handle, nullptr);
-            STRACE("\tLogical device destroyed.");
-            STRACE("\tDestroying Surface ...");
-            vkDestroySurfaceKHR(Instance, Surface, nullptr);
-            */
             if (validationLayersEnabled)
                 DestroyDebugUtilsMessengerEXT(Instance, DebugMessenger, nullptr);
             STRACE("\tDestroying instance ...");
@@ -256,7 +231,7 @@ namespace Sogas
             u32 count = commandBufferCounter++;
             if (count >= commandBuffers.size())
             {
-                commandBuffers.push_back(std::make_unique<VulkanCommandBuffer>());
+                commandBuffers.push_back(std::make_unique<VulkanCommandBuffer>(this));
             }
 
             CommandBuffer cmd;
@@ -407,7 +382,7 @@ namespace Sogas
                     if (res == VK_SUBOPTIMAL_KHR || res == VK_ERROR_OUT_OF_DATE_KHR)
                     {
                         swapchain->resized = true;
-                        SASSERT(VulkanSwapchain::Create(Handle, Gpu, &swapchain->descriptor, swapchainInternalState));
+                        SASSERT(VulkanSwapchain::Create(this, &swapchain->descriptor, swapchainInternalState));
                     }
                     else
                     {
@@ -443,7 +418,7 @@ namespace Sogas
                 if (res == VK_SUBOPTIMAL_KHR || res == VK_ERROR_OUT_OF_DATE_KHR)
                 {
                     InSwapchain->resized = true;
-                    if (VulkanSwapchain::Create(Handle, Gpu, &InSwapchain->descriptor, internalSwapchain))
+                    if (VulkanSwapchain::Create(this, &InSwapchain->descriptor, internalSwapchain))
                     {
                         BeginRenderPass(InSwapchain, cmd);
                         return;
@@ -575,7 +550,7 @@ namespace Sogas
             VulkanAttachment::Create(this, InAttachment);
         }
 
-        void VulkanDevice::SetWindowSize(std::shared_ptr<Swapchain> InSwapchain, const u32& width, const u32& height)
+        void VulkanDevice::SetWindowSize(std::shared_ptr<Swapchain> InSwapchain, const u32 &width, const u32 &height)
         {
             if (InSwapchain->resized || (InSwapchain->descriptor.width != width, InSwapchain->descriptor.height != height))
             {
@@ -584,7 +559,7 @@ namespace Sogas
             }
         }
 
-        void VulkanDevice::BindVertexBuffer(const std::shared_ptr<Renderer::Buffer>& buffer, CommandBuffer cmd)
+        void VulkanDevice::BindVertexBuffer(const std::shared_ptr<Renderer::Buffer> &buffer, CommandBuffer cmd)
         {
             SASSERT(buffer);
             SASSERT(buffer->isValid());

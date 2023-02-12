@@ -12,7 +12,8 @@ namespace Vk
         explicit VulkanDescriptorSet(const u32 InSetNumber) : setNumber(InSetNumber) {};
         VulkanDescriptorSet(const VulkanDescriptorSet&) = delete;
         VulkanDescriptorSet(VulkanDescriptorSet&&) = delete;
-        const VulkanDescriptorSet& operator=(const VulkanDescriptorSet& other) = delete; 
+        const VulkanDescriptorSet& operator=(const VulkanDescriptorSet& other) = delete;
+        ~VulkanDescriptorSet();
 
         static void Create(
             const VulkanDevice* InDevice, 
@@ -34,6 +35,7 @@ namespace Vk
         std::vector<VkWriteDescriptorSet> writes;
         const u32 setNumber;
     private:
+        const VulkanDevice* device = nullptr;
         VkPipelineBindPoint pipelineBindPoint;
         VkPipelineLayout    pipelineLayout = VK_NULL_HANDLE;
         VkDescriptorPool    descriptorPool = VK_NULL_HANDLE;

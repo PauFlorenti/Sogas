@@ -20,6 +20,8 @@ namespace Sogas
         void Activate(CommandBuffer cmd) const;
         void Render(CommandBuffer cmd) const;
 
+        void Destroy();
+
         u32 vertexCount = 0;
         u32 vertexOffset = 0;
         u32 indexCount = 0;

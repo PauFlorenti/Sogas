@@ -12,14 +12,14 @@ namespace Sogas
     public:
         ~CEntity();
 
-        CHandle Get(u32 ComponentType) const 
+        CHandle Get(u32 ComponentType) const
         {
-            SASSERT_MSG( ComponentType < CHandle::MaxTypes, "Not a valid type." );
+            SASSERT_MSG(ComponentType < CHandle::MaxTypes, "Not a valid type.");
             return Components[ComponentType];
         }
 
-        template < typename TComp >
-        CHandle Get() const 
+        template <typename TComp>
+        CHandle Get() const
         {
             auto objManager = GetObjectManager<TComp>();
             SASSERT(objManager);
@@ -31,12 +31,12 @@ namespace Sogas
 
         void Set(u32 componentType, CHandle newComponent);
         void Set(CHandle newComponent);
-        void Load(const json& j);
+        void Load(const json &j);
         void OnEntityCreated();
 
-        const char* GetName() const;
+        const char *GetName() const;
     };
 
-    extern CHandle getEntityByName(const std::string& name);
-    
-} // Sogas
+    extern CHandle getEntityByName(const std::string &name);
+
+} // namespace Sogas

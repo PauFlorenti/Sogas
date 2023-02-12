@@ -4,31 +4,35 @@
 
 namespace Sogas
 {
-namespace Vk
-{
-
-    class VulkanDevice;
-    
-    class VulkanShader
+    namespace Vk
     {
-    public:
-        VulkanShader() = default;
-        VulkanShader(const VulkanShader&) = delete;
-        VulkanShader(VulkanShader&&) = delete;
-        const VulkanShader& operator=(const VulkanShader& other) = delete;
+        class VulkanDevice;
 
-        static void Create(const VulkanDevice* device, ShaderStage stage, std::string InFilename, Shader* OutShader);
+        class VulkanShader
+        {
+        public:
+            VulkanShader() = default;
+            VulkanShader(const VulkanShader &) = delete;
+            VulkanShader(VulkanShader &&) = delete;
+            const VulkanShader &operator=(const VulkanShader &other) = delete;
+            ~VulkanShader();
 
-        static inline std::shared_ptr<VulkanShader> ToInternal(const Shader* InShader) {
-            return std::static_pointer_cast<VulkanShader>(InShader->internalState);
-        }
+            static void Create(const VulkanDevice *device, ShaderStage stage, std::string InFilename, Shader *OutShader);
 
-        VkShaderModule shaderModule;
+            static inline std::shared_ptr<VulkanShader> ToInternal(const Shader *InShader)
+            {
+                return std::static_pointer_cast<VulkanShader>(InShader->internalState);
+            }
 
-        // Sets limited to 8 by now.
-        std::vector<VkDescriptorSetLayoutBinding> layoutBindingsPerSet[8];
-        std::vector<VkPushConstantRange> pushConstantRanges;
-    };
+            VkShaderModule shaderModule;
 
-} // Vk
-} // Sogas
+            // Sets limited to 8 by now.
+            std::vector<VkDescriptorSetLayoutBinding> layoutBindingsPerSet[8];
+            std::vector<VkPushConstantRange> pushConstantRanges;
+
+        private:
+            const VulkanDevice *device = nullptr;
+        };
+
+    } // namespace Vk
+} // namespace Sogas

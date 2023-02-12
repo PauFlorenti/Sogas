@@ -33,6 +33,11 @@ namespace Sogas
         return true;
     }
 
+    void ReleasePrimitives()
+    {
+        line->Destroy();
+    }
+
     void DrawLine(glm::vec3 src, glm::vec3 dst, glm::vec4 /*color*/)
     {
         glm::vec3 delta = dst - src;

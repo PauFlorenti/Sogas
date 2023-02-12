@@ -8,6 +8,7 @@ namespace Sogas
 
     CHandleManager* CHandleManager::PredefinedManagers[CHandle::MaxTypes];
     u32             CHandleManager::nPredefinedManagers = 0;
+    bool CHandleManager::bHandleToDestroy = false;
 
     void CHandleManager::Init(u32 maxObjects)
     {
@@ -218,8 +219,23 @@ namespace Sogas
 
     void CHandleManager::DestroyAllPendingObjects()
     {
-        // Pending to implement
-        //if(!)
+        if (!bHandleToDestroy)
+        {
+            return;
+        }
+        
+        bool bSomethingDeleted = false;
+        do {
+            bSomethingDeleted = false;
+
+            // First type is CEntity type, avoid it.
+            for (u32 i = 1; i < GetNumberDefinedTypes(); ++i)
+            {
+                bSomethingDeleted |= AllManagers[i]->DestroyPendingObjects();
+            }
+        }
+        while (bSomethingDeleted);
+        bSomethingDeleted = false;
     }
 
     void CHandleManager::DumpInternals() const

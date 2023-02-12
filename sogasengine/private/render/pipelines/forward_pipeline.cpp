@@ -85,7 +85,6 @@ namespace Sogas
             fwdDesc.vertexDeclaration = "PosNormalUvColor";
             fwdDesc.depthStencilState = &depthState;
             renderer->CreatePipeline(&fwdDesc, &pipeline, &forwardRenderPass);
-
             PipelineDescriptor psoDesc;
             psoDesc.vs = &presentShaders[0];
             psoDesc.ps = &presentShaders[1];
@@ -133,6 +132,7 @@ namespace Sogas
 
         void ForwardPipeline::render(std::shared_ptr<Swapchain> swapchain)
         {
+            /*
             // Start drawing.
             CommandBuffer cmd = renderer->BeginCommandBuffer();
             renderer->BindPipeline(&pipeline, cmd);
@@ -191,6 +191,7 @@ namespace Sogas
             renderer->EndRenderPass(presentCmd);
 
             renderer->SubmitCommandBuffers();
+            */
         }
 
         void ForwardPipeline::present()
@@ -203,6 +204,20 @@ namespace Sogas
             lightBuffer->Release();
             quadIdxBuffer->Release();
             quadBuffer->Release();
+
+            pipeline.Destroy();
+            presentPipeline.Destroy();
+            forwardRenderPass.Destroy();
+
+            //colorBuffer.reset();
+            colorAttachment.Destroy();
+            depthAttachment.Destroy();
+
+            forwardShaders[0].Destroy();
+            forwardShaders[1].Destroy();
+            presentShaders[0].Destroy();
+            presentShaders[1].Destroy();
+
         }
     } // namespace Renderer
 } // namespace Sogas

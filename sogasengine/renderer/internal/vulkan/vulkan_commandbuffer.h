@@ -4,36 +4,42 @@
 
 namespace Sogas
 {
-namespace Vk
-{
-    class VulkanPipeline;
-    class VulkanSwapchain;
-
-    class VulkanCommandBuffer
+    namespace Vk
     {
-    public:
-        VulkanCommandBuffer() = default;
+        class VulkanPipeline;
+        class VulkanSwapchain;
+        class VulkanDevice;
 
-        static inline VulkanCommandBuffer* ToInternal(const CommandBuffer* cmd) {
-            return static_cast<VulkanCommandBuffer*>(cmd->internalState);
-        }
+        class VulkanCommandBuffer
+        {
+        public:
+            explicit VulkanCommandBuffer(const VulkanDevice *device = nullptr);
+            ~VulkanCommandBuffer();
 
-        VkCommandPool   commandPools[MAX_FRAMES_IN_FLIGHT];
-        VkCommandBuffer commandBuffers[MAX_FRAMES_IN_FLIGHT];
-        u32 frameIndex;
+            static inline VulkanCommandBuffer *ToInternal(const CommandBuffer *cmd)
+            {
+                return static_cast<VulkanCommandBuffer *>(cmd->internalState);
+            }
 
-        RenderPass*         activeRenderPass    = nullptr;
-        std::shared_ptr<Swapchain> swapchain = nullptr;
-        DescriptorSet*      descriptorSetBound  = nullptr;
+            void Destroy();
 
-        VkSemaphore semaphore = VK_NULL_HANDLE;
+            VkCommandPool       commandPools[MAX_FRAMES_IN_FLIGHT];
+            VkCommandBuffer     commandBuffers[MAX_FRAMES_IN_FLIGHT];
+            VkDescriptorPool    descriptorPools[MAX_FRAMES_IN_FLIGHT];
+            std::vector<CommandBuffer> commandsToWait;
+            std::vector<VkDescriptorSet> descriptorSets;
 
-        std::vector<CommandBuffer> commandsToWait;
+            RenderPass *activeRenderPass            = nullptr;
+            std::shared_ptr<Swapchain> swapchain    = nullptr;
+            DescriptorSet *descriptorSetBound       = nullptr;
 
-        bool                            dirty{true};
-        VkDescriptorPool                descriptorPools[MAX_FRAMES_IN_FLIGHT];
-        std::vector<VkDescriptorSet>    descriptorSets;
-    };
+            VkSemaphore semaphore = VK_NULL_HANDLE;
+            u32 frameIndex;
+            bool dirty{true};
 
-} // Vk
-} // Sogas
+        private:
+            const VulkanDevice *device = nullptr;
+        };
+
+    } // namespace Vk
+} // namespace Sogas

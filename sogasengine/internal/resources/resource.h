@@ -91,6 +91,8 @@ namespace Sogas
             Resources[Name] = Resource;
         }
 
+        void Destroy();
+
     private:
         static CResourceManager* ResourceManager;
 

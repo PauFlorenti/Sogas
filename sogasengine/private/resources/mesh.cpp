@@ -54,4 +54,13 @@ namespace Sogas
         else
             device.lock()->Draw(static_cast<u32>(vertices.size()), vertexOffset, cmd);
     }
+
+    void CMesh::Destroy()
+    {
+        if (vertexBuffer && vertexBuffer->isValid())
+            vertexBuffer->Release();
+        if (indexBuffer && indexBuffer->isValid())
+            indexBuffer->Release();
+    }
+    
 } // namespace Sogas

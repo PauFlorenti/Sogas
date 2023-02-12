@@ -13,6 +13,7 @@ namespace Vk
         VulkanPipeline(const VulkanPipeline&) = delete;
         VulkanPipeline(VulkanPipeline&&) = delete; // TODO move operations should be allowed.
         const VulkanPipeline& operator=(const VulkanPipeline& other) = delete;
+        ~VulkanPipeline();
 
         static void Create(const VulkanDevice* device, const PipelineDescriptor* descriptor, Pipeline* pipeline, RenderPass* renderpass = nullptr);
 
@@ -21,6 +22,7 @@ namespace Vk
         }
 
         void CreateDescriptorSets();
+        void Destroy();
     
         // TODO rethink this, probably make them private ...
         VkPipeline                                  handle              = VK_NULL_HANDLE;

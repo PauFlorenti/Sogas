@@ -1,3 +1,4 @@
+#include "vulkan/vulkan_device.h"
 #include "vulkan/vulkan_renderpass.h"
 #include "vulkan/vulkan_swapchain.h"
 
@@ -7,15 +8,17 @@ namespace Vk
 {
     VulkanSwapchain::~VulkanSwapchain()
     {
+        Release();
     }
 
     bool VulkanSwapchain::Create(
-        const VkDevice& device,
-        const VkPhysicalDevice& gpu,
+        const VulkanDevice* device,
         const SwapchainDescriptor* descriptor,
         std::shared_ptr<VulkanSwapchain> internalState
     )
     {
+        const auto& gpu = device->GetGPU();
+        internalState->device = device;
         STRACE("\tCreating vulkan swapchain ...");
         VkSurfaceCapabilitiesKHR surfaceCapabilities;
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(gpu, internalState->surface, &surfaceCapabilities);
@@ -104,7 +107,7 @@ namespace Vk
         // TODO should chose sharing mode depending on queueFamilyIndices ... probably passing VulkanDevice* into the function.
         swapchainCreateInfo.imageSharingMode    = VK_SHARING_MODE_EXCLUSIVE;
 
-        if (vkCreateSwapchainKHR(device, &swapchainCreateInfo, nullptr, &internalState->swapchain) != VK_SUCCESS)
+        if (vkCreateSwapchainKHR(device->Handle, &swapchainCreateInfo, nullptr, &internalState->swapchain) != VK_SUCCESS)
         {
             SFATAL("\tFailed to create swapchain!");
             return false;
@@ -113,7 +116,7 @@ namespace Vk
         if (swapchainCreateInfo.oldSwapchain != VK_NULL_HANDLE)
         {
             STRACE("Destroying old swapchain.");
-            vkDestroySwapchainKHR(device, swapchainCreateInfo.oldSwapchain, nullptr);
+            vkDestroySwapchainKHR(device->Handle, swapchainCreateInfo.oldSwapchain, nullptr);
         }
 
         // Create default render pass
@@ -151,6 +154,7 @@ namespace Vk
         renderPassInfo.pSubpasses       = &subpass;
 
         auto renderPassInternal = std::make_shared<VulkanRenderPass>();
+        renderPassInternal->device = device; // !Important for destruction.
         internalState->renderpass.internalState     = renderPassInternal;
 
         internalState->texture.descriptor.width    = internalState->extent.width;
@@ -159,16 +163,16 @@ namespace Vk
         internalState->texture.descriptor.format   = descriptor->format;
         internalState->renderpass.descriptor.attachments.push_back(Attachment::RenderTarget(&internalState->texture));
 
-        if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPassInternal->renderpass) != VK_SUCCESS) {
+        if (vkCreateRenderPass(device->Handle, &renderPassInfo, nullptr, &renderPassInternal->renderpass) != VK_SUCCESS) {
             SFATAL("Failed to create swapchain default renderpass.");
             return false;
         }
 
         // Create render targets
         u32 swapchainImageCount = 0;
-        vkGetSwapchainImagesKHR(device, internalState->swapchain, &swapchainImageCount, nullptr);
+        vkGetSwapchainImagesKHR(device->Handle, internalState->swapchain, &swapchainImageCount, nullptr);
         internalState->images.resize(swapchainImageCount);
-        vkGetSwapchainImagesKHR(device, internalState->swapchain, &swapchainImageCount, internalState->images.data());
+        vkGetSwapchainImagesKHR(device->Handle, internalState->swapchain, &swapchainImageCount, internalState->images.data());
 
         STRACE("\tCreating swapchain image views.");
         internalState->imageViews.resize(swapchainImageCount);
@@ -189,7 +193,7 @@ namespace Vk
             imageViewCreateInfo.subresourceRange.layerCount     = 1;
             imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
 
-            if (vkCreateImageView(device, &imageViewCreateInfo, nullptr, &internalState->imageViews.at(i)) != VK_SUCCESS)
+            if (vkCreateImageView(device->Handle, &imageViewCreateInfo, nullptr, &internalState->imageViews.at(i)) != VK_SUCCESS)
             {
                 std::cout << "\tFailed to create image view!\n";
                 return false;
@@ -203,7 +207,7 @@ namespace Vk
             framebufferInfo.pAttachments    = &internalState->imageViews[i];
             framebufferInfo.layers          = 1;
 
-            if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &internalState->framebuffers.at(i)) != VK_SUCCESS) {
+            if (vkCreateFramebuffer(device->Handle, &framebufferInfo, nullptr, &internalState->framebuffers.at(i)) != VK_SUCCESS) {
                 SERROR("Failed to create framebuffer");
                 return false;
             }
@@ -211,18 +215,47 @@ namespace Vk
 
         VkSemaphoreCreateInfo semaphoreInfo = {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
         
-        if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &internalState->presentCompleteSemaphore) != VK_SUCCESS) {
+        if (vkCreateSemaphore(device->Handle, &semaphoreInfo, nullptr, &internalState->presentCompleteSemaphore) != VK_SUCCESS) {
             SERROR("Failed to create swapchain start semaphore!");
             return false;
         }
 
-        if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &internalState->renderCompleteSemaphore) != VK_SUCCESS) {
+        if (vkCreateSemaphore(device->Handle, &semaphoreInfo, nullptr, &internalState->renderCompleteSemaphore) != VK_SUCCESS) {
             SERROR("Failed to create swapchain end semaphore!");
             return false;
         }
 
         STRACE("\tSwapchain image views created.");
         return true;
+    }
+
+    void VulkanSwapchain::Release()
+    {
+
+        vkDeviceWaitIdle(device->Handle);
+
+        renderpass.Destroy();
+
+        vkDestroySemaphore(device->Handle, renderCompleteSemaphore, nullptr);
+        vkDestroySemaphore(device->Handle, presentCompleteSemaphore, nullptr);
+
+        for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+        {
+            vkDestroyFence(device->Handle, swapchainFence[i], nullptr);
+        }
+
+        for (auto& framebuffer : framebuffers)
+        {
+            vkDestroyFramebuffer(device->Handle, framebuffer, nullptr);
+        }
+
+        for (auto& imageView : imageViews)
+        {
+            vkDestroyImageView(device->Handle, imageView, nullptr);
+        }
+
+        vkDestroySwapchainKHR(device->Handle, swapchain, nullptr);
+        vkDestroySurfaceKHR(device->Instance, surface, nullptr);
     }
 
 } // Vk

@@ -14,6 +14,7 @@ namespace Vk
         VulkanRenderPass(const VulkanRenderPass&) = delete;
         VulkanRenderPass(VulkanRenderPass&&) = delete;
         const VulkanRenderPass& operator=(const VulkanRenderPass& other) = delete;
+        ~VulkanRenderPass();
 
         static inline std::shared_ptr<VulkanRenderPass> ToInternal(const RenderPass* InRenderpass) {
             return std::static_pointer_cast<VulkanRenderPass>(InRenderpass->internalState);
@@ -21,6 +22,9 @@ namespace Vk
 
         static void Create(const VulkanDevice* device, const RenderPassDescriptor* desc, RenderPass* renderpass);
 
+        void Destroy();
+
+        const VulkanDevice*     device          = nullptr;
         VkRenderPass            renderpass      = VK_NULL_HANDLE;
         VkFramebuffer           framebuffer     = VK_NULL_HANDLE;
         VkRenderPassBeginInfo   beginInfo       = {};

@@ -41,6 +41,8 @@ namespace Sogas
     void CRenderModule::Stop()
     {
         forwardPipeline->destroy();
+        swapchain->Destroy();
+        renderer->shutdown();
     }
 
     void CRenderModule::Update(f32 /*dt*/)

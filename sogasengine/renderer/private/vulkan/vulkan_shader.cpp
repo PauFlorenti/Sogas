@@ -24,6 +24,13 @@ namespace Vk
         return buffer;
     }
 
+    VulkanShader::~VulkanShader()
+    {
+        vkDestroyShaderModule(device->Handle, shaderModule, nullptr);
+        layoutBindingsPerSet->clear();
+        pushConstantRanges.clear();
+    }
+
     void VulkanShader::Create(const VulkanDevice* device, ShaderStage InStage, std::string InFilename, Shader* OutShader)
     {
         std::string name = InFilename;
@@ -35,6 +42,7 @@ namespace Vk
         spirv_cross::ShaderResources shaderResources = comp.get_shader_resources();
 
         auto internalState          = std::make_shared<VulkanShader>();
+        internalState->device       = device;
         OutShader->internalState    = internalState;
         OutShader->stage            = InStage;
 
