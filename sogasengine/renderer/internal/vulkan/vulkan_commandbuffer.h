@@ -4,42 +4,40 @@
 
 namespace Sogas
 {
-    namespace Vk
+namespace Vk
+{
+class VulkanPipeline;
+class VulkanSwapchain;
+class VulkanDevice;
+
+class VulkanCommandBuffer
+{
+  public:
+    explicit VulkanCommandBuffer(const VulkanDevice* device = nullptr);
+    ~VulkanCommandBuffer();
+
+    static inline VulkanCommandBuffer* ToInternal(const CommandBuffer* cmd)
     {
-        class VulkanPipeline;
-        class VulkanSwapchain;
-        class VulkanDevice;
+        return static_cast<VulkanCommandBuffer*>(cmd->internalState);
+    }
 
-        class VulkanCommandBuffer
-        {
-        public:
-            explicit VulkanCommandBuffer(const VulkanDevice *device = nullptr);
-            ~VulkanCommandBuffer();
+    void Destroy();
 
-            static inline VulkanCommandBuffer *ToInternal(const CommandBuffer *cmd)
-            {
-                return static_cast<VulkanCommandBuffer *>(cmd->internalState);
-            }
+    VkCommandPool              commandPools[MAX_FRAMES_IN_FLIGHT];
+    VkCommandBuffer            commandBuffers[MAX_FRAMES_IN_FLIGHT];
+    VkDescriptorPool           descriptorPools[MAX_FRAMES_IN_FLIGHT];
+    std::vector<CommandBuffer> commandsToWait;
 
-            void Destroy();
+    RenderPass*                activeRenderPass   = nullptr;
+    std::shared_ptr<Swapchain> swapchain          = nullptr;
+    DescriptorSet*             descriptorSetBound = nullptr;
+    VkSemaphore                semaphore          = VK_NULL_HANDLE;
+    u32                        frameIndex;
+    bool                       dirty{true};
 
-            VkCommandPool       commandPools[MAX_FRAMES_IN_FLIGHT];
-            VkCommandBuffer     commandBuffers[MAX_FRAMES_IN_FLIGHT];
-            VkDescriptorPool    descriptorPools[MAX_FRAMES_IN_FLIGHT];
-            std::vector<CommandBuffer> commandsToWait;
-            std::vector<VkDescriptorSet> descriptorSets;
+  private:
+    const VulkanDevice* device = nullptr;
+};
 
-            RenderPass *activeRenderPass            = nullptr;
-            std::shared_ptr<Swapchain> swapchain    = nullptr;
-            DescriptorSet *descriptorSetBound       = nullptr;
-
-            VkSemaphore semaphore = VK_NULL_HANDLE;
-            u32 frameIndex;
-            bool dirty{true};
-
-        private:
-            const VulkanDevice *device = nullptr;
-        };
-
-    } // namespace Vk
+} // namespace Vk
 } // namespace Sogas

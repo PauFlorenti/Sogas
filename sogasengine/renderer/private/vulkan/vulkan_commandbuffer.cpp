@@ -3,36 +3,40 @@
 
 namespace Sogas
 {
-    namespace Vk
+namespace Vk
+{
+VulkanCommandBuffer::VulkanCommandBuffer(const VulkanDevice* device) : device(device)
+{
+    SASSERT(device != nullptr);
+
+    for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
     {
-        VulkanCommandBuffer::VulkanCommandBuffer(const VulkanDevice *device)
-            : device(device)
-        {
-            SASSERT(device != nullptr);
+        commandBuffers[i]  = VK_NULL_HANDLE;
+        commandPools[i]    = VK_NULL_HANDLE;
+        descriptorPools[i] = VK_NULL_HANDLE;
+    }
+}
 
-            for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
-            {
-                commandBuffers[i] = VK_NULL_HANDLE;
-                commandPools[i] = VK_NULL_HANDLE;
-                descriptorPools[i] = VK_NULL_HANDLE;
-            }
-        }
+VulkanCommandBuffer::~VulkanCommandBuffer()
+{
+    Destroy();
+};
 
-        VulkanCommandBuffer::~VulkanCommandBuffer() { Destroy(); };
+void VulkanCommandBuffer::Destroy()
+{
+    for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+    {
+        vkDestroyCommandPool(device->Handle, commandPools[i], nullptr);
+        vkDestroyDescriptorPool(device->Handle, descriptorPools[i], nullptr);
+    }
 
-        void VulkanCommandBuffer::Destroy()
-        {
-            for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
-            {
-                vkDestroyCommandPool(device->Handle, commandPools[i], nullptr);
-                vkDestroyDescriptorPool(device->Handle, descriptorPools[i], nullptr);
-            }
+    commandsToWait.clear();
 
-            vkDestroySemaphore(device->Handle, semaphore, nullptr);
+    vkDestroySemaphore(device->Handle, semaphore, nullptr);
 
-            activeRenderPass = nullptr;
-            swapchain.reset();
-            descriptorSetBound = nullptr;
-        }
-    } // namespace Vk
+    activeRenderPass = nullptr;
+    swapchain.reset();
+    descriptorSetBound = nullptr;
+}
+} // namespace Vk
 } // namespace Sogas
