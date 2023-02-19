@@ -5,15 +5,9 @@ IndentWidth:   4
 PointerAlignment: Left
 ColumnLimit: 120
 AlignAfterOpenBracket: Align
-AlignArrayOfStructures: Left
-AlignConsecutiveAssignments:
-  Enabled: true
-  AcrossEmptyLines: false
-  AcrossComments: false
-AlignConsecutiveDeclarations:
-  Enabled: true
-  AcrossEmptyLines: false
-  AcrossComments: false
+#AlignArrayOfStructures: Left
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
 AlignEscapedNewlines: Right
 AllowAllArgumentsOnNextLine: false
 AllowAllParametersOfDeclarationOnNextLine: false
@@ -36,7 +30,7 @@ BraceWrapping:
   AfterEnum: true
   AfterFunction: true
   AfterNamespace: true
-  AfterObjectDeclaration: false
+  #AfterObjectDeclaration: false
   AfterStruct: true
   AfterUnion: true
   AfterExternBlock: true
@@ -48,8 +42,8 @@ BraceWrapping:
   SplitEmptyFunction: false
   SplitEmptyRecord: false
   SplitEmptyNamespace: true
-BreakAfterAttribute: Always
-BreakArrays: false
+#BreakAfterAttribute: Always
+#BreakArrays: false
 BreakStringLiterals: true
 
 ...

@@ -301,45 +301,45 @@ void VulkanDevice::SubmitCommandBuffers()
 {
     // TODO submit frame resources commands
 
-    u32 nCommands        = commandBufferCounter;
     commandBufferCounter = 0;
     std::vector<VkCommandBuffer>      submitCommands;
     std::vector<VkSemaphore>          signalSemaphores;
     std::vector<VkSemaphore>          waitSemaphores;
+    std::vector<VkSemaphore>          presentWaitSemaphores;
     std::shared_ptr<Swapchain>        swapchain;
     std::vector<VkPipelineStageFlags> waitStages = {};
 
     std::vector<VkFence> fences;
 
-    for (u32 i = 0; i < nCommands; i++)
+    for (const auto& cmd : commandBuffers)
     {
-        if (vkEndCommandBuffer(commandBuffers.at(i)->commandBuffers[GetFrameIndex()]) != VK_SUCCESS)
+        if (vkEndCommandBuffer(cmd->commandBuffers[GetFrameIndex()]) != VK_SUCCESS)
         {
             SFATAL("Failed to end command buffer");
             SASSERT_MSG(false, "Failed to end command buffer.");
         }
 
-        if (commandBuffers.at(i)->swapchain)
+        if (cmd->swapchain)
         {
-            swapchain                   = commandBuffers.at(i)->swapchain;
+            swapchain                   = cmd->swapchain;
             auto swapchainInternalState = VulkanSwapchain::ToInternal(swapchain);
             waitStages.push_back(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
             waitSemaphores.push_back(swapchainInternalState->presentCompleteSemaphore);
             signalSemaphores.push_back(swapchainInternalState->renderCompleteSemaphore);
         }
 
-        submitCommands.push_back(commandBuffers.at(i)->commandBuffers[GetFrameIndex()]);
-        signalSemaphores.push_back(commandBuffers.at(i)->semaphore);
+        submitCommands.push_back(cmd->commandBuffers[GetFrameIndex()]);
+        signalSemaphores.push_back(cmd->semaphore);
 
-        if (!commandBuffers.at(i)->commandsToWait.empty())
+        if (!cmd->commandsToWait.empty())
         {
-            for (auto& cmdToWait : commandBuffers.at(i)->commandsToWait)
+            for (auto& cmdToWait : cmd->commandsToWait)
             {
                 auto commandInternalState = VulkanCommandBuffer::ToInternal(&cmdToWait);
                 waitSemaphores.push_back(commandInternalState->semaphore);
                 waitStages.push_back(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
             }
-            commandBuffers.at(i)->commandsToWait.clear();
+            cmd->commandsToWait.clear();
         }
 
         VkSubmitInfo submitInfo         = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
@@ -356,9 +356,14 @@ void VulkanDevice::SubmitCommandBuffers()
         vkCreateFence(Handle, &fenceInfo, nullptr, &f);
         fences.push_back(f);
 
-        if (vkQueueSubmit(GraphicsQueue, 1, &submitInfo, fences.back() /*fence[GetFrameIndex()]*/) != VK_SUCCESS)
+        if (vkQueueSubmit(GraphicsQueue, 1, &submitInfo, fences.back()) != VK_SUCCESS)
         {
             SASSERT_MSG(false, "Failed to submit graphics commands");
+        }
+
+        if (cmd == commandBuffers.back())
+        {
+            presentWaitSemaphores = signalSemaphores;
         }
 
         waitStages.clear();
@@ -369,13 +374,14 @@ void VulkanDevice::SubmitCommandBuffers()
 
     if (swapchain)
     {
-        auto             swapchainInternalState = VulkanSwapchain::ToInternal(swapchain);
-        VkPresentInfoKHR presentInfo            = {VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
-        presentInfo.swapchainCount              = 1;
-        presentInfo.pSwapchains                 = &swapchainInternalState->swapchain;
-        presentInfo.waitSemaphoreCount          = 1;
-        presentInfo.pWaitSemaphores             = &swapchainInternalState->renderCompleteSemaphore;
-        presentInfo.pImageIndices               = &swapchainInternalState->imageIndex;
+        auto swapchainInternalState = VulkanSwapchain::ToInternal(swapchain);
+
+        VkPresentInfoKHR presentInfo   = {VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
+        presentInfo.swapchainCount     = 1;
+        presentInfo.pSwapchains        = &swapchainInternalState->swapchain;
+        presentInfo.waitSemaphoreCount = static_cast<u32>(presentWaitSemaphores.size());
+        presentInfo.pWaitSemaphores    = presentWaitSemaphores.data();
+        presentInfo.pImageIndices      = &swapchainInternalState->imageIndex;
 
         VkResult res = vkQueuePresentKHR(GraphicsQueue, &presentInfo);
 
@@ -395,9 +401,6 @@ void VulkanDevice::SubmitCommandBuffers()
 
     FrameCount++;
 
-    // Ignore 2 first frames.
-    if (GetFrameCount() >= MAX_FRAMES_IN_FLIGHT)
-    {}
     vkWaitForFences(Handle, static_cast<u32>(fences.size()), fences.data(), VK_TRUE, UINT64_MAX);
 
     for (auto& f : fences)
