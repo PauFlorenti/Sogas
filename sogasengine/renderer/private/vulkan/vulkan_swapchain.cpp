@@ -13,7 +13,7 @@ VulkanSwapchain::VulkanSwapchain(const VulkanDevice* InDevice) : device(InDevice
 
 VulkanSwapchain::~VulkanSwapchain()
 {
-    Release();
+    Destroy();
 }
 
 bool VulkanSwapchain::Create(const VulkanDevice* device, std::shared_ptr<Renderer::Swapchain> swapchain)
@@ -248,7 +248,7 @@ bool VulkanSwapchain::Create(const VulkanDevice* device, std::shared_ptr<Rendere
     return true;
 }
 
-void VulkanSwapchain::Release()
+void VulkanSwapchain::Destroy()
 {
 
     vkDeviceWaitIdle(device->Handle);

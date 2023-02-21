@@ -7,7 +7,7 @@ namespace Renderer
 class DeviceRenderpass
 {
   public:
-    virtual ~DeviceRenderpass() {};
+    virtual ~DeviceRenderpass() = default;
     virtual void Destroy() = 0;
 };
 } // namespace Renderer

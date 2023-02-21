@@ -27,7 +27,7 @@ class VulkanSwapchain : public Renderer::DeviceSwapchain
         return static_cast<VulkanSwapchain*>(InSwapchain->internalState);
     }
 
-    void Release() override;
+    void Destroy() override;
 
     VkSwapchainKHR     swapchain = VK_NULL_HANDLE;
     VkSurfaceKHR       surface   = VK_NULL_HANDLE;

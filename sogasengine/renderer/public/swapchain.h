@@ -1,6 +1,5 @@
 #pragma once
 
-#include "device_buffer.h"
 #include "render_types.h"
 
 namespace Sogas
@@ -31,7 +30,6 @@ class Swapchain final
     ~Swapchain() { Destroy(); }
 
     void Destroy();
-    // const std::unique_ptr<DeviceSwapchain>& GetInternalState() const { return internalState; }
     const RenderPass*          GetRenderpass() const { return renderpass; }
     const SwapchainDescriptor& GetDescriptor() const { return descriptor; }
     void                       SetSwapchainSize(const u32 /*InWidth*/, const u32 /*InHeight*/){};

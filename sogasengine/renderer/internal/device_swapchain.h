@@ -7,7 +7,8 @@ namespace Renderer
 class DeviceSwapchain
 {
   public:
-    virtual void Release() = 0;
+    virtual ~DeviceSwapchain() = default;
+    virtual void Destroy() = 0;
 };
 } // namespace Renderer
 } // namespace Sogas
