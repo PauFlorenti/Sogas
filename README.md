@@ -38,13 +38,18 @@ Finder should be handled by resouce manager.
         - [-] .obj files
         - [ ] .glft and .glb files
         - [ ] .fbx files
+    - [ ] Create own meshes
+        - [ ] Quad
+        - [ ] Cube
+        - [ ] Pyramid
+        - [ ] Sphere
     - [ ] Load textures
 
 - [ ] Entity Component System
-    - [x] Entity class
+    - [-] Entity class
     - [ ] Transform component - GLM or own math class??
-    - [ ] Camera component.
-    - [ ] Render component.
+    - [-] Camera component.
+    - [-] Render component.
         - [ ] Material definition.
     - [ ] Light component.
         - [ ] Directional Light
@@ -54,11 +59,16 @@ Finder should be handled by resouce manager.
     - [ ] Proper destruction of unused entities and handles.
 
 ### GRAPHICS
+- [ ] ImGui
 - [ ] Render
-    - [ ] Create a proper Renderer interface to communicate with multiple devices.
-    - [ ] Create a buffer interface.
+    - [-] Create a proper Renderer interface to communicate with multiple devices.
+    - [-] Create a buffer interface.
     - [ ] Create a texture interface.
     - [ ] Create render command queues.
+- [ ] Primitives
+    - [ ] Line
+    - [ ] Wired cube
+    - [ ] Wired Sphere
 
 ### VULKAN
     - [ ] Properly Initialize Vulkan

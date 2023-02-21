@@ -21,13 +21,12 @@ class ForwardPipeline
 
     void update_constants();
     void render(std::shared_ptr<Swapchain> swapchain);
-    void present();
     void destroy();
 
   private:
     std::shared_ptr<GPU_device> renderer;
     Pipeline                    pipeline;
-    Renderer::RenderPass*        forwardRenderPass;
+    Renderer::RenderPass*       forwardRenderPass;
     Shader                      forwardShaders[2]; // 0 vs, 1 ps
     Pipeline                    presentPipeline;
     Shader                      presentShaders[2];

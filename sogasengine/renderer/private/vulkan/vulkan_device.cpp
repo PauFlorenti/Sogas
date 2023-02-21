@@ -509,8 +509,22 @@ void VulkanDevice::EndRenderPass(CommandBuffer cmd)
 
 std::shared_ptr<Renderer::Buffer> VulkanDevice::CreateBuffer(Renderer::BufferDescriptor desc, void* data) const
 {
-    auto buffer = VulkanBuffer::Create(this, desc, data);
-    return buffer;
+    return VulkanBuffer::Create(this, desc, data);
+}
+
+std::shared_ptr<Renderer::Buffer> VulkanDevice::CreateBuffer(const u32&                   size,
+                                                             const u64&                   element_size,
+                                                             Renderer::BufferBindingPoint binding,
+                                                             Renderer::BufferUsage        usage,
+                                                             void*                        data) const
+{
+    Renderer::BufferDescriptor buffer_descriptor{};
+    buffer_descriptor.size        = size;
+    buffer_descriptor.elementSize = element_size;
+    buffer_descriptor.binding     = binding;
+    buffer_descriptor.usage       = usage;
+    buffer_descriptor.type        = Renderer::BufferType::Static;
+    return VulkanBuffer::Create(this, std::move(buffer_descriptor), data);
 }
 
 void VulkanDevice::CreateTexture(const TextureDescriptor* desc, void* data, Texture* texture) const
@@ -635,7 +649,7 @@ void VulkanDevice::BindBuffer(const std::shared_ptr<Renderer::Buffer>& InBuffer,
 
     bufferInternalState->descriptorInfo.buffer = *bufferInternalState->GetHandle();
     bufferInternalState->descriptorInfo.offset = InOffset;
-    bufferInternalState->descriptorInfo.range  = InBuffer->getSizeInBytes();
+    bufferInternalState->descriptorInfo.range  = InBuffer->ByteSize();
 
     VkWriteDescriptorSet write = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
     write.descriptorCount      = 1;

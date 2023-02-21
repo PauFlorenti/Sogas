@@ -6,7 +6,8 @@ namespace Sogas
 {
 namespace Vk
 {
-VulkanBuffer::VulkanBuffer(const VulkanDevice* device) : device(device)
+VulkanBuffer::VulkanBuffer(const VulkanDevice* device)
+    : device(device)
 {
     SASSERT(device != nullptr);
 }
@@ -31,7 +32,7 @@ VulkanBuffer::Create(const VulkanDevice* device, Renderer::BufferDescriptor desc
     buffer->device_buffer                            = internal_state;
 
     VkBufferCreateInfo buffer_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
-    buffer_info.size               = buffer->getSizeInBytes();
+    buffer_info.size               = buffer->ByteSize();
 
     if (desc.binding == Renderer::BufferBindingPoint::Vertex)
     {

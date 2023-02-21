@@ -195,8 +195,6 @@ void ForwardPipeline::render(std::shared_ptr<Swapchain> swapchain)
     renderer->SubmitCommandBuffers();
 }
 
-void ForwardPipeline::present() {}
-
 void ForwardPipeline::destroy()
 {
     constantBuffer->Release();

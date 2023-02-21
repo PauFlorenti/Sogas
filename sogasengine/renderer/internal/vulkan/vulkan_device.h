@@ -43,6 +43,7 @@ class VulkanDevice : public Renderer::GPU_device
     void EndRenderPass(CommandBuffer cmd) override;
     void CreateSwapchain(std::shared_ptr<Renderer::Swapchain> swapchain, GLFWwindow *window) override;
     std::shared_ptr<Renderer::Buffer> CreateBuffer(Renderer::BufferDescriptor desc, void *data) const override;
+    std::shared_ptr<Renderer::Buffer> CreateBuffer(const u32& size, const u64& element_size, Renderer::BufferBindingPoint binding, Renderer::BufferUsage usage, void* data = nullptr) const override;
     void CreateTexture(const TextureDescriptor *desc, void *data, Texture *texture) const override;
     void CreateRenderPass(Renderer::RenderPass *renderpass) const override;
     void CreatePipeline(const PipelineDescriptor *desc, Pipeline *pipeline, Renderer::RenderPass *renderpass = nullptr) const override;

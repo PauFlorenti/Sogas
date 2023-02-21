@@ -5,7 +5,10 @@ namespace Sogas
 {
 namespace Renderer
 {
-Buffer::Buffer(BufferDescriptor desc) : sizeInBytes(desc.elementSize * desc.size) {}
+Buffer::Buffer(BufferDescriptor desc)
+    : elementSize(desc.elementSize),
+      elementCount(desc.size)
+{}
 
 Buffer::Buffer(Buffer&& other)
 {
@@ -22,9 +25,14 @@ Buffer& Buffer::operator=(Buffer&& other)
     device_buffer.reset();
     device_buffer = std::move(other.device_buffer);
     other.device_buffer.reset();
-    sizeInBytes = other.sizeInBytes;
-    device      = std::move(other.device);
+    device = std::move(other.device);
     other.device.reset();
+
+    elementSize        = std::move(other.elementSize);
+    elementCount       = std::move(other.elementCount);
+    other.elementCount = 0;
+    other.elementSize  = 0;
+
     return *this;
 }
 
@@ -33,9 +41,19 @@ Buffer::~Buffer()
     Release();
 }
 
-size_t Buffer::getSizeInBytes() const
+const u32 Buffer::Size() const
 {
-    return static_cast<size_t>(sizeInBytes);
+    return elementCount;
+}
+
+const u64 Buffer::ByteSize() const
+{
+    return elementSize * elementCount;
+}
+
+const u64 Buffer::ElementSize() const
+{
+    return elementSize;
 }
 
 bool Buffer::isEmpty() const
@@ -52,7 +70,8 @@ void Buffer::Release()
 {
     device.reset();
     device_buffer.reset();
-    sizeInBytes = 0;
+    elementCount = 0;
+    elementSize  = 0;
 }
 
 } // namespace Renderer
