@@ -4,7 +4,7 @@ namespace Sogas
 {
 namespace Renderer
 {
-class DeviceBuffer
+class DeviceSwapchain
 {
   public:
     virtual void Release() = 0;

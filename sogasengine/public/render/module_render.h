@@ -23,6 +23,6 @@ namespace Sogas
 
     private:
         std::shared_ptr<Renderer::GPU_device> renderer;
-        std::shared_ptr<Swapchain> swapchain;
+        std::shared_ptr<Renderer::Swapchain> swapchain;
     };
 } // namespace Sogas

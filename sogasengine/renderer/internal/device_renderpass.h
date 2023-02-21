@@ -4,10 +4,11 @@ namespace Sogas
 {
 namespace Renderer
 {
-class DeviceBuffer
+class DeviceRenderpass
 {
   public:
-    virtual void Release() = 0;
+    virtual ~DeviceRenderpass() {};
+    virtual void Destroy() = 0;
 };
 } // namespace Renderer
 } // namespace Sogas

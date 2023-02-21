@@ -6,12 +6,14 @@
 #include "renderer/public/buffer.h"
 #include "renderer/public/render_device.h"
 #include "renderer/public/render_types.h"
+#include "renderer/public/renderpass.h"
+#include "renderer/public/swapchain.h"
 
 std::vector<Sogas::Vertex> quad = {
-    {{1.0f, 1.0f, 0.0f},   {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
-    {{-1.0f, 1.0f, 0.0f},  {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+    {{1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+    {{-1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
     {{-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
-    {{1.0f, -1.0f, 0.0f},  {0.0f, 0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+    {{1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
 };
 
 std::vector<u32> quadIdx = {0, 1, 2, 2, 3, 0};
@@ -72,7 +74,8 @@ ForwardPipeline::ForwardPipeline(std::shared_ptr<GPU_device> InRenderer, std::sh
     RenderPassDescriptor rpDesc;
     rpDesc.attachments.push_back(Attachment::RenderTarget(nullptr, &colorAttachment));
     rpDesc.attachments.push_back(Attachment::DepthStencil(nullptr, &depthAttachment));
-    renderer->CreateRenderPass(&rpDesc, &forwardRenderPass);
+    forwardRenderPass = new RenderPass(std::move(rpDesc));
+    renderer->CreateRenderPass(forwardRenderPass);
 
     DepthStencilState depthState;
     depthState.compareOp         = CompareOperations::LESS_OR_EQUAL;
@@ -84,12 +87,12 @@ ForwardPipeline::ForwardPipeline(std::shared_ptr<GPU_device> InRenderer, std::sh
     fwdDesc.ps                = &forwardShaders[1];
     fwdDesc.vertexDeclaration = "PosNormalUvColor";
     fwdDesc.depthStencilState = &depthState;
-    renderer->CreatePipeline(&fwdDesc, &pipeline, &forwardRenderPass);
+    renderer->CreatePipeline(&fwdDesc, &pipeline, forwardRenderPass);
     PipelineDescriptor psoDesc;
     psoDesc.vs                = &presentShaders[0];
     psoDesc.ps                = &presentShaders[1];
     psoDesc.vertexDeclaration = "PosNormalUvColor";
-    renderer->CreatePipeline(&psoDesc, &presentPipeline, &swapchain->renderpass);
+    renderer->CreatePipeline(&psoDesc, &presentPipeline, swapchain->renderpass);
 
     PushConstantDescriptor modelPushConstant;
     modelPushConstant.offset = 0;
@@ -133,7 +136,7 @@ void ForwardPipeline::render(std::shared_ptr<Swapchain> swapchain)
     // Start drawing.
     CommandBuffer cmd = renderer->BeginCommandBuffer();
     renderer->BindPipeline(&pipeline, cmd);
-    renderer->BeginRenderPass(&forwardRenderPass, cmd);
+    renderer->BeginRenderPass(forwardRenderPass, cmd);
 
     // Bind frame constants.
     renderer->BindBuffer(constantBuffer, &pipeline, 0, 0);
@@ -203,9 +206,9 @@ void ForwardPipeline::destroy()
 
     pipeline.Destroy();
     presentPipeline.Destroy();
-    forwardRenderPass.Destroy();
+    delete forwardRenderPass;
+    forwardRenderPass = nullptr;
 
-    // colorBuffer.reset();
     colorAttachment.Destroy();
     depthAttachment.Destroy();
 

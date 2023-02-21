@@ -127,20 +127,15 @@ VulkanDevice::~VulkanDevice()
     shutdown();
 }
 
-void VulkanDevice::CreateSwapchain(const SwapchainDescriptor& desc,
-                                   std::shared_ptr<Swapchain> swapchain,
-                                   GLFWwindow*                window)
+void VulkanDevice::CreateSwapchain(std::shared_ptr<Renderer::Swapchain> swapchain, GLFWwindow* window)
 {
     SASSERT(window);
-    auto internalState = std::static_pointer_cast<VulkanSwapchain>(swapchain->internalState);
 
     if (swapchain->internalState == nullptr)
     {
-        internalState = std::make_shared<VulkanSwapchain>();
+        swapchain->internalState = new VulkanSwapchain(this);
     }
-
-    swapchain->descriptor    = desc;
-    swapchain->internalState = internalState;
+    auto internalState = VulkanSwapchain::ToInternal(swapchain);
 
     if (internalState->surface == VK_NULL_HANDLE)
     {
@@ -166,16 +161,10 @@ void VulkanDevice::CreateSwapchain(const SwapchainDescriptor& desc,
         i++;
     }
 
-    if (!VulkanSwapchain::Create(this, &swapchain->descriptor, internalState))
+    if (!VulkanSwapchain::Create(this, swapchain))
     {
         SERROR("Failed to create vulkan swapchain");
     }
-
-    swapchain->renderpass.internalState = std::make_shared<VulkanRenderPass>();
-    auto renderpassInternalState = std::static_pointer_cast<VulkanRenderPass>(swapchain->renderpass.internalState);
-    auto swapchainRenderpassInternalState =
-        std::static_pointer_cast<VulkanRenderPass>(internalState->renderpass.internalState);
-    renderpassInternalState->renderpass = swapchainRenderpassInternalState->renderpass;
 }
 
 bool VulkanDevice::Init()
@@ -302,12 +291,12 @@ void VulkanDevice::SubmitCommandBuffers()
     // TODO submit frame resources commands
 
     commandBufferCounter = 0;
-    std::vector<VkCommandBuffer>      submitCommands;
-    std::vector<VkSemaphore>          signalSemaphores;
-    std::vector<VkSemaphore>          waitSemaphores;
-    std::vector<VkSemaphore>          presentWaitSemaphores;
-    std::shared_ptr<Swapchain>        swapchain;
-    std::vector<VkPipelineStageFlags> waitStages = {};
+    std::vector<VkCommandBuffer>         submitCommands;
+    std::vector<VkSemaphore>             signalSemaphores;
+    std::vector<VkSemaphore>             waitSemaphores;
+    std::vector<VkSemaphore>             presentWaitSemaphores;
+    std::shared_ptr<Renderer::Swapchain> swapchain;
+    std::vector<VkPipelineStageFlags>    waitStages = {};
 
     std::vector<VkFence> fences;
 
@@ -390,7 +379,7 @@ void VulkanDevice::SubmitCommandBuffers()
             if (res == VK_SUBOPTIMAL_KHR || res == VK_ERROR_OUT_OF_DATE_KHR)
             {
                 swapchain->resized = true;
-                SASSERT(VulkanSwapchain::Create(this, &swapchain->descriptor, swapchainInternalState));
+                SASSERT(VulkanSwapchain::Create(this, swapchain));
             }
             else
             {
@@ -409,11 +398,11 @@ void VulkanDevice::SubmitCommandBuffers()
     }
 }
 
-void VulkanDevice::BeginRenderPass(std::shared_ptr<Swapchain> InSwapchain, CommandBuffer cmd)
+void VulkanDevice::BeginRenderPass(std::shared_ptr<Renderer::Swapchain> InSwapchain, CommandBuffer cmd)
 {
     auto internalCommand              = VulkanCommandBuffer::ToInternal(&cmd);
     auto internalSwapchain            = VulkanSwapchain::ToInternal(InSwapchain);
-    internalCommand->activeRenderPass = &internalSwapchain->renderpass;
+    internalCommand->activeRenderPass = InSwapchain->GetRenderpass();
     internalCommand->swapchain        = InSwapchain;
 
     VkResult res = vkAcquireNextImageKHR(Handle,
@@ -427,7 +416,7 @@ void VulkanDevice::BeginRenderPass(std::shared_ptr<Swapchain> InSwapchain, Comma
         if (res == VK_SUBOPTIMAL_KHR || res == VK_ERROR_OUT_OF_DATE_KHR)
         {
             InSwapchain->resized = true;
-            if (VulkanSwapchain::Create(this, &InSwapchain->descriptor, internalSwapchain))
+            if (VulkanSwapchain::Create(this, InSwapchain))
             {
                 BeginRenderPass(InSwapchain, cmd);
                 return;
@@ -447,19 +436,20 @@ void VulkanDevice::BeginRenderPass(std::shared_ptr<Swapchain> InSwapchain, Comma
     }
 
     // Begin Render Pass
-    VkViewport viewport{};
+    const auto& swapchain_descriptor = InSwapchain->GetDescriptor();
+    VkViewport  viewport{};
     viewport.x        = 0;
-    viewport.y        = (f32)InSwapchain->descriptor.height;
-    viewport.width    = (f32)InSwapchain->descriptor.width;
-    viewport.height   = -(f32)InSwapchain->descriptor.height;
+    viewport.y        = (f32)swapchain_descriptor.height;
+    viewport.width    = (f32)swapchain_descriptor.width;
+    viewport.height   = -(f32)swapchain_descriptor.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     vkCmdSetViewport(internalCommand->commandBuffers[GetFrameIndex()], 0, 1, &viewport);
 
     VkRect2D scissor{};
-    scissor.extent.width  = InSwapchain->descriptor.width;
-    scissor.extent.height = InSwapchain->descriptor.height;
+    scissor.extent.width  = swapchain_descriptor.width;
+    scissor.extent.height = swapchain_descriptor.height;
     scissor.offset        = {0, 0};
 
     vkCmdSetScissor(internalCommand->commandBuffers[GetFrameIndex()], 0, 1, &scissor);
@@ -467,8 +457,7 @@ void VulkanDevice::BeginRenderPass(std::shared_ptr<Swapchain> InSwapchain, Comma
     VkClearValue clearValue = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
 
     VkRenderPassBeginInfo renderpassBeginInfo = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
-    renderpassBeginInfo.renderPass =
-        std::static_pointer_cast<VulkanRenderPass>(internalCommand->activeRenderPass->internalState)->renderpass;
+    renderpassBeginInfo.renderPass        = VulkanRenderPass::ToInternal(internalCommand->activeRenderPass)->renderpass;
     renderpassBeginInfo.clearValueCount   = 1;
     renderpassBeginInfo.pClearValues      = &clearValue;
     renderpassBeginInfo.framebuffer       = internalSwapchain->framebuffers.at(internalSwapchain->imageIndex);
@@ -480,7 +469,7 @@ void VulkanDevice::BeginRenderPass(std::shared_ptr<Swapchain> InSwapchain, Comma
                          VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void VulkanDevice::BeginRenderPass(RenderPass* InRenderpass, CommandBuffer cmd)
+void VulkanDevice::BeginRenderPass(Renderer::RenderPass* InRenderpass, CommandBuffer cmd)
 {
     SASSERT(InRenderpass);
 
@@ -529,12 +518,14 @@ void VulkanDevice::CreateTexture(const TextureDescriptor* desc, void* data, Text
     VulkanTexture::Create(this, desc, data, texture);
 }
 
-void VulkanDevice::CreateRenderPass(const RenderPassDescriptor* desc, RenderPass* renderpass) const
+void VulkanDevice::CreateRenderPass(Renderer::RenderPass* renderpass) const
 {
-    VulkanRenderPass::Create(this, desc, renderpass);
+    VulkanRenderPass::Create(this, renderpass);
 }
 
-void VulkanDevice::CreatePipeline(const PipelineDescriptor* desc, Pipeline* pipeline, RenderPass* renderpass) const
+void VulkanDevice::CreatePipeline(const PipelineDescriptor* desc,
+                                  Pipeline*                 pipeline,
+                                  Renderer::RenderPass*     renderpass) const
 {
     VulkanPipeline::Create(this, desc, pipeline, renderpass);
 }
@@ -568,9 +559,10 @@ void VulkanDevice::CreateAttachment(AttachmentFramebuffer* InAttachment) const
     VulkanAttachment::Create(this, InAttachment);
 }
 
-void VulkanDevice::SetWindowSize(std::shared_ptr<Swapchain> InSwapchain, const u32& width, const u32& height)
+void VulkanDevice::SetWindowSize(std::shared_ptr<Renderer::Swapchain> InSwapchain, const u32& width, const u32& height)
 {
-    if (InSwapchain->resized || (InSwapchain->descriptor.width != width, InSwapchain->descriptor.height != height))
+    const auto& swapchain_descriptor = InSwapchain->GetDescriptor();
+    if (InSwapchain->resized || (swapchain_descriptor.width != width, swapchain_descriptor.height != height))
     {
         InSwapchain->SetSwapchainSize(width, height);
         InSwapchain->resized = false;

@@ -38,21 +38,21 @@ class VulkanDevice : public Renderer::GPU_device
     void shutdown() override;
     CommandBuffer BeginCommandBuffer() override;
     void SubmitCommandBuffers() override;
-    void BeginRenderPass(std::shared_ptr<Swapchain> swapchain, CommandBuffer cmd) override;
-    void BeginRenderPass(RenderPass *InRenderpass, CommandBuffer cmd) override;
+    void BeginRenderPass(std::shared_ptr<Renderer::Swapchain> swapchain, CommandBuffer cmd) override;
+    void BeginRenderPass(Renderer::RenderPass *InRenderpass, CommandBuffer cmd) override;
     void EndRenderPass(CommandBuffer cmd) override;
-    void CreateSwapchain(const SwapchainDescriptor &desc, std::shared_ptr<Swapchain> swapchain, GLFWwindow *window) override;
+    void CreateSwapchain(std::shared_ptr<Renderer::Swapchain> swapchain, GLFWwindow *window) override;
     std::shared_ptr<Renderer::Buffer> CreateBuffer(Renderer::BufferDescriptor desc, void *data) const override;
     void CreateTexture(const TextureDescriptor *desc, void *data, Texture *texture) const override;
-    void CreateRenderPass(const RenderPassDescriptor *desc, RenderPass *renderpass) const override;
-    void CreatePipeline(const PipelineDescriptor *desc, Pipeline *pipeline, RenderPass *renderpass = nullptr) const override;
+    void CreateRenderPass(Renderer::RenderPass *renderpass) const override;
+    void CreatePipeline(const PipelineDescriptor *desc, Pipeline *pipeline, Renderer::RenderPass *renderpass = nullptr) const override;
     void CreateAttachment() const override{};
     void CreateShader(ShaderStage stage, std::string filename, Shader *shader) const override;
     void UpdateDescriptorSet(const Pipeline *InPipeline) const override;
     void CreateAttachment(AttachmentFramebuffer *InAttachment) const override;
 
     // API calls ...
-    void SetWindowSize(std::shared_ptr<Swapchain> InSwapchain, const u32 &width, const u32 &height) override;
+    void SetWindowSize(std::shared_ptr<Renderer::Swapchain> InSwapchain, const u32 &width, const u32 &height) override;
     void BindVertexBuffer(const std::shared_ptr<Renderer::Buffer> &buffer, CommandBuffer cmd) override;
     void BindIndexBuffer(const std::shared_ptr<Renderer::Buffer> &buffer, CommandBuffer cmd) override;
     void BindPipeline(const Pipeline *InPipeline, CommandBuffer &cmd) override;

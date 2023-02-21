@@ -1,6 +1,8 @@
 #pragma once
 
 #include "buffer.h"
+#include "swapchain.h"
+#include "renderpass.h"
 #include "render_types.h"
 
 struct GLFWwindow;
@@ -30,10 +32,10 @@ namespace Sogas
             virtual void BeginRenderPass(std::shared_ptr<Swapchain> swapchain, CommandBuffer cmd) = 0;
             virtual void BeginRenderPass(RenderPass *InRenderpass, CommandBuffer cmd) = 0;
             virtual void EndRenderPass(CommandBuffer cmd) = 0;
-            virtual void CreateSwapchain(const SwapchainDescriptor &desc, std::shared_ptr<Swapchain> swapchain, GLFWwindow *window) = 0;
+            virtual void CreateSwapchain(std::shared_ptr<Swapchain> swapchain, GLFWwindow *window) = 0;
             virtual std::shared_ptr<Renderer::Buffer> CreateBuffer(Renderer::BufferDescriptor desc, void *data) const = 0;
             virtual void CreateTexture(const TextureDescriptor *desc, void *data, Texture *texture) const = 0;
-            virtual void CreateRenderPass(const RenderPassDescriptor *desc, RenderPass *renderpass) const = 0;
+            virtual void CreateRenderPass(RenderPass *renderpass) const = 0;
             virtual void CreatePipeline(const PipelineDescriptor *desc, Pipeline *pipeline, RenderPass *renderpass = nullptr) const = 0;
             virtual void CreateAttachment() const = 0;
             virtual void CreateShader(ShaderStage stage, std::string filename, Shader *shader) const = 0;

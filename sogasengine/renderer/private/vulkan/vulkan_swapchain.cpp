@@ -1,22 +1,25 @@
-#include "vulkan/vulkan_device.h"
 #include "vulkan/vulkan_swapchain.h"
+#include "renderpass.h"
+#include "swapchain.h"
+#include "vulkan/vulkan_device.h"
 #include "vulkan/vulkan_renderpass.h"
 
 namespace Sogas
 {
 namespace Vk
 {
+
+VulkanSwapchain::VulkanSwapchain(const VulkanDevice* InDevice) : device(InDevice) {}
+
 VulkanSwapchain::~VulkanSwapchain()
 {
     Release();
 }
 
-bool VulkanSwapchain::Create(const VulkanDevice*              device,
-                             const SwapchainDescriptor*       descriptor,
-                             std::shared_ptr<VulkanSwapchain> internalState)
+bool VulkanSwapchain::Create(const VulkanDevice* device, std::shared_ptr<Renderer::Swapchain> swapchain)
 {
-    const auto& gpu       = device->GetGPU();
-    internalState->device = device;
+    auto        internalState = VulkanSwapchain::ToInternal(swapchain);
+    const auto& gpu           = device->GetGPU();
     STRACE("\tCreating vulkan swapchain ...");
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(gpu, internalState->surface, &surfaceCapabilities);
@@ -29,7 +32,7 @@ bool VulkanSwapchain::Create(const VulkanDevice*              device,
         return false;
     }
 
-    internalState->surfaceFormat.format = Vk::ConvertFormat(descriptor->format);
+    internalState->surfaceFormat.format = Vk::ConvertFormat(swapchain->GetDescriptor().format);
     std::vector<VkSurfaceFormatKHR> formats(formatCount);
     vkGetPhysicalDeviceSurfaceFormatsKHR(gpu, internalState->surface, &formatCount, formats.data());
 
@@ -80,12 +83,13 @@ bool VulkanSwapchain::Create(const VulkanDevice*              device,
     }
     else
     {
-        internalState->extent.width  = descriptor->width;
-        internalState->extent.height = descriptor->height;
-        internalState->extent.width  = std::clamp(internalState->extent.width,
+        const auto& swapchain_descriptor = swapchain->GetDescriptor();
+        internalState->extent.width      = swapchain_descriptor.width;
+        internalState->extent.height     = swapchain_descriptor.height;
+        internalState->extent.width      = std::clamp(internalState->extent.width,
                                                  surfaceCapabilities.minImageExtent.width,
                                                  surfaceCapabilities.maxImageExtent.width);
-        internalState->extent.height = std::clamp(internalState->extent.height,
+        internalState->extent.height     = std::clamp(internalState->extent.height,
                                                   surfaceCapabilities.minImageExtent.height,
                                                   surfaceCapabilities.maxImageExtent.height);
     }
@@ -157,15 +161,15 @@ bool VulkanSwapchain::Create(const VulkanDevice*              device,
     renderPassInfo.subpassCount           = 1;
     renderPassInfo.pSubpasses             = &subpass;
 
-    auto renderPassInternal                 = std::make_shared<VulkanRenderPass>();
-    renderPassInternal->device              = device; // !Important for destruction.
-    internalState->renderpass.internalState = renderPassInternal;
+    swapchain->renderpass->internalState = new VulkanRenderPass(device);
+    auto renderPassInternal              = VulkanRenderPass::ToInternal(swapchain->GetRenderpass());
 
     internalState->texture.descriptor.width  = internalState->extent.width;
     internalState->texture.descriptor.height = internalState->extent.height;
     internalState->texture.descriptor.depth  = 1;
-    internalState->texture.descriptor.format = descriptor->format;
-    internalState->renderpass.descriptor.attachments.push_back(Attachment::RenderTarget(&internalState->texture));
+    internalState->texture.descriptor.format = swapchain->GetDescriptor().format;
+
+    swapchain->renderpass->AddAttachment(Attachment::RenderTarget(&internalState->texture));
 
     if (vkCreateRenderPass(device->Handle, &renderPassInfo, nullptr, &renderPassInternal->renderpass) != VK_SUCCESS)
     {
@@ -248,8 +252,6 @@ void VulkanSwapchain::Release()
 {
 
     vkDeviceWaitIdle(device->Handle);
-
-    renderpass.Destroy();
 
     vkDestroySemaphore(device->Handle, renderCompleteSemaphore, nullptr);
     vkDestroySemaphore(device->Handle, presentCompleteSemaphore, nullptr);

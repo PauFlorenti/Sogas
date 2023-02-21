@@ -4,42 +4,45 @@
 
 namespace Sogas
 {
-    struct Swapchain;
-    namespace Renderer
-    {
-        class GPU_device;
-        class Buffer;
+struct Swapchain;
+namespace Renderer
+{
+class GPU_device;
+class Buffer;
+class Swapchain;
+class RenderPass;
 
-        class ForwardPipeline
-        {
-        public:
-            explicit ForwardPipeline(std::shared_ptr<GPU_device> InRenderer = nullptr, std::shared_ptr<Swapchain> swapchain = nullptr);
-            ~ForwardPipeline(){};
+class ForwardPipeline
+{
+  public:
+    explicit ForwardPipeline(std::shared_ptr<GPU_device> InRenderer = nullptr,
+                             std::shared_ptr<Swapchain>  swapchain  = nullptr);
+    ~ForwardPipeline(){};
 
-            void update_constants();
-            void render(std::shared_ptr<Swapchain> swapchain);
-            void present();
-            void destroy();
+    void update_constants();
+    void render(std::shared_ptr<Swapchain> swapchain);
+    void present();
+    void destroy();
 
-        private:
-            std::shared_ptr<GPU_device> renderer;
-            Pipeline pipeline;
-            RenderPass forwardRenderPass;
-            Shader forwardShaders[2]; // 0 vs, 1 ps
-            Pipeline presentPipeline;
-            Shader presentShaders[2];
+  private:
+    std::shared_ptr<GPU_device> renderer;
+    Pipeline                    pipeline;
+    Renderer::RenderPass*        forwardRenderPass;
+    Shader                      forwardShaders[2]; // 0 vs, 1 ps
+    Pipeline                    presentPipeline;
+    Shader                      presentShaders[2];
 
-            AttachmentFramebuffer colorAttachment;
-            AttachmentFramebuffer depthAttachment;
+    AttachmentFramebuffer colorAttachment;
+    AttachmentFramebuffer depthAttachment;
 
-            std::shared_ptr<Buffer> constantBuffer;
-            std::shared_ptr<Buffer> lightBuffer;
-            std::shared_ptr<Buffer> quadIdxBuffer;
-            std::shared_ptr<Buffer> quadBuffer;
+    std::shared_ptr<Buffer> constantBuffer;
+    std::shared_ptr<Buffer> lightBuffer;
+    std::shared_ptr<Buffer> quadIdxBuffer;
+    std::shared_ptr<Buffer> quadBuffer;
 
-            std::shared_ptr<Texture> colorBuffer;
+    std::shared_ptr<Texture> colorBuffer;
 
-            const u32 nLights = 10;
-        };
-    }
-}
+    const u32 nLights = 10;
+};
+} // namespace Renderer
+} // namespace Sogas

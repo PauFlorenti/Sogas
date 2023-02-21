@@ -1,9 +1,13 @@
 #pragma once
 
 #include "vulkan_types.h"
-
 namespace Sogas
 {
+namespace Renderer
+{
+class RenderPass;
+class Swapchain;
+} // namespace Renderer
 namespace Vk
 {
 class VulkanPipeline;
@@ -28,12 +32,12 @@ class VulkanCommandBuffer
     VkDescriptorPool           descriptorPools[MAX_FRAMES_IN_FLIGHT];
     std::vector<CommandBuffer> commandsToWait;
 
-    RenderPass*                activeRenderPass   = nullptr;
-    std::shared_ptr<Swapchain> swapchain          = nullptr;
-    DescriptorSet*             descriptorSetBound = nullptr;
-    VkSemaphore                semaphore          = VK_NULL_HANDLE;
-    u32                        frameIndex;
-    bool                       dirty{true};
+    const Renderer::RenderPass*          activeRenderPass   = nullptr;
+    std::shared_ptr<Renderer::Swapchain> swapchain          = nullptr;
+    DescriptorSet*                       descriptorSetBound = nullptr;
+    VkSemaphore                          semaphore          = VK_NULL_HANDLE;
+    u32                                  frameIndex;
+    bool                                 dirty{true};
 
   private:
     const VulkanDevice* device = nullptr;

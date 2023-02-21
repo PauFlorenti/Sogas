@@ -1,29 +1,33 @@
 #pragma once
 
+#include "device_swapchain.h"
 #include "vulkan_types.h"
 
 namespace Sogas
 {
+namespace Renderer
+{
+class Swapchain;
+}
 namespace Vk
 {
-class VulkanSwapchain
+class VulkanDevice;
+class VulkanSwapchain : public Renderer::DeviceSwapchain
 {
   public:
-    VulkanSwapchain()                       = default;
+    explicit VulkanSwapchain(const VulkanDevice* InDevice = nullptr);
     VulkanSwapchain(const VulkanSwapchain&) = delete;
     VulkanSwapchain(VulkanSwapchain&&)      = delete;
     ~VulkanSwapchain();
 
-    static bool Create(const VulkanDevice*              device,
-                       const SwapchainDescriptor*       descriptor,
-                       std::shared_ptr<VulkanSwapchain> internalState);
+    static bool Create(const VulkanDevice* device, std::shared_ptr<Renderer::Swapchain> swapchain);
 
-    static inline std::shared_ptr<VulkanSwapchain> ToInternal(const std::shared_ptr<Swapchain> InSwapchain)
+    static inline VulkanSwapchain* ToInternal(const std::shared_ptr<Renderer::Swapchain> InSwapchain)
     {
-        return std::static_pointer_cast<VulkanSwapchain>(InSwapchain->internalState);
+        return static_cast<VulkanSwapchain*>(InSwapchain->internalState);
     }
 
-    void Release();
+    void Release() override;
 
     VkSwapchainKHR     swapchain = VK_NULL_HANDLE;
     VkSurfaceKHR       surface   = VK_NULL_HANDLE;
@@ -31,18 +35,16 @@ class VulkanSwapchain
     VkPresentModeKHR   presentMode;
     VkExtent2D         extent;
 
-    u32                                       imageIndex{0};
-    std::vector<VkImage>                      images;
-    std::vector<VkImageView>                  imageViews;
-    std::vector<VkFramebuffer>                framebuffers;
+    u32                        imageIndex{0};
+    std::vector<VkImage>       images;
+    std::vector<VkImageView>   imageViews;
+    std::vector<VkFramebuffer> framebuffers;
 
     VkSemaphore presentCompleteSemaphore = VK_NULL_HANDLE;
     VkSemaphore renderCompleteSemaphore  = VK_NULL_HANDLE;
 
-    Texture    texture;
-    RenderPass renderpass;
-
   private:
+    Texture             texture;
     const VulkanDevice* device = nullptr;
 };
 

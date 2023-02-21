@@ -1,35 +1,45 @@
 #pragma once
 
 #include "vulkan_types.h"
+#include "device_renderpass.h"
 
 namespace Sogas
 {
+namespace Renderer
+{
+class RenderPass;
+struct RenderPassDescriptor;
+} // namespace Renderer
 namespace Vk
 {
-    class VulkanDevice;
-    class VulkanRenderPass
+class VulkanDevice;
+class VulkanRenderPass : public Renderer::DeviceRenderpass
+{
+  public:
+    explicit VulkanRenderPass(const VulkanDevice* = nullptr);
+    VulkanRenderPass(const VulkanRenderPass&)                        = delete;
+    VulkanRenderPass(VulkanRenderPass&&)                             = delete;
+    const VulkanRenderPass& operator=(const VulkanRenderPass& other) = delete;
+    ~VulkanRenderPass();
+
+    static inline VulkanRenderPass* ToInternal(const Renderer::RenderPass* InRenderpass)
     {
-    public:
-        VulkanRenderPass() = default;
-        VulkanRenderPass(const VulkanRenderPass&) = delete;
-        VulkanRenderPass(VulkanRenderPass&&) = delete;
-        const VulkanRenderPass& operator=(const VulkanRenderPass& other) = delete;
-        ~VulkanRenderPass();
+        return static_cast<VulkanRenderPass*>(InRenderpass->internalState);
+    }
 
-        static inline std::shared_ptr<VulkanRenderPass> ToInternal(const RenderPass* InRenderpass) {
-            return std::static_pointer_cast<VulkanRenderPass>(InRenderpass->internalState);
-        }
+    static void
+    Create(const VulkanDevice* device, Renderer::RenderPass* renderpass);
 
-        static void Create(const VulkanDevice* device, const RenderPassDescriptor* desc, RenderPass* renderpass);
+    void Destroy() override;
 
-        void Destroy();
+    VkRenderPass          renderpass  = VK_NULL_HANDLE;
+    VkFramebuffer         framebuffer = VK_NULL_HANDLE;
+    VkRenderPassBeginInfo beginInfo   = {};
+    VkClearValue          clearColor[8]; // Maximum of 8 attachments at the moment.
 
-        const VulkanDevice*     device          = nullptr;
-        VkRenderPass            renderpass      = VK_NULL_HANDLE;
-        VkFramebuffer           framebuffer     = VK_NULL_HANDLE;
-        VkRenderPassBeginInfo   beginInfo       = {};
-        VkClearValue            clearColor[8]; // Maximum of 8 attachments at the moment.
-    };
+  private:
+    const VulkanDevice* device = nullptr;
+};
 
-} // Vk
-} // Sogas
+} // namespace Vk
+} // namespace Sogas
