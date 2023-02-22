@@ -148,7 +148,7 @@ class Texture final : public IResource
     const u32 GetHeight() const;
     const TextureDescriptor& GetDescriptor() const;
 
-    void SetData() const;
+    void SetData(void* data) const;
 
     DeviceTexture* internalState = nullptr;
   private:

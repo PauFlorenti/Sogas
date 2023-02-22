@@ -149,14 +149,19 @@ void VulkanTexture::Create(const VulkanDevice* device, Texture* texture, void* d
         memcpy(internalState->mapdata, data, static_cast<size_t>(imageSize));
         vkUnmapMemory(device->Handle, stagingMemory);
 
-        TransitionLayout(device, texture, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        TransitionLayout(device,
+                         internalState,
+                         &texture->GetDescriptor(),
+                         VK_IMAGE_LAYOUT_UNDEFINED,
+                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
         CopyBufferToImage(device,
                           stagingBuffer,
                           internalState->handle,
                           imageInfo.extent.width,
                           imageInfo.extent.height);
         TransitionLayout(device,
-                         texture,
+                         internalState,
+                         &texture->GetDescriptor(),
                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
@@ -168,17 +173,26 @@ void VulkanTexture::Create(const VulkanDevice* device, Texture* texture, void* d
         if (desc.bindPoint == BindPoint::DEPTH_STENCIL)
         {
             TransitionLayout(device,
-                             texture,
+                             internalState,
+                             &texture->GetDescriptor(),
                              imageInfo.initialLayout,
                              VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
         }
         if (desc.bindPoint == BindPoint::SHADER_SAMPLE)
         {
-            TransitionLayout(device, texture, imageInfo.initialLayout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+            TransitionLayout(device,
+                             internalState,
+                             &texture->GetDescriptor(),
+                             imageInfo.initialLayout,
+                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         }
         else if (desc.bindPoint == BindPoint::RENDER_TARGET)
         {
-            TransitionLayout(device, texture, imageInfo.initialLayout, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+            TransitionLayout(device,
+                             internalState,
+                             &texture->GetDescriptor(),
+                             imageInfo.initialLayout,
+                             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
         }
     }
 
@@ -201,10 +215,77 @@ void VulkanTexture::Create(const VulkanDevice* device, Texture* texture, void* d
     }
 }
 
-void VulkanTexture::TransitionLayout(const VulkanDevice* device,
-                                     const Texture*                 InTexture,
-                                     VkImageLayout                  srcLayout,
-                                     VkImageLayout                  dstLayout)
+void VulkanTexture::SetData(void* data, const TextureDescriptor* texture_descriptor)
+{
+    auto image_size =
+        texture_descriptor->width * texture_descriptor->height * GetFormatStride(texture_descriptor->format);
+
+    VkBuffer           stagingBuffer;
+    VkDeviceMemory     stagingMemory;
+    VkBufferCreateInfo bufferInfo    = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+    bufferInfo.usage                 = texture_descriptor->usage == Usage::READBACK ? VK_BUFFER_USAGE_TRANSFER_DST_BIT
+                                                                                    : VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    bufferInfo.queueFamilyIndexCount = static_cast<u32>(device->queueFamilies.size());
+    bufferInfo.pQueueFamilyIndices   = device->queueFamilies.data();
+    bufferInfo.size                  = image_size;
+
+    if (vkCreateBuffer(device->Handle, &bufferInfo, nullptr, &stagingBuffer) != VK_SUCCESS)
+    {
+        SERROR("Failed to create staging buffer for image texture.");
+        return;
+    }
+
+    VkMemoryRequirements stagingMemoryRequirements;
+    vkGetBufferMemoryRequirements(device->Handle, stagingBuffer, &stagingMemoryRequirements);
+    {
+        VkMemoryAllocateInfo allocInfo = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+        allocInfo.allocationSize       = stagingMemoryRequirements.size;
+        if (texture_descriptor->usage == Usage::UPLOAD)
+        {
+            allocInfo.memoryTypeIndex =
+                device->FindMemoryType(stagingMemoryRequirements.memoryTypeBits,
+                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        }
+        else
+        {
+            allocInfo.memoryTypeIndex =
+                device->FindMemoryType(stagingMemoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        }
+
+        if (vkAllocateMemory(device->Handle, &allocInfo, nullptr, &stagingMemory) != VK_SUCCESS)
+        {
+            SERROR("Could not allocate memory for image staging buffer.");
+            return;
+        }
+
+        if (vkBindBufferMemory(device->Handle, stagingBuffer, stagingMemory, 0) != VK_SUCCESS)
+        {
+            SERROR("Failed to bind buffer memory.");
+            return;
+        }
+    }
+
+    vkMapMemory(device->Handle, stagingMemory, 0, image_size, 0, &mapdata);
+    memcpy(mapdata, data, static_cast<size_t>(image_size));
+    vkUnmapMemory(device->Handle, stagingMemory);
+
+    TransitionLayout(device, this, texture_descriptor, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    CopyBufferToImage(device, stagingBuffer, handle, texture_descriptor->width, texture_descriptor->height);
+    TransitionLayout(device,
+                     this,
+                     texture_descriptor,
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    vkDestroyBuffer(device->Handle, stagingBuffer, nullptr);
+    vkFreeMemory(device->Handle, stagingMemory, nullptr);
+}
+
+void VulkanTexture::TransitionLayout(const VulkanDevice*      device,
+                                     const VulkanTexture*     InTexture,
+                                     const TextureDescriptor* textureDescriptor,
+                                     VkImageLayout            srcLayout,
+                                     VkImageLayout            dstLayout)
 {
     VkCommandBufferAllocateInfo cmdAllocInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     cmdAllocInfo.commandBufferCount          = 1;
@@ -218,7 +299,7 @@ void VulkanTexture::TransitionLayout(const VulkanDevice* device,
         return;
     }
 
-    auto                     textureInternalState = VulkanTexture::ToInternal(InTexture);
+    auto                     textureInternalState = InTexture;
     auto&                    image                = textureInternalState->handle;
     VkCommandBufferBeginInfo beginInfo            = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
     if (vkBeginCommandBuffer(cmd, &beginInfo) == VK_SUCCESS)
@@ -231,7 +312,7 @@ void VulkanTexture::TransitionLayout(const VulkanDevice* device,
         barrier.dstAccessMask                   = VK_ACCESS_TRANSFER_WRITE_BIT;
         barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-        barrier.subresourceRange.aspectMask     = InTexture->GetDescriptor().bindPoint == BindPoint::DEPTH_STENCIL
+        barrier.subresourceRange.aspectMask     = textureDescriptor->bindPoint == BindPoint::DEPTH_STENCIL
                                                       ? (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)
                                                       : VK_IMAGE_ASPECT_COLOR_BIT;
         barrier.subresourceRange.layerCount     = 1;
@@ -303,10 +384,10 @@ void VulkanTexture::TransitionLayout(const VulkanDevice* device,
 }
 
 void VulkanTexture::CopyBufferToImage(const VulkanDevice* device,
-                                      VkBuffer                       buffer,
-                                      VkImage                        image,
-                                      const u32&                     width,
-                                      const u32&                     height)
+                                      VkBuffer            buffer,
+                                      VkImage             image,
+                                      const u32&          width,
+                                      const u32&          height)
 {
     VkCommandBufferAllocateInfo cmdAllocInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     cmdAllocInfo.commandBufferCount          = 1;

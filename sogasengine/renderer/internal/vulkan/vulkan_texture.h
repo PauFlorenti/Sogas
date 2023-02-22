@@ -27,15 +27,17 @@ class VulkanTexture : public DeviceTexture
         return static_cast<VulkanTexture*>(InTexture->internalState);
     }
 
-    static void TransitionLayout(const VulkanDevice* device,
-                                 const Texture*      InTexture,
-                                 VkImageLayout       srcLayout,
-                                 VkImageLayout       dstLayout);
+    static void TransitionLayout(const VulkanDevice*      device,
+                                 const VulkanTexture*     InTexture,
+                                 const TextureDescriptor* textureDescriptor,
+                                 VkImageLayout            srcLayout,
+                                 VkImageLayout            dstLayout);
 
     static void
     CopyBufferToImage(const VulkanDevice* device, VkBuffer buffer, VkImage image, const u32& width, const u32& height);
 
     void Release() override;
+    void SetData(void* data, const TextureDescriptor* texture_descriptor);
 
     const VkImage     GetHandle() const { return handle; }
     const VkImageView GetImageView() const { return imageView; }
