@@ -1,4 +1,6 @@
+
 #include "texture.h"
+#include "device_texture.h"
 
 namespace Sogas
 {
@@ -12,7 +14,6 @@ void Texture::Destroy()
 {
     delete internalState;
     internalState = nullptr;
-    //internalState.release();
 }
 
 const u32 Texture::GetWidth() const

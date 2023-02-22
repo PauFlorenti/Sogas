@@ -118,7 +118,7 @@ ForwardPipeline::ForwardPipeline(std::shared_ptr<GPU_device> InRenderer, std::sh
     quadBufferDesc.size        = quad.size();
     quadBufferDesc.binding     = Renderer::BufferBindingPoint::Vertex;
     quadBufferDesc.usage       = Renderer::BufferUsage::TRANSFER_DST;
-    quadBufferDesc.elementSize = sizeof(Sogas::Renderer::Vertex);
+    quadBufferDesc.elementSize = sizeof(Sogas::Renderer::VertexLayout);
     quadBufferDesc.type        = Renderer::BufferType::Static;
     quadBuffer                 = renderer->CreateBuffer(std::move(quadBufferDesc), quad.data());
 

@@ -142,7 +142,7 @@ class Texture final : public IResource
     Texture(TextureDescriptor descriptor);
     ~Texture() { Destroy(); };
 
-    void Destroy();
+    void Destroy() override;
 
     const u32 GetWidth() const;
     const u32 GetHeight() const;
