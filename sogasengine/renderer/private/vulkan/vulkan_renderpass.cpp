@@ -5,10 +5,13 @@
 
 namespace Sogas
 {
+namespace Renderer
+{
 namespace Vk
 {
 
-VulkanRenderPass::VulkanRenderPass(const VulkanDevice* InDevice) : device(InDevice)
+VulkanRenderPass::VulkanRenderPass(const VulkanDevice* InDevice)
+    : device(InDevice)
 {
     SASSERT(InDevice != nullptr);
 }
@@ -18,8 +21,7 @@ VulkanRenderPass::~VulkanRenderPass()
     Destroy();
 }
 
-void VulkanRenderPass::Create(const VulkanDevice*                   InDevice,
-                              Renderer::RenderPass*                 InRenderpass)
+void VulkanRenderPass::Create(const VulkanDevice* InDevice, Renderer::RenderPass* InRenderpass)
 {
     SASSERT(InDevice != nullptr);
     SASSERT(InRenderpass);
@@ -150,4 +152,5 @@ void VulkanRenderPass::Destroy()
 }
 
 } // namespace Vk
+} // namespace Renderer
 } // namespace Sogas

@@ -27,7 +27,7 @@ namespace Sogas
         CRenderManager();
 
         void AddKey(CHandle owner, const CMesh* mesh, const Material* InMaterial);
-        void RenderAll(CHandle camera, DrawChannel channel, CommandBuffer cmd);
+        void RenderAll(CHandle camera, Renderer::DrawChannel channel, Renderer::CommandBuffer cmd);
         void DeleteKeysFromOwner(CHandle owner);
 
     private:

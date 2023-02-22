@@ -3,9 +3,12 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
-template<> struct std::hash<Sogas::Vertex>
+#include "render_types.h"
+
+template <>
+struct std::hash<Sogas::Renderer::VertexLayout>
 {
-    size_t operator()(Sogas::Vertex const& vertex) const 
+    size_t operator()(Sogas::Renderer::VertexLayout const& vertex) const 
     {
         return (((std::hash<glm::vec3>()(vertex.position) ^
             (std::hash<glm::vec4>()(vertex.color) << 1)) >> 1) ^
@@ -40,16 +43,16 @@ namespace Sogas
                 return false;
             }
 
-            std::vector<Vertex> vertices;
+            std::vector<Renderer::VertexLayout> vertices;
             std::vector<u32> indices;
 
-            std::unordered_map<Vertex, u32> uniqueVertices{};
+            std::unordered_map<Renderer::VertexLayout, u32> uniqueVertices{};
 
             for (const auto& shape : shapes)
             {
                 for (const auto& index : shape.mesh.indices)
                 {
-                    Vertex vertex = {};
+                    Renderer::VertexLayout vertex = {};
 
                     vertex.position = {
                         attrib.vertices[3 * index.vertex_index + 0],

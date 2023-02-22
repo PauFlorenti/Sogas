@@ -1,6 +1,7 @@
 #pragma once
 
 #include "renderer/public/render_types.h"
+#include "renderer/public/attachment.h"
 
 namespace Sogas
 {
@@ -11,6 +12,7 @@ class GPU_device;
 class Buffer;
 class Swapchain;
 class RenderPass;
+class Texture;
 
 class ForwardPipeline
 {

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "vulkan_types.h"
 #include "device_renderpass.h"
+#include "vulkan_types.h"
 
 namespace Sogas
 {
@@ -9,7 +9,6 @@ namespace Renderer
 {
 class RenderPass;
 struct RenderPassDescriptor;
-} // namespace Renderer
 namespace Vk
 {
 class VulkanDevice;
@@ -27,8 +26,7 @@ class VulkanRenderPass : public Renderer::DeviceRenderpass
         return static_cast<VulkanRenderPass*>(InRenderpass->internalState);
     }
 
-    static void
-    Create(const VulkanDevice* device, Renderer::RenderPass* renderpass);
+    static void Create(const VulkanDevice* device, Renderer::RenderPass* renderpass);
 
     void Destroy() override;
 
@@ -42,4 +40,5 @@ class VulkanRenderPass : public Renderer::DeviceRenderpass
 };
 
 } // namespace Vk
+} // namespace Renderer
 } // namespace Sogas

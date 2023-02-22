@@ -26,7 +26,7 @@ namespace Sogas
         enabled     = j.value("enabled", enabled);
     }
 
-    bool TCompPointLight::Activate(const std::shared_ptr<Renderer::Buffer>& InBuffer, const u32 InLightNumber, CommandBuffer cmd)
+    bool TCompPointLight::Activate(const std::shared_ptr<Renderer::Buffer>& InBuffer, const u32 InLightNumber, Renderer::CommandBuffer cmd)
     {
         if (intensity == 0.0f || enabled == false)
             return false;

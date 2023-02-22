@@ -4,6 +4,7 @@
 #include "render_types.h"
 #include "renderpass.h"
 #include "swapchain.h"
+#include "texture.h"
 
 struct GLFWwindow;
 
@@ -37,7 +38,7 @@ class GPU_device
     virtual void                                CreateSwapchain(std::shared_ptr<Swapchain> swapchain, GLFWwindow* window) = 0;
     virtual std::shared_ptr<Renderer::Buffer>   CreateBuffer(Renderer::BufferDescriptor desc, void* data) const = 0;
     virtual std::shared_ptr<Renderer::Buffer>   CreateBuffer(const u32& size, const u64& element_size, BufferBindingPoint binding, BufferUsage usage, void* data) const = 0;
-    virtual void                                CreateTexture(const TextureDescriptor* desc, void* data, Texture* texture) const = 0;
+    virtual void                                CreateTexture(Texture *texture, void* data) const = 0;
     virtual void                                CreateRenderPass(RenderPass* renderpass) const = 0;
     virtual void                                CreatePipeline(const PipelineDescriptor* desc, Pipeline* pipeline, RenderPass* renderpass = nullptr) const = 0;
     virtual void                                CreateAttachment() const = 0;

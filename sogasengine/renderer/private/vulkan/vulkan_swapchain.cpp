@@ -6,10 +6,16 @@
 
 namespace Sogas
 {
+namespace Renderer
+{
 namespace Vk
 {
 
-VulkanSwapchain::VulkanSwapchain(const VulkanDevice* InDevice) : device(InDevice) {}
+VulkanSwapchain::VulkanSwapchain(const VulkanDevice* InDevice)
+    : device(InDevice)
+{
+    texture = new Texture({});
+}
 
 VulkanSwapchain::~VulkanSwapchain()
 {
@@ -96,7 +102,9 @@ bool VulkanSwapchain::Create(const VulkanDevice* device, std::shared_ptr<Rendere
 
     u32 imageCount = surfaceCapabilities.minImageCount + 1;
     if (imageCount > 0 && imageCount > surfaceCapabilities.maxImageCount)
+    {
         imageCount = surfaceCapabilities.maxImageCount;
+    }
 
     VkSwapchainCreateInfoKHR swapchainCreateInfo = {VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR};
     swapchainCreateInfo.surface                  = internalState->surface;
@@ -164,12 +172,13 @@ bool VulkanSwapchain::Create(const VulkanDevice* device, std::shared_ptr<Rendere
     swapchain->renderpass->internalState = new VulkanRenderPass(device);
     auto renderPassInternal              = VulkanRenderPass::ToInternal(swapchain->GetRenderpass());
 
-    internalState->texture.descriptor.width  = internalState->extent.width;
-    internalState->texture.descriptor.height = internalState->extent.height;
-    internalState->texture.descriptor.depth  = 1;
-    internalState->texture.descriptor.format = swapchain->GetDescriptor().format;
+    // const auto& texture_descriptor = internalState->GetTexture().GetDescriptor();
+    // texture_descriptor.width  = internalState->extent.width;
+    // texture_descriptor.height = internalState->extent.height;
+    // texture_descriptor.depth  = 1;
+    // texture_descriptor.format = swapchain->GetDescriptor().format;
 
-    swapchain->renderpass->AddAttachment(Attachment::RenderTarget(&internalState->texture));
+    swapchain->renderpass->AddAttachment(Attachment::RenderTarget(internalState->GetTexture()));
 
     if (vkCreateRenderPass(device->Handle, &renderPassInfo, nullptr, &renderPassInternal->renderpass) != VK_SUCCESS)
     {
@@ -271,4 +280,5 @@ void VulkanSwapchain::Destroy()
 }
 
 } // namespace Vk
+} // namespace Renderer
 } // namespace Sogas

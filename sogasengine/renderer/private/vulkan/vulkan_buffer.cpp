@@ -4,6 +4,8 @@
 
 namespace Sogas
 {
+namespace Renderer
+{
 namespace Vk
 {
 
@@ -199,4 +201,5 @@ void VulkanBuffer::Allocate_buffer_memory(VkMemoryPropertyFlags memoryPropertyFl
 }
 
 } // namespace Vk
+} // namespace Renderer
 } // namespace Sogas

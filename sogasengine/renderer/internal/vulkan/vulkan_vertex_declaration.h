@@ -2,19 +2,22 @@
 
 #include <vulkan/vulkan.h>
 
-namespace Sogas 
+namespace Sogas
 {
-namespace Vk 
+namespace Renderer
 {
-    struct CVulkanVertexDeclaration
-    {
-        std::string name;
-        const VkVertexInputAttributeDescription* layout = VK_NULL_HANDLE;
-        u32 size = 0;
+namespace Vk
+{
+struct CVulkanVertexDeclaration
+{
+    std::string                              name;
+    const VkVertexInputAttributeDescription* layout = VK_NULL_HANDLE;
+    u32                                      size   = 0;
 
-        CVulkanVertexDeclaration(const char* name, const VkVertexInputAttributeDescription* newLayout, const u32 size);
-    };
+    CVulkanVertexDeclaration(const char* name, const VkVertexInputAttributeDescription* newLayout, const u32 size);
+};
 
-    const CVulkanVertexDeclaration* GetVertexDeclaration(const std::string& name);
-} // Vk
-} // Sogas
+const CVulkanVertexDeclaration* GetVertexDeclaration(const std::string& name);
+} // namespace Vk
+} // namespace Renderer
+} // namespace Sogas

@@ -7,6 +7,8 @@
 
 namespace Sogas
 {
+namespace Renderer
+{
 namespace Vk
 {
 
@@ -303,4 +305,5 @@ void VulkanPipeline::Destroy()
 }
 
 } // namespace Vk
+} // namespace Renderer
 } // namespace Sogas

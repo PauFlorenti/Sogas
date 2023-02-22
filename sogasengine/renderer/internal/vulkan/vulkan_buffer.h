@@ -5,6 +5,8 @@
 
 namespace Sogas
 {
+namespace Renderer
+{
 namespace Vk
 {
 class VulkanDevice;
@@ -46,4 +48,5 @@ class VulkanBuffer final : public Renderer::DeviceBuffer
     VkDeviceMemory      memory  = VK_NULL_HANDLE;
 };
 } // namespace Vk
+} // namespace Renderer
 } // namespace Sogas

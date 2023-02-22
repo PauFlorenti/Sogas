@@ -3,9 +3,12 @@
 
 namespace Sogas
 {
+namespace Renderer
+{
 namespace Vk
 {
-VulkanCommandBuffer::VulkanCommandBuffer(const VulkanDevice* device) : device(device)
+VulkanCommandBuffer::VulkanCommandBuffer(const VulkanDevice* device)
+    : device(device)
 {
     SASSERT(device != nullptr);
 
@@ -39,4 +42,5 @@ void VulkanCommandBuffer::Destroy()
     descriptorSetBound = nullptr;
 }
 } // namespace Vk
+} // namespace Renderer
 } // namespace Sogas

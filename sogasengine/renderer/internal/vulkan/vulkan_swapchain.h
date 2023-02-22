@@ -7,8 +7,7 @@ namespace Sogas
 {
 namespace Renderer
 {
-class Swapchain;
-}
+  class Texture;
 namespace Vk
 {
 class VulkanDevice;
@@ -28,6 +27,7 @@ class VulkanSwapchain : public Renderer::DeviceSwapchain
     }
 
     void Destroy() override;
+    const Texture* GetTexture() const { return texture; }
 
     VkSwapchainKHR     swapchain = VK_NULL_HANDLE;
     VkSurfaceKHR       surface   = VK_NULL_HANDLE;
@@ -44,9 +44,10 @@ class VulkanSwapchain : public Renderer::DeviceSwapchain
     VkSemaphore renderCompleteSemaphore  = VK_NULL_HANDLE;
 
   private:
-    Texture             texture;
+    Texture*             texture;
     const VulkanDevice* device = nullptr;
 };
 
 } // namespace Vk
+} // namespace Renderer
 } // namespace Sogas

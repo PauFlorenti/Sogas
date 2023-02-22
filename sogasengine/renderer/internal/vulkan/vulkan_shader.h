@@ -4,35 +4,39 @@
 
 namespace Sogas
 {
-    namespace Vk
+namespace Renderer
+{
+
+namespace Vk
+{
+class VulkanDevice;
+
+class VulkanShader
+{
+  public:
+    VulkanShader()                                           = default;
+    VulkanShader(const VulkanShader&)                        = delete;
+    VulkanShader(VulkanShader&&)                             = delete;
+    const VulkanShader& operator=(const VulkanShader& other) = delete;
+    ~VulkanShader();
+
+    static void Create(const VulkanDevice* device, ShaderStage stage, std::string InFilename, Shader* OutShader);
+
+    static inline std::shared_ptr<VulkanShader> ToInternal(const Shader* InShader)
     {
-        class VulkanDevice;
+        return std::static_pointer_cast<VulkanShader>(InShader->internalState);
+    }
 
-        class VulkanShader
-        {
-        public:
-            VulkanShader() = default;
-            VulkanShader(const VulkanShader &) = delete;
-            VulkanShader(VulkanShader &&) = delete;
-            const VulkanShader &operator=(const VulkanShader &other) = delete;
-            ~VulkanShader();
+    VkShaderModule shaderModule;
 
-            static void Create(const VulkanDevice *device, ShaderStage stage, std::string InFilename, Shader *OutShader);
+    // Sets limited to 8 by now.
+    std::vector<VkDescriptorSetLayoutBinding> layoutBindingsPerSet[8];
+    std::vector<VkPushConstantRange>          pushConstantRanges;
 
-            static inline std::shared_ptr<VulkanShader> ToInternal(const Shader *InShader)
-            {
-                return std::static_pointer_cast<VulkanShader>(InShader->internalState);
-            }
+  private:
+    const VulkanDevice* device = nullptr;
+};
 
-            VkShaderModule shaderModule;
-
-            // Sets limited to 8 by now.
-            std::vector<VkDescriptorSetLayoutBinding> layoutBindingsPerSet[8];
-            std::vector<VkPushConstantRange> pushConstantRanges;
-
-        private:
-            const VulkanDevice *device = nullptr;
-        };
-
-    } // namespace Vk
+} // namespace Vk
+} // namespace Renderer
 } // namespace Sogas

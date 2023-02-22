@@ -21,14 +21,14 @@ bool CRenderModule::Start()
     u32                      extensionsCount = 0;
     const char**             extensions      = glfwGetRequiredInstanceExtensions(&extensionsCount);
     std::vector<const char*> extensions_vector(extensions, extensions + extensionsCount);
-    renderer = Renderer::GPU_device::create(GraphicsAPI::Vulkan, nullptr, extensions_vector);
+    renderer = Renderer::GPU_device::create(Renderer::GraphicsAPI::Vulkan, nullptr, extensions_vector);
     renderer->Init();
 
     i32 width, height;
     CApplication::Get()->GetWindowSize(&width, &height);
 
     Renderer::SwapchainDescriptor swapchain_descriptor;
-    swapchain_descriptor.format = Format::R32G32B32A32_SFLOAT;
+    swapchain_descriptor.format = Renderer::Format::R32G32B32A32_SFLOAT;
     swapchain_descriptor.width  = width;
     swapchain_descriptor.height = height;
     swapchain                   = std::make_shared<Renderer::Swapchain>(std::move(swapchain_descriptor));

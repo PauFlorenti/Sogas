@@ -4,38 +4,40 @@
 
 namespace Sogas
 {
-    namespace Vk
+namespace Renderer
+{
+namespace Vk
+{
+class VulkanDevice;
+class VulkanAttachment
+{
+  public:
+    ~VulkanAttachment() { Destroy(); }
+
+    static inline std::shared_ptr<VulkanAttachment> ToInternal(const AttachmentFramebuffer* InAttachment)
     {
-        class VulkanDevice;
-        class VulkanAttachment
-        {
-        public:
+        return std::static_pointer_cast<VulkanAttachment>(InAttachment->internalState);
+    }
 
-            ~VulkanAttachment() { Destroy(); }
+    static void Create(const VulkanDevice* InDevice, AttachmentFramebuffer* InAttachment);
 
-            static inline std::shared_ptr<VulkanAttachment> ToInternal(const AttachmentFramebuffer *InAttachment)
-            {
-                return std::static_pointer_cast<VulkanAttachment>(InAttachment->internalState);
-            }
+    const VkImage     GetImage() const { return image; }
+    const VkImageView GetImageView() const { return imageView; }
+    const VkFormat    GetFormat() const { return format; }
+    const VkSampler   GetSampler();
 
-            static void Create(const VulkanDevice *InDevice, AttachmentFramebuffer *InAttachment);
+    void Destroy();
 
-            const VkImage GetImage() const { return image; }
-            const VkImageView GetImageView() const { return imageView; }
-            const VkFormat GetFormat() const { return format; }
-            const VkSampler GetSampler();
+    VkDescriptorImageInfo imageInfo = {};
 
-            void Destroy();
-
-            VkDescriptorImageInfo imageInfo = {};
-
-        private:
-            VkDevice device = VK_NULL_HANDLE;
-            VkImage image = VK_NULL_HANDLE;
-            VkImageView imageView = VK_NULL_HANDLE;
-            VkDeviceMemory memory = VK_NULL_HANDLE;
-            VkSampler       sampler     = VK_NULL_HANDLE;
-            VkFormat format;
-        };
-    } // namespace Vk
+  private:
+    VkDevice       device    = VK_NULL_HANDLE;
+    VkImage        image     = VK_NULL_HANDLE;
+    VkImageView    imageView = VK_NULL_HANDLE;
+    VkDeviceMemory memory    = VK_NULL_HANDLE;
+    VkSampler      sampler   = VK_NULL_HANDLE;
+    VkFormat       format;
+};
+} // namespace Vk
+} // namespace Renderer
 } // namespace Sogas

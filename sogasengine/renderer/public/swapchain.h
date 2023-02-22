@@ -1,6 +1,7 @@
 #pragma once
 
 #include "render_types.h"
+#include "texture.h" // TODO At the moment used for Format enum. This should be moved, enums probably into another file.
 
 namespace Sogas
 {
@@ -29,7 +30,7 @@ class Swapchain final
     Swapchain& operator=(Swapchain&& other);
     ~Swapchain() { Destroy(); }
 
-    void Destroy();
+    void                       Destroy();
     const RenderPass*          GetRenderpass() const { return renderpass; }
     const SwapchainDescriptor& GetDescriptor() const { return descriptor; }
     void                       SetSwapchainSize(const u32 /*InWidth*/, const u32 /*InHeight*/){};

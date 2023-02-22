@@ -7,7 +7,6 @@ namespace Sogas
 namespace Renderer
 {
 class RenderPass;
-}
 namespace Vk
 {
 class VulkanDevice;
@@ -45,4 +44,5 @@ class VulkanPipeline
 };
 
 } // namespace Vk
+} // namespace Renderer
 } // namespace Sogas

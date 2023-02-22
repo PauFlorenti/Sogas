@@ -7,7 +7,6 @@ namespace Renderer
 {
 class RenderPass;
 class Swapchain;
-} // namespace Renderer
 namespace Vk
 {
 class VulkanPipeline;
@@ -44,4 +43,5 @@ class VulkanCommandBuffer
 };
 
 } // namespace Vk
+} // namespace Renderer
 } // namespace Sogas

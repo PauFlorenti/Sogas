@@ -30,20 +30,25 @@ namespace Sogas
     bool Material::CreateFromJson(const json& j)
     {
         std::string albedo_name = j.value("albedo", "");
-        albedo = albedo_name.empty() ? CResourceManager::Get()->GetResource("white.text")->As<Texture>() : CResourceManager::Get()->GetResource(albedo_name)->As<Texture>();
+        albedo = albedo_name.empty() ? CResourceManager::Get()->GetResource("white.text")->As<Renderer::Texture>()
+                                     : CResourceManager::Get()->GetResource(albedo_name)->As<Renderer::Texture>();
 
         std::string normal_name = j.value("normal", "");
-        normal = normal_name.empty() ? CResourceManager::Get()->GetResource("white.text")->As<Texture>() : CResourceManager::Get()->GetResource(normal_name)->As<Texture>();
+        normal = normal_name.empty() ? CResourceManager::Get()->GetResource("white.text")->As<Renderer::Texture>()
+                                     : CResourceManager::Get()->GetResource(normal_name)->As<Renderer::Texture>();
 
         std::string metallic_roughness_name = j.value("metallic_roughness", "");
-        metallic_roughness = metallic_roughness_name.empty() ? CResourceManager::Get()->GetResource("white.text")->As<Texture>() : CResourceManager::Get()->GetResource(metallic_roughness_name)->As<Texture>();
+        metallic_roughness                  = metallic_roughness_name.empty()
+                                                  ? CResourceManager::Get()->GetResource("white.text")->As<Renderer::Texture>()
+                : CResourceManager::Get()->GetResource(metallic_roughness_name)->As<Renderer::Texture>();
 
         std::string emissive_name = j.value("emissive", "");
-        emissive = emissive_name.empty() ? CResourceManager::Get()->GetResource("white.text")->As<Texture>() : CResourceManager::Get()->GetResource(emissive_name)->As<Texture>();
+        emissive = emissive_name.empty() ? CResourceManager::Get()->GetResource("white.text")->As<Renderer::Texture>()
+                                         : CResourceManager::Get()->GetResource(emissive_name)->As<Renderer::Texture>();
         return true;
     }
 
-    void Material::Activate(CommandBuffer cmd) const
+    void Material::Activate(Renderer::CommandBuffer cmd) const
     {
         auto renderer = CEngine::Get()->GetRenderModule()->GetGraphicsDevice();
         renderer->BindTexture(albedo, cmd.activePipeline, 0, 1);

@@ -17,6 +17,8 @@
 
 namespace Sogas
 {
+namespace Renderer
+{
 namespace Vk
 {
 const std::vector<const char*> validationLayers = {"VK_LAYER_KHRONOS_validation"};
@@ -209,7 +211,9 @@ void VulkanDevice::shutdown()
     STRACE("\tDestroying Vulkan logical device ...");
     vkDestroyDevice(Handle, nullptr);
     if (validationLayersEnabled)
+    {
         DestroyDebugUtilsMessengerEXT(Instance, DebugMessenger, nullptr);
+    }
     STRACE("\tDestroying instance ...");
     vkDestroyInstance(Instance, nullptr);
     STRACE("\tInstance destroyed.");
@@ -527,9 +531,9 @@ std::shared_ptr<Renderer::Buffer> VulkanDevice::CreateBuffer(const u32&         
     return VulkanBuffer::Create(this, std::move(buffer_descriptor), data);
 }
 
-void VulkanDevice::CreateTexture(const TextureDescriptor* desc, void* data, Texture* texture) const
+void VulkanDevice::CreateTexture(Texture* texture, void* data) const
 {
-    VulkanTexture::Create(this, desc, data, texture);
+    VulkanTexture::Create(this, texture, data);
 }
 
 void VulkanDevice::CreateRenderPass(Renderer::RenderPass* renderpass) const
@@ -950,7 +954,9 @@ bool VulkanDevice::CheckValidationLayersSupport()
 void VulkanDevice::SetupDebugMessenger()
 {
     if (!validationLayersEnabled)
+    {
         return;
+    }
 
     VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo = {
         VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT};
@@ -1003,4 +1009,5 @@ void VulkanDevice::CreateCommandResources()
     }
 }
 } // namespace Vk
+} // namespace Renderer
 } // namespace Sogas

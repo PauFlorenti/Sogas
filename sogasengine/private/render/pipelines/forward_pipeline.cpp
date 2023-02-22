@@ -8,8 +8,9 @@
 #include "renderer/public/render_types.h"
 #include "renderer/public/renderpass.h"
 #include "renderer/public/swapchain.h"
+#include "renderer/public/attachment.h"
 
-std::vector<Sogas::Vertex> quad = {
+std::vector<Sogas::Renderer::VertexLayout> quad = {
     {{1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
     {{-1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
     {{-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
@@ -117,7 +118,7 @@ ForwardPipeline::ForwardPipeline(std::shared_ptr<GPU_device> InRenderer, std::sh
     quadBufferDesc.size        = quad.size();
     quadBufferDesc.binding     = Renderer::BufferBindingPoint::Vertex;
     quadBufferDesc.usage       = Renderer::BufferUsage::TRANSFER_DST;
-    quadBufferDesc.elementSize = sizeof(Sogas::Vertex);
+    quadBufferDesc.elementSize = sizeof(Sogas::Renderer::Vertex);
     quadBufferDesc.type        = Renderer::BufferType::Static;
     quadBuffer                 = renderer->CreateBuffer(std::move(quadBufferDesc), quad.data());
 

@@ -1,21 +1,24 @@
 #pragma once
 
-#include "resource.h"
 #include "render_types.h"
+#include "resource.h"
 
 namespace Sogas
 {
-    struct Texture;
-    class Material : public IResource
-    {
-        const Texture* albedo               = nullptr;
-        const Texture* normal               = nullptr;
-        const Texture* metallic_roughness   = nullptr;
-        const Texture* emissive             = nullptr;
+namespace Renderer
+{
+class Texture;
+}
+class Material : public IResource
+{
+    const Renderer::Texture* albedo             = nullptr;
+    const Renderer::Texture* normal             = nullptr;
+    const Renderer::Texture* metallic_roughness = nullptr;
+    const Renderer::Texture* emissive           = nullptr;
 
-    public:
-        bool CreateFromJson(const json& j);
+  public:
+    bool CreateFromJson(const json& j);
 
-        void Activate(CommandBuffer cmd) const;
-    }; 
-} // Sogas
+    void Activate(Renderer::CommandBuffer cmd) const;
+};
+} // namespace Sogas
