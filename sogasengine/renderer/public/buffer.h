@@ -50,7 +50,7 @@ class Buffer final
     ~Buffer();
 
     void Release();
-    void SetData(void* InData);
+    void SetData(void* InData, const u64& size, const u64& offset = 0);
 
     const u32 Size() const;
     const u64 ByteSize() const;

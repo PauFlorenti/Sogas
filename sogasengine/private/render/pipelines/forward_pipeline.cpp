@@ -152,7 +152,7 @@ void ForwardPipeline::render(std::shared_ptr<Swapchain> swapchain)
     cameraCtes.camera_view            = cCamera->GetView();
     cameraCtes.camera_projection      = cCamera->GetProjection();
     cameraCtes.camera_view_projection = cCamera->GetViewProjection();
-    renderer->UpdateBuffer(constantBuffer, &cameraCtes, sizeof(ConstantsCamera), 0, cmd);
+    constantBuffer->SetData(&cameraCtes, sizeof(ConstantsCamera), 0);
 
     u32 i = 0;
     GetObjectManager<TCompPointLight>()->ForEach(
@@ -164,7 +164,7 @@ void ForwardPipeline::render(std::shared_ptr<Swapchain> swapchain)
             l.intensity = light->intensity;
             l.radius    = light->radius;
 
-            renderer->UpdateBuffer(lightBuffer, &l, sizeof(Light), sizeof(Light) * i, cmd);
+            lightBuffer->SetData(&l, sizeof(Light), sizeof(Light) * i);
             i++;
         });
 

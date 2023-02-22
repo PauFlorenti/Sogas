@@ -41,6 +41,20 @@ Buffer::~Buffer()
     Release();
 }
 
+void Buffer::Release()
+{
+    device.reset();
+    device_buffer.reset();
+    elementCount = 0;
+    elementSize  = 0;
+}
+
+void Buffer::SetData(void* data, const u64& size, const u64& offset)
+{
+    SASSERT_MSG((offset + size) <= (elementCount * elementSize), "Writing out of buffer.");
+    device_buffer->SetData(data, size, offset);
+}
+
 const u32 Buffer::Size() const
 {
     return elementCount;
@@ -64,14 +78,6 @@ bool Buffer::isEmpty() const
 bool Buffer::isValid() const
 {
     return !isEmpty();
-}
-
-void Buffer::Release()
-{
-    device.reset();
-    device_buffer.reset();
-    elementCount = 0;
-    elementSize  = 0;
 }
 
 } // namespace Renderer
