@@ -13,6 +13,7 @@ class VulkanDevice;
 
 class VulkanBuffer final : public Renderer::DeviceBuffer
 {
+  friend class VulkanTexture;
   public:
     explicit VulkanBuffer(const VulkanDevice* device = nullptr);
     VulkanBuffer(const VulkanBuffer&)                  = delete;

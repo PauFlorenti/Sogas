@@ -31,9 +31,9 @@ const TextureDescriptor& Texture::GetDescriptor() const
     return descriptor;
 }
 
-void Texture::SetData(void* data) const 
+void Texture::SetData(void* data) const
 {
-    internalState->SetData(data, &descriptor);
+    internalState->SetData(data);
 };
 } // namespace Renderer
 } // namespace Sogas

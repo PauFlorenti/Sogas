@@ -144,15 +144,16 @@ class Texture final : public IResource
 
     void Destroy() override;
 
-    const u32 GetWidth() const;
-    const u32 GetHeight() const;
+    const u32                GetWidth() const;
+    const u32                GetHeight() const;
     const TextureDescriptor& GetDescriptor() const;
 
     void SetData(void* data) const;
 
     DeviceTexture* internalState = nullptr;
+
   private:
-    TextureDescriptor              descriptor;
+    TextureDescriptor descriptor;
 };
 } // namespace Renderer
 } // namespace Sogas

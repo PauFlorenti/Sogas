@@ -11,6 +11,17 @@ namespace Renderer
 namespace Vk
 {
 class VulkanDevice;
+class VulkanBuffer;
+
+struct VulkanTextureDescriptor
+{
+    u32                width{0};
+    u32                height{0};
+    VkFormat           texture_format;
+    u32                texture_format_stride{0};
+    VkImageAspectFlags texture_aspect{VK_IMAGE_ASPECT_NONE};
+};
+
 class VulkanTexture : public DeviceTexture
 {
   public:
@@ -27,17 +38,8 @@ class VulkanTexture : public DeviceTexture
         return static_cast<VulkanTexture*>(InTexture->internalState);
     }
 
-    static void TransitionLayout(const VulkanDevice*      device,
-                                 const VulkanTexture*     InTexture,
-                                 const TextureDescriptor* textureDescriptor,
-                                 VkImageLayout            srcLayout,
-                                 VkImageLayout            dstLayout);
-
-    static void
-    CopyBufferToImage(const VulkanDevice* device, VkBuffer buffer, VkImage image, const u32& width, const u32& height);
-
     void Release() override;
-    void SetData(void* data, const TextureDescriptor* texture_descriptor);
+    void SetData(void* data);
 
     const VkImage     GetHandle() const { return handle; }
     const VkImageView GetImageView() const { return imageView; }
@@ -46,12 +48,17 @@ class VulkanTexture : public DeviceTexture
     VkDescriptorImageInfo descriptorImageInfo;
 
   private:
-    void*               mapdata   = nullptr;
-    const VulkanDevice* device    = nullptr;
-    VkImage             handle    = VK_NULL_HANDLE;
-    VkImageView         imageView = VK_NULL_HANDLE;
-    VkDeviceMemory      memory    = VK_NULL_HANDLE;
-    VkSampler           sampler   = VK_NULL_HANDLE;
+    void TransitionLayout(VkImageLayout srcLayout, VkImageLayout dstLayout);
+    void CopyBufferToImage(const VulkanBuffer* buffer);
+    void Allocate_and_bind_texture_memory(VkMemoryPropertyFlags memory_properties);
+
+    void*                   mapdata   = nullptr;
+    const VulkanDevice*     device    = nullptr;
+    VkImage                 handle    = VK_NULL_HANDLE;
+    VkImageView             imageView = VK_NULL_HANDLE;
+    VkDeviceMemory          memory    = VK_NULL_HANDLE;
+    VkSampler               sampler   = VK_NULL_HANDLE;
+    VulkanTextureDescriptor texture_descriptor;
 };
 } // namespace Vk
 } // namespace Renderer

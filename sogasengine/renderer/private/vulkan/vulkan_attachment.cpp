@@ -84,6 +84,65 @@ void VulkanAttachment::Create(const VulkanDevice* InDevice, AttachmentFramebuffe
         SERROR("Failed to create image view for image attachment framebuffer");
         return;
     }
+
+    VkCommandBufferAllocateInfo cmdAllocInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+    cmdAllocInfo.commandBufferCount          = 1;
+    cmdAllocInfo.commandPool                 = InDevice->resourcesCommandPool[InDevice->GetFrameIndex()];
+    cmdAllocInfo.level                       = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+    VkCommandBuffer cmd;
+    if (vkAllocateCommandBuffers(InDevice->Handle, &cmdAllocInfo, &cmd) != VK_SUCCESS)
+    {
+        SERROR("Failed to allcoate command buffer.");
+        return;
+    }
+
+    if (InAttachment->usage == BindPoint::DEPTH_STENCIL)
+    {
+        VkCommandBufferBeginInfo beginInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+        if (vkBeginCommandBuffer(cmd, &beginInfo) == VK_SUCCESS)
+        {
+            VkImageMemoryBarrier barrier            = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+            barrier.image                           = internalState->image;
+            barrier.oldLayout                       = VK_IMAGE_LAYOUT_UNDEFINED;
+            barrier.newLayout                       = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            barrier.srcAccessMask                   = 0;
+            barrier.dstAccessMask                   = VK_ACCESS_TRANSFER_WRITE_BIT;
+            barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+            barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+            barrier.subresourceRange.aspectMask     = aspectMask;
+            barrier.subresourceRange.layerCount     = 1;
+            barrier.subresourceRange.baseArrayLayer = 0;
+            barrier.subresourceRange.levelCount     = 1;
+            barrier.subresourceRange.baseMipLevel   = 0;
+            barrier.srcAccessMask = 0;
+            barrier.dstAccessMask =
+                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+
+            VkPipelineStageFlags srcStage;
+            VkPipelineStageFlags dstStage;
+            srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            dstStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+
+            vkCmdPipelineBarrier(cmd, srcStage, dstStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+            vkEndCommandBuffer(cmd);
+
+            VkSubmitInfo submitInfo       = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
+            submitInfo.commandBufferCount = 1;
+            submitInfo.pCommandBuffers    = &cmd;
+
+            if (vkQueueSubmit(InDevice->GraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
+            {
+                SERROR("Failed to submit graphics queue commands.");
+                return;
+            }
+
+            vkQueueWaitIdle(InDevice->GraphicsQueue);
+        }
+        vkFreeCommandBuffers(InDevice->Handle, InDevice->resourcesCommandPool[InDevice->GetFrameIndex()], 1, &cmd);
+    }
 }
 
 const VkSampler VulkanAttachment::GetSampler()

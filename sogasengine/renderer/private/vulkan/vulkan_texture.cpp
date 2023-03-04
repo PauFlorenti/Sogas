@@ -25,267 +25,197 @@ void VulkanTexture::Create(const VulkanDevice* device, Texture* texture, void* d
 
     const auto& desc = texture->GetDescriptor();
 
-    auto internalState     = new VulkanTexture(device);
+    auto internalState                                      = new VulkanTexture(device);
+    internalState->texture_descriptor.width                 = desc.width;
+    internalState->texture_descriptor.height                = desc.height;
+    internalState->texture_descriptor.texture_format        = ConvertFormat(desc.format);
+    internalState->texture_descriptor.texture_format_stride = GetFormatStride(desc.format);
+    internalState->texture_descriptor.texture_aspect        = desc.bindPoint == BindPoint::DEPTH_STENCIL
+                                                                  ? (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)
+                                                                  : VK_IMAGE_ASPECT_COLOR_BIT;
+
     texture->internalState = internalState;
 
-    VkImageCreateInfo imageInfo     = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
-    imageInfo.format                = ConvertFormat(desc.format);
-    imageInfo.extent                = {desc.width, desc.height, 1};
-    imageInfo.mipLevels             = 1;
-    imageInfo.arrayLayers           = 1;
-    imageInfo.samples               = VK_SAMPLE_COUNT_1_BIT;
-    imageInfo.tiling                = VK_IMAGE_TILING_OPTIMAL;
-    imageInfo.sharingMode           = VK_SHARING_MODE_EXCLUSIVE;
-    imageInfo.queueFamilyIndexCount = static_cast<u32>(device->queueFamilies.size());
-    imageInfo.pQueueFamilyIndices   = device->queueFamilies.data();
-    imageInfo.initialLayout         = VK_IMAGE_LAYOUT_UNDEFINED;
+    // Create image
+    VkImageCreateInfo imageInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
+    {
+        imageInfo.format                = internalState->texture_descriptor.texture_format;
+        imageInfo.extent                = {desc.width, desc.height, 1};
+        imageInfo.mipLevels             = 1;
+        imageInfo.arrayLayers           = 1;
+        imageInfo.samples               = VK_SAMPLE_COUNT_1_BIT;
+        imageInfo.tiling                = VK_IMAGE_TILING_OPTIMAL;
+        imageInfo.sharingMode           = VK_SHARING_MODE_EXCLUSIVE;
+        imageInfo.queueFamilyIndexCount = static_cast<u32>(device->queueFamilies.size());
+        imageInfo.pQueueFamilyIndices   = device->queueFamilies.data();
+        imageInfo.initialLayout         = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    switch (desc.textureType)
-    {
-    case TextureDescriptor::TextureType::TEXTURE_TYPE_1D:
-        imageInfo.imageType = VK_IMAGE_TYPE_1D;
-        break;
-    default:
-    case TextureDescriptor::TextureType::TEXTURE_TYPE_2D:
-        imageInfo.imageType = VK_IMAGE_TYPE_2D;
-        break;
-    case TextureDescriptor::TextureType::TEXTURE_TYPE_3D:
-        imageInfo.imageType = VK_IMAGE_TYPE_3D;
-        break;
+        switch (desc.textureType)
+        {
+        case TextureDescriptor::TextureType::TEXTURE_TYPE_1D:
+            imageInfo.imageType = VK_IMAGE_TYPE_1D;
+            break;
+        default:
+        case TextureDescriptor::TextureType::TEXTURE_TYPE_2D:
+            imageInfo.imageType = VK_IMAGE_TYPE_2D;
+            break;
+        case TextureDescriptor::TextureType::TEXTURE_TYPE_3D:
+            imageInfo.imageType = VK_IMAGE_TYPE_3D;
+            break;
+        }
+
+        if (desc.usage == Usage::UPLOAD)
+        {
+            imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        }
+        if (desc.usage == Usage::READBACK)
+        {
+            imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+        }
+
+        if (desc.bindPoint == BindPoint::SHADER_SAMPLE)
+        {
+            imageInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+        }
+        if (desc.bindPoint == BindPoint::DEPTH_STENCIL)
+        {
+            imageInfo.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        }
+        if (desc.bindPoint == BindPoint::RENDER_TARGET)
+        {
+            imageInfo.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+            imageInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+        }
+
+        VkDeviceSize imageSize = imageInfo.extent.width * imageInfo.extent.height * imageInfo.extent.depth *
+                                 imageInfo.arrayLayers * GetFormatStride(desc.format);
+
+        if (vkCreateImage(device->Handle, &imageInfo, nullptr, &internalState->handle) != VK_SUCCESS)
+        {
+            SFATAL("Could not create image.");
+            return;
+        }
     }
 
-    if (desc.usage == Usage::UPLOAD)
-    {
-        imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    }
-    if (desc.usage == Usage::READBACK)
-    {
-        imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    }
-
-    if (desc.bindPoint == BindPoint::SHADER_SAMPLE)
-    {
-        imageInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-    }
-    if (desc.bindPoint == BindPoint::DEPTH_STENCIL)
-    {
-        imageInfo.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-    }
-    if (desc.bindPoint == BindPoint::RENDER_TARGET)
-    {
-        imageInfo.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        imageInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-    }
-
-    VkDeviceSize imageSize = imageInfo.extent.width * imageInfo.extent.height * imageInfo.extent.depth *
-                             imageInfo.arrayLayers * GetFormatStride(desc.format);
-
-    if (vkCreateImage(device->Handle, &imageInfo, nullptr, &internalState->handle) != VK_SUCCESS)
-    {
-        SFATAL("Could not create image.");
-        return;
-    }
-
-    VkMemoryRequirements memoryRequirements;
-    vkGetImageMemoryRequirements(device->Handle, internalState->handle, &memoryRequirements);
-    {
-        VkMemoryAllocateInfo allocInfo = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
-        allocInfo.allocationSize       = memoryRequirements.size;
-        allocInfo.memoryTypeIndex =
-            device->FindMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-        vkAllocateMemory(device->Handle, &allocInfo, nullptr, &internalState->memory);
-        vkBindImageMemory(device->Handle, internalState->handle, internalState->memory, 0);
-    }
+    internalState->Allocate_and_bind_texture_memory(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     if (data != nullptr)
     {
-        VkBuffer           stagingBuffer;
-        VkDeviceMemory     stagingMemory;
-        VkBufferCreateInfo bufferInfo = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
-        bufferInfo.usage =
-            desc.usage == Usage::READBACK ? VK_BUFFER_USAGE_TRANSFER_DST_BIT : VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-        bufferInfo.queueFamilyIndexCount = static_cast<u32>(device->queueFamilies.size());
-        bufferInfo.pQueueFamilyIndices   = device->queueFamilies.data();
-        bufferInfo.size                  = imageSize;
-
-        if (vkCreateBuffer(device->Handle, &bufferInfo, nullptr, &stagingBuffer) != VK_SUCCESS)
-        {
-            SERROR("Failed to create staging buffer for image texture.");
-            return;
-        }
-
-        VkMemoryRequirements stagingMemoryRequirements;
-        vkGetBufferMemoryRequirements(device->Handle, stagingBuffer, &stagingMemoryRequirements);
-        {
-            VkMemoryAllocateInfo allocInfo = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
-            allocInfo.allocationSize       = stagingMemoryRequirements.size;
-            if (desc.usage == Usage::UPLOAD)
-            {
-                allocInfo.memoryTypeIndex =
-                    device->FindMemoryType(stagingMemoryRequirements.memoryTypeBits,
-                                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-            }
-            else
-            {
-                allocInfo.memoryTypeIndex = device->FindMemoryType(stagingMemoryRequirements.memoryTypeBits,
-                                                                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-            }
-
-            if (vkAllocateMemory(device->Handle, &allocInfo, nullptr, &stagingMemory) != VK_SUCCESS)
-            {
-                SERROR("Could not allocate memory for image staging buffer.");
-                return;
-            }
-
-            if (vkBindBufferMemory(device->Handle, stagingBuffer, stagingMemory, 0) != VK_SUCCESS)
-            {
-                SERROR("Failed to bind buffer memory.");
-                return;
-            }
-        }
-
-        vkMapMemory(device->Handle, stagingMemory, 0, imageSize, 0, &internalState->mapdata);
-        memcpy(internalState->mapdata, data, static_cast<size_t>(imageSize));
-        vkUnmapMemory(device->Handle, stagingMemory);
-
-        TransitionLayout(device,
-                         internalState,
-                         &texture->GetDescriptor(),
-                         VK_IMAGE_LAYOUT_UNDEFINED,
-                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        CopyBufferToImage(device,
-                          stagingBuffer,
-                          internalState->handle,
-                          imageInfo.extent.width,
-                          imageInfo.extent.height);
-        TransitionLayout(device,
-                         internalState,
-                         &texture->GetDescriptor(),
-                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-        vkDestroyBuffer(device->Handle, stagingBuffer, nullptr);
-        vkFreeMemory(device->Handle, stagingMemory, nullptr);
+        internalState->SetData(data);
     }
     else
     {
         if (desc.bindPoint == BindPoint::DEPTH_STENCIL)
         {
-            TransitionLayout(device,
-                             internalState,
-                             &texture->GetDescriptor(),
-                             imageInfo.initialLayout,
-                             VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+            internalState->TransitionLayout(imageInfo.initialLayout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
         }
         if (desc.bindPoint == BindPoint::SHADER_SAMPLE)
         {
-            TransitionLayout(device,
-                             internalState,
-                             &texture->GetDescriptor(),
-                             imageInfo.initialLayout,
-                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+            internalState->TransitionLayout(imageInfo.initialLayout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         }
         else if (desc.bindPoint == BindPoint::RENDER_TARGET)
         {
-            TransitionLayout(device,
-                             internalState,
-                             &texture->GetDescriptor(),
-                             imageInfo.initialLayout,
-                             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+            internalState->TransitionLayout(imageInfo.initialLayout, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
         }
     }
 
-    VkImageViewCreateInfo imageViewInfo           = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
-    imageViewInfo.image                           = internalState->handle;
-    imageViewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
-    imageViewInfo.format                          = imageInfo.format;
-    imageViewInfo.subresourceRange.aspectMask     = desc.bindPoint == BindPoint::DEPTH_STENCIL
-                                                        ? (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)
-                                                        : VK_IMAGE_ASPECT_COLOR_BIT;
-    imageViewInfo.subresourceRange.layerCount     = 1;
-    imageViewInfo.subresourceRange.baseArrayLayer = 0;
-    imageViewInfo.subresourceRange.levelCount     = 1;
-    imageViewInfo.subresourceRange.baseMipLevel   = 0;
-
-    if (vkCreateImageView(device->Handle, &imageViewInfo, nullptr, &internalState->imageView) != VK_SUCCESS)
+    // Create image view
     {
-        SERROR("Failed to create image view!");
-        return;
+        VkImageViewCreateInfo imageViewInfo           = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
+        imageViewInfo.image                           = internalState->handle;
+        imageViewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
+        imageViewInfo.format                          = imageInfo.format;
+        imageViewInfo.subresourceRange.aspectMask     = desc.bindPoint == BindPoint::DEPTH_STENCIL
+                                                            ? (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)
+                                                            : VK_IMAGE_ASPECT_COLOR_BIT;
+        imageViewInfo.subresourceRange.layerCount     = 1;
+        imageViewInfo.subresourceRange.baseArrayLayer = 0;
+        imageViewInfo.subresourceRange.levelCount     = 1;
+        imageViewInfo.subresourceRange.baseMipLevel   = 0;
+
+        if (vkCreateImageView(device->Handle, &imageViewInfo, nullptr, &internalState->imageView) != VK_SUCCESS)
+        {
+            SERROR("Failed to create image view!");
+            return;
+        }
     }
 }
 
-void VulkanTexture::SetData(void* data, const TextureDescriptor* texture_descriptor)
+void VulkanTexture::SetData(void* data)
 {
-    auto image_size =
-        texture_descriptor->width * texture_descriptor->height * GetFormatStride(texture_descriptor->format);
+    auto image_size = texture_descriptor.width * texture_descriptor.height * texture_descriptor.texture_format_stride;
 
-    VkBuffer           stagingBuffer;
-    VkDeviceMemory     stagingMemory;
+    VulkanBuffer       stagingBuffer(device);
     VkBufferCreateInfo bufferInfo    = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
-    bufferInfo.usage                 = texture_descriptor->usage == Usage::READBACK ? VK_BUFFER_USAGE_TRANSFER_DST_BIT
-                                                                                    : VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    bufferInfo.usage                 = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     bufferInfo.queueFamilyIndexCount = static_cast<u32>(device->queueFamilies.size());
     bufferInfo.pQueueFamilyIndices   = device->queueFamilies.data();
     bufferInfo.size                  = image_size;
 
-    if (vkCreateBuffer(device->Handle, &bufferInfo, nullptr, &stagingBuffer) != VK_SUCCESS)
+    if (vkCreateBuffer(device->Handle, &bufferInfo, nullptr, &stagingBuffer.handle) != VK_SUCCESS)
     {
         SERROR("Failed to create staging buffer for image texture.");
         return;
     }
 
-    VkMemoryRequirements stagingMemoryRequirements;
-    vkGetBufferMemoryRequirements(device->Handle, stagingBuffer, &stagingMemoryRequirements);
-    {
-        VkMemoryAllocateInfo allocInfo = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
-        allocInfo.allocationSize       = stagingMemoryRequirements.size;
-        if (texture_descriptor->usage == Usage::UPLOAD)
-        {
-            allocInfo.memoryTypeIndex =
-                device->FindMemoryType(stagingMemoryRequirements.memoryTypeBits,
-                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-        }
-        else
-        {
-            allocInfo.memoryTypeIndex =
-                device->FindMemoryType(stagingMemoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-        }
+    stagingBuffer.Allocate_buffer_memory(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-        if (vkAllocateMemory(device->Handle, &allocInfo, nullptr, &stagingMemory) != VK_SUCCESS)
-        {
-            SERROR("Could not allocate memory for image staging buffer.");
-            return;
-        }
+    vkBindBufferMemory(device->Handle, stagingBuffer.handle, stagingBuffer.memory, 0);
 
-        if (vkBindBufferMemory(device->Handle, stagingBuffer, stagingMemory, 0) != VK_SUCCESS)
-        {
-            SERROR("Failed to bind buffer memory.");
-            return;
-        }
-    }
+    stagingBuffer.SetData(data, image_size);
 
-    vkMapMemory(device->Handle, stagingMemory, 0, image_size, 0, &mapdata);
-    memcpy(mapdata, data, static_cast<size_t>(image_size));
-    vkUnmapMemory(device->Handle, stagingMemory);
-
-    TransitionLayout(device, this, texture_descriptor, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    CopyBufferToImage(device, stagingBuffer, handle, texture_descriptor->width, texture_descriptor->height);
-    TransitionLayout(device,
-                     this,
-                     texture_descriptor,
-                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-    vkDestroyBuffer(device->Handle, stagingBuffer, nullptr);
-    vkFreeMemory(device->Handle, stagingMemory, nullptr);
+    TransitionLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    CopyBufferToImage(&stagingBuffer);
+    TransitionLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
-void VulkanTexture::TransitionLayout(const VulkanDevice*      device,
-                                     const VulkanTexture*     InTexture,
-                                     const TextureDescriptor* textureDescriptor,
-                                     VkImageLayout            srcLayout,
-                                     VkImageLayout            dstLayout)
+const VkSampler VulkanTexture::GetSampler()
+{
+    if (sampler != VK_NULL_HANDLE)
+    {
+        return sampler;
+    }
+
+    VkSamplerCreateInfo samplerInfo     = {VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
+    samplerInfo.magFilter               = VK_FILTER_LINEAR;
+    samplerInfo.minFilter               = VK_FILTER_LINEAR;
+    samplerInfo.addressModeU            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeV            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeW            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.anisotropyEnable        = VK_FALSE; // TODO check gpu properties and enable it!
+    samplerInfo.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    samplerInfo.compareEnable           = VK_TRUE;
+    samplerInfo.compareOp               = VK_COMPARE_OP_ALWAYS;
+    samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerInfo.mipLodBias              = 0.0f;
+    samplerInfo.minLod                  = 0.0f;
+    samplerInfo.maxLod                  = 0.0f;
+
+    if (vkCreateSampler(device->Handle, &samplerInfo, nullptr, &sampler) != VK_SUCCESS)
+    {
+        SFATAL("Failed to create sampler.");
+    }
+    return sampler;
+}
+
+void VulkanTexture::Release()
+{
+    {
+        vkFreeMemory(device->Handle, memory, nullptr);
+        vkDestroyImageView(device->Handle, imageView, nullptr);
+        vkDestroyImage(device->Handle, handle, nullptr);
+        vkDestroySampler(device->Handle, sampler, nullptr);
+    }
+
+    VkDevice       device    = VK_NULL_HANDLE;
+    VkImage        handle    = VK_NULL_HANDLE;
+    VkImageView    imageView = VK_NULL_HANDLE;
+    VkDeviceMemory memory    = VK_NULL_HANDLE;
+    VkSampler      sampler   = VK_NULL_HANDLE;
+}
+
+void VulkanTexture::TransitionLayout(VkImageLayout srcLayout, VkImageLayout dstLayout)
 {
     VkCommandBufferAllocateInfo cmdAllocInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     cmdAllocInfo.commandBufferCount          = 1;
@@ -299,22 +229,18 @@ void VulkanTexture::TransitionLayout(const VulkanDevice*      device,
         return;
     }
 
-    auto                     textureInternalState = InTexture;
-    auto&                    image                = textureInternalState->handle;
-    VkCommandBufferBeginInfo beginInfo            = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+    VkCommandBufferBeginInfo beginInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
     if (vkBeginCommandBuffer(cmd, &beginInfo) == VK_SUCCESS)
     {
         VkImageMemoryBarrier barrier            = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
-        barrier.image                           = image;
+        barrier.image                           = handle;
         barrier.oldLayout                       = srcLayout;
         barrier.newLayout                       = dstLayout;
         barrier.srcAccessMask                   = 0;
         barrier.dstAccessMask                   = VK_ACCESS_TRANSFER_WRITE_BIT;
         barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-        barrier.subresourceRange.aspectMask     = textureDescriptor->bindPoint == BindPoint::DEPTH_STENCIL
-                                                      ? (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)
-                                                      : VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.subresourceRange.aspectMask     = texture_descriptor.texture_aspect;
         barrier.subresourceRange.layerCount     = 1;
         barrier.subresourceRange.baseArrayLayer = 0;
         barrier.subresourceRange.levelCount     = 1;
@@ -383,11 +309,7 @@ void VulkanTexture::TransitionLayout(const VulkanDevice*      device,
     vkFreeCommandBuffers(device->Handle, device->resourcesCommandPool[device->GetFrameIndex()], 1, &cmd);
 }
 
-void VulkanTexture::CopyBufferToImage(const VulkanDevice* device,
-                                      VkBuffer            buffer,
-                                      VkImage             image,
-                                      const u32&          width,
-                                      const u32&          height)
+void VulkanTexture::CopyBufferToImage(const VulkanBuffer* buffer)
 {
     VkCommandBufferAllocateInfo cmdAllocInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     cmdAllocInfo.commandBufferCount          = 1;
@@ -413,9 +335,9 @@ void VulkanTexture::CopyBufferToImage(const VulkanDevice* device,
         region.imageSubresource.mipLevel       = 0;
         region.imageSubresource.layerCount     = 1;
         region.imageOffset                     = {0, 0, 0};
-        region.imageExtent                     = {width, height, 1};
+        region.imageExtent                     = {texture_descriptor.width, texture_descriptor.height, 1};
 
-        vkCmdCopyBufferToImage(cmd, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+        vkCmdCopyBufferToImage(cmd, buffer->handle, handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
         vkEndCommandBuffer(cmd);
 
@@ -434,50 +356,18 @@ void VulkanTexture::CopyBufferToImage(const VulkanDevice* device,
     vkFreeCommandBuffers(device->Handle, device->resourcesCommandPool[device->GetFrameIndex()], 1, &cmd);
 }
 
-const VkSampler VulkanTexture::GetSampler()
+void VulkanTexture::Allocate_and_bind_texture_memory(VkMemoryPropertyFlags memory_properties)
 {
-    if (sampler != VK_NULL_HANDLE)
+    VkMemoryRequirements memoryRequirements;
+    vkGetImageMemoryRequirements(device->Handle, handle, &memoryRequirements);
     {
-        return sampler;
+        VkMemoryAllocateInfo allocInfo = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+        allocInfo.allocationSize       = memoryRequirements.size;
+        allocInfo.memoryTypeIndex      = device->FindMemoryType(memoryRequirements.memoryTypeBits, memory_properties);
+
+        vkAllocateMemory(device->Handle, &allocInfo, nullptr, &memory);
+        vkBindImageMemory(device->Handle, handle, memory, 0);
     }
-
-    VkSamplerCreateInfo samplerInfo     = {VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
-    samplerInfo.magFilter               = VK_FILTER_LINEAR;
-    samplerInfo.minFilter               = VK_FILTER_LINEAR;
-    samplerInfo.addressModeU            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.addressModeV            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.addressModeW            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.anisotropyEnable        = VK_FALSE; // TODO check gpu properties and enable it!
-    samplerInfo.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-    samplerInfo.unnormalizedCoordinates = VK_FALSE;
-    samplerInfo.compareEnable           = VK_TRUE;
-    samplerInfo.compareOp               = VK_COMPARE_OP_ALWAYS;
-    samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    samplerInfo.mipLodBias              = 0.0f;
-    samplerInfo.minLod                  = 0.0f;
-    samplerInfo.maxLod                  = 0.0f;
-
-    if (vkCreateSampler(device->Handle, &samplerInfo, nullptr, &sampler) != VK_SUCCESS)
-    {
-        SFATAL("Failed to create sampler.");
-    }
-    return sampler;
-}
-
-void VulkanTexture::Release()
-{
-    {
-        vkFreeMemory(device->Handle, memory, nullptr);
-        vkDestroyImageView(device->Handle, imageView, nullptr);
-        vkDestroyImage(device->Handle, handle, nullptr);
-        vkDestroySampler(device->Handle, sampler, nullptr);
-    }
-
-    VkDevice       device    = VK_NULL_HANDLE;
-    VkImage        handle    = VK_NULL_HANDLE;
-    VkImageView    imageView = VK_NULL_HANDLE;
-    VkDeviceMemory memory    = VK_NULL_HANDLE;
-    VkSampler      sampler   = VK_NULL_HANDLE;
 }
 
 } // namespace Vk
