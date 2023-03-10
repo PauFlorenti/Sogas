@@ -18,7 +18,9 @@ enum BufferBindingPoint
 enum BufferType
 {
     Static  = 0,
-    Dynamic = 1
+    Dynamic = 1,
+    Stream  = 2,
+    Count
 };
 
 enum BufferUsage
@@ -33,11 +35,20 @@ enum BufferUsage
 
 struct BufferDescriptor
 {
-    u64                size{0};
-    u64                elementSize{0};
-    BufferBindingPoint binding;
     BufferType         type{BufferType::Static};
     BufferUsage        usage{BufferUsage::UNDEFINED};
+    BufferBindingPoint binding;
+
+    u32 size{0};
+    u32 elementSize{0};
+
+    void*       data = nullptr;
+    std::string name;
+
+    BufferDescriptor& reset();
+    BufferDescriptor& set(BufferUsage usage, BufferBindingPoint bindingPoint, u32 size);
+    BufferDescriptor& setData(void* InData);
+    BufferDescriptor& setName(const std::string& InName);
 };
 
 class Buffer final

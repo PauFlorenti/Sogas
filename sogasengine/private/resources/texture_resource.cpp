@@ -32,12 +32,13 @@ class TextureResource : public IResourceType
             stbi_uc*   pixels = stbi_load(filename.c_str(), &width, &height, &channels, STBI_rgb_alpha);
             SASSERT(pixels);
 
-            desc.textureType = TextureDescriptor::TEXTURE_TYPE_2D;
-            desc.width       = width;
-            desc.height      = height;
-            desc.format      = Format::R8G8B8A8_SRGB;
-            desc.usage       = Usage::UPLOAD;
-            desc.bindPoint   = BindPoint::SHADER_SAMPLE;
+            desc.textureType                 = TextureDescriptor::TEXTURE_TYPE_2D;
+            desc.width                       = width;
+            desc.height                      = height;
+            desc.format                      = Format::R8G8B8A8_SRGB;
+            desc.usage                       = Usage::UPLOAD;
+            desc.bindPoint                   = BindPoint::SHADER_SAMPLE;
+            //std::shared_ptr<Texture> texture = render->CreateTexture(std::move(desc));
             Texture* texture = new Texture(std::move(desc));
             render->CreateTexture(texture, pixels);
             return texture;

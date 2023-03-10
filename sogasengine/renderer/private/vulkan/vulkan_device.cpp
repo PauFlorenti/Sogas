@@ -511,6 +511,11 @@ void VulkanDevice::EndRenderPass(CommandBuffer cmd)
     vkCmdEndRenderPass(internalCmd->commandBuffers[GetFrameIndex()]);
 }
 
+BufferHandle VulkanDevice::CreateBuffer(BufferDescriptor& InDescriptor) const
+{
+    return BufferHandle();
+}
+
 std::shared_ptr<Renderer::Buffer> VulkanDevice::CreateBuffer(Renderer::BufferDescriptor desc, void* data) const
 {
     return VulkanBuffer::Create(this, desc, data);
@@ -535,6 +540,11 @@ void VulkanDevice::CreateTexture(Texture* texture, void* data) const
 {
     VulkanTexture::Create(this, texture, data);
 }
+
+std::shared_ptr<Texture> VulkanDevice::CreateTexture(TextureDescriptor desc, void* data) const
+{
+    return VulkanTexture::Create(this, std::move(desc), data);
+};
 
 void VulkanDevice::CreateRenderPass(Renderer::RenderPass* renderpass) const
 {
@@ -574,6 +584,7 @@ void VulkanDevice::UpdateDescriptorSet(const Pipeline* InPipeline) const
 void VulkanDevice::CreateAttachment(AttachmentFramebuffer* InAttachment) const
 {
     SASSERT(InAttachment);
+    // return VulkanTexture::Create(this, , nullptr);
     VulkanAttachment::Create(this, InAttachment);
 }
 

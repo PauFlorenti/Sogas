@@ -23,6 +23,7 @@
 #include <glm/gtx/hash.hpp>
 #pragma warning (default : 4201 )
 
-// application
 #include "defines.h"
+
+// application
 #include "logger/public/logger.h"

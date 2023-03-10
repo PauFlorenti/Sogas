@@ -1,14 +1,16 @@
 
 #include "texture.h"
 #include "device_texture.h"
+#include "render_device.h"
 
 namespace Sogas
 {
 namespace Renderer
 {
-Texture::Texture(TextureDescriptor InDescriptor)
+Texture::Texture(TextureDescriptor InDescriptor, void* data)
     : descriptor(InDescriptor)
-{}
+{
+}
 
 void Texture::Destroy()
 {

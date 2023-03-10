@@ -19,7 +19,7 @@ bool CMesh::Create(std::vector<Renderer::VertexLayout> vs, std::vector<u32> is, 
     Renderer::BufferDescriptor vertexBufferDescriptor;
     vertexBufferDescriptor.binding     = Renderer::BufferBindingPoint::Vertex;
     vertexBufferDescriptor.usage       = Renderer::BufferUsage::TRANSFER_DST;
-    vertexBufferDescriptor.size        = vs.size();
+    vertexBufferDescriptor.size        = static_cast<u32>(vs.size());
     vertexBufferDescriptor.elementSize = sizeof(Renderer::VertexLayout);
     vertexBuffer                       = device.lock()->CreateBuffer(vertexBufferDescriptor, vs.data());
 
@@ -30,7 +30,7 @@ bool CMesh::Create(std::vector<Renderer::VertexLayout> vs, std::vector<u32> is, 
         Renderer::BufferDescriptor indexBufferDescriptor;
         indexBufferDescriptor.binding     = Renderer::BufferBindingPoint::Index;
         indexBufferDescriptor.usage       = Renderer::BufferUsage::TRANSFER_DST;
-        indexBufferDescriptor.size        = indices.size();
+        indexBufferDescriptor.size        = static_cast<u32>(indices.size());
         indexBufferDescriptor.elementSize = sizeof(u32);
         indexBuffer                       = device.lock()->CreateBuffer(indexBufferDescriptor, is.data());
     }

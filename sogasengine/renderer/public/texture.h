@@ -139,7 +139,8 @@ struct TextureDescriptor
 class Texture final : public IResource
 {
   public:
-    Texture(TextureDescriptor descriptor);
+    Texture() = default;
+    Texture(TextureDescriptor descriptor, void* data = nullptr);
     ~Texture() { Destroy(); };
 
     void Destroy() override;

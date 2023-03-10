@@ -54,11 +54,12 @@ struct Attachment
         Attachment att;
         att.type                  = Attachment::Type::RENDERTARGET;
         att.texture               = texture;
-        att.attachmentFramebuffer = attachmentFramebuffer, att.loadop = loadop;
-        att.storeop       = storeop;
-        att.initialLayout = initialLayout;
-        att.subpassLayout = subpassLayout;
-        att.finalLayout   = finalLayout;
+        att.attachmentFramebuffer = attachmentFramebuffer;
+        att.loadop                = loadop;
+        att.storeop               = storeop;
+        att.initialLayout         = initialLayout;
+        att.subpassLayout         = subpassLayout;
+        att.finalLayout           = finalLayout;
         return att;
     }
 

@@ -15,6 +15,17 @@ class VulkanBuffer;
 
 struct VulkanTextureDescriptor
 {
+    void operator=(const TextureDescriptor& other)
+    {
+        width                 = other.width;
+        height                = other.height;
+        texture_format        = ConvertFormat(other.format);
+        texture_format_stride = GetFormatStride(other.format);
+        texture_aspect        = other.bindPoint == BindPoint::DEPTH_STENCIL
+                                    ? (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)
+                                    : VK_IMAGE_ASPECT_COLOR_BIT;
+    };
+
     u32                width{0};
     u32                height{0};
     VkFormat           texture_format;
@@ -26,12 +37,15 @@ class VulkanTexture : public DeviceTexture
 {
   public:
     explicit VulkanTexture(const VulkanDevice* InDevice = nullptr);
+    explicit VulkanTexture(const VulkanDevice* InDevice, const TextureDescriptor& InDescriptor);
     VulkanTexture(const VulkanTexture&)                        = delete;
     VulkanTexture(VulkanTexture&&)                             = delete;
     const VulkanTexture& operator=(const VulkanTexture& other) = delete;
     ~VulkanTexture() { Release(); }
 
     static void Create(const VulkanDevice* device, Texture* texture, void* data);
+    static std::shared_ptr<Texture>
+    Create(const VulkanDevice* device, TextureDescriptor descriptor, void* data = nullptr);
 
     static inline VulkanTexture* ToInternal(const Texture* InTexture)
     {
@@ -58,7 +72,7 @@ class VulkanTexture : public DeviceTexture
     VkImageView             imageView = VK_NULL_HANDLE;
     VkDeviceMemory          memory    = VK_NULL_HANDLE;
     VkSampler               sampler   = VK_NULL_HANDLE;
-    VulkanTextureDescriptor texture_descriptor;
+    VulkanTextureDescriptor descriptor;
 };
 } // namespace Vk
 } // namespace Renderer

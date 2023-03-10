@@ -3,12 +3,12 @@
 #include "components/camera_component.h"
 #include "components/light_point_component.h"
 #include "render/render_manager.h"
+#include "renderer/public/attachment.h"
 #include "renderer/public/buffer.h"
 #include "renderer/public/render_device.h"
 #include "renderer/public/render_types.h"
 #include "renderer/public/renderpass.h"
 #include "renderer/public/swapchain.h"
-#include "renderer/public/attachment.h"
 
 std::vector<Sogas::Renderer::VertexLayout> quad = {
     {{1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
@@ -72,8 +72,18 @@ ForwardPipeline::ForwardPipeline(std::shared_ptr<GPU_device> InRenderer, std::sh
     depthAttachment.usage  = BindPoint::DEPTH_STENCIL;
     renderer->CreateAttachment(&depthAttachment);
 
+    TextureDescriptor desc;
+    desc.format      = Format::R8G8B8A8_SRGB;
+    desc.bindPoint   = BindPoint::RENDER_TARGET;
+    desc.width       = 640;
+    desc.height      = 480;
+    desc.depth       = 1;
+    desc.textureType = TextureDescriptor::TEXTURE_TYPE_2D;
+    desc.usage       = Usage::DEFAULT;
+    auto colorAtt    = renderer->CreateTexture(std::move(desc));
+
     RenderPassDescriptor rpDesc;
-    rpDesc.attachments.push_back(Attachment::RenderTarget(nullptr, &colorAttachment));
+    rpDesc.attachments.push_back(Attachment::RenderTarget(colorAtt.get(), nullptr /*&colorAttachment*/));
     rpDesc.attachments.push_back(Attachment::DepthStencil(nullptr, &depthAttachment));
     forwardRenderPass = new RenderPass(std::move(rpDesc));
     renderer->CreateRenderPass(forwardRenderPass);
@@ -115,7 +125,7 @@ ForwardPipeline::ForwardPipeline(std::shared_ptr<GPU_device> InRenderer, std::sh
     lightBuffer                 = renderer->CreateBuffer(lightBufferDesc, nullptr);
 
     Renderer::BufferDescriptor quadBufferDesc;
-    quadBufferDesc.size        = quad.size();
+    quadBufferDesc.size        = static_cast<u32>(quad.size());
     quadBufferDesc.binding     = Renderer::BufferBindingPoint::Vertex;
     quadBufferDesc.usage       = Renderer::BufferUsage::TRANSFER_DST;
     quadBufferDesc.elementSize = sizeof(Sogas::Renderer::VertexLayout);
@@ -123,7 +133,7 @@ ForwardPipeline::ForwardPipeline(std::shared_ptr<GPU_device> InRenderer, std::sh
     quadBuffer                 = renderer->CreateBuffer(std::move(quadBufferDesc), quad.data());
 
     Renderer::BufferDescriptor quadIdxBufferDesc;
-    quadIdxBufferDesc.size        = quadIdx.size();
+    quadIdxBufferDesc.size        = static_cast<u32>(quadIdx.size());
     quadIdxBufferDesc.elementSize = sizeof(u32);
     quadIdxBufferDesc.binding     = Renderer::BufferBindingPoint::Index;
     quadIdxBufferDesc.usage       = Renderer::BufferUsage::TRANSFER_DST;
