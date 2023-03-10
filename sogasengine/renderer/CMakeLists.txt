@@ -35,7 +35,6 @@ target_link_libraries(renderer
     PUBLIC
     ${GLFW_BINARY_DIR}/src/${CMAKE_BUILD_TYPE}/glfw3.lib
     PRIVATE
-    #spirv/lib/spirv-cross-cored
     D:/Projects/Sogas/sogasengine/renderer/external/spirv/lib/spirv-cross-cored.lib
     ${Vulkan_LIBRARY}
     logger

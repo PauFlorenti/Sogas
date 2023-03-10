@@ -27,9 +27,9 @@ struct LinearAllocator : public Allocator
 
     void clear();
 
-    void*  memory;
+    u8*  memory         = nullptr;
     size_t allocated_size = 0;
-    size_t max_size       = 0;
+    size_t total_size     = 0;
 };
 
 } // namespace Memory

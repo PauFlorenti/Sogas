@@ -31,7 +31,6 @@ target_include_directories(${PROJECT_NAME}
     ${GLFW_SOURCE_DIR}/include
     PRIVATE
     .
-    #${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/private
     ${CMAKE_CURRENT_SOURCE_DIR}/internal
     ${tinyobjloader_SOURCE_DIR}

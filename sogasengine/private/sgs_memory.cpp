@@ -24,7 +24,7 @@ void LinearAllocator::init(size_t size)
     allocated_size = 0;
 }
 
-void LinearAllcoator::shutdown()
+void LinearAllocator::shutdown()
 {
     clear();
     free(memory);
@@ -37,7 +37,7 @@ void* LinearAllocator::allocate(size_t size, size_t alignment)
     const size_t start = memory_align(allocated_size, alignment);
     SASSERT(start < total_size);
 
-    const size_t new_allocated_size = new_start + size;
+    const size_t new_allocated_size = start + size;
     if (new_allocated_size > total_size)
     {
         SASSERT_MSG(false, "LinearAllocator overflow.");
@@ -45,10 +45,10 @@ void* LinearAllocator::allocate(size_t size, size_t alignment)
     }
 
     allocated_size = new_allocated_size;
-    return memory + new_start;
+    return memory + start;
 }
 
-void LinearAllocator::deallocate(void* memory)
+void LinearAllocator::deallocate(void* /*memory*/)
 {
     // This allocator does not allocate on a per-pointer base!
 }
