@@ -519,16 +519,7 @@ void VulkanDevice::EndRenderPass(CommandBuffer cmd)
 
 BufferHandle VulkanDevice::CreateBuffer(BufferDescriptor& InDescriptor)
 {
-    BufferHandle handle = {buffers.ObtainResource()};
-
-    if (handle.index == INVALID_ID)
-    {
-        return handle;
-    }
-
-    VulkanBuffer* buffer = static_cast<VulkanBuffer*>(buffers.AccessResource(handle.index));
- 
-    return handle;
+    return VulkanBuffer::Create(this, InDescriptor);
 }
 
 std::shared_ptr<Renderer::Buffer> VulkanDevice::CreateBuffer(Renderer::BufferDescriptor desc, void* data) const
@@ -601,6 +592,17 @@ void VulkanDevice::CreateAttachment(AttachmentFramebuffer* InAttachment) const
     SASSERT(InAttachment);
     // return VulkanTexture::Create(this, , nullptr);
     VulkanAttachment::Create(this, InAttachment);
+}
+
+void VulkanDevice::DestroyBuffer(BufferHandle InBuffer)
+{
+    auto buffer = static_cast<VulkanBuffer*>(buffers.AccessResource(InBuffer.index));
+
+    if (buffer)
+    {
+        buffer->Release();
+    }
+    buffers.ReleaseResource(InBuffer.index);
 }
 
 void VulkanDevice::SetWindowSize(std::shared_ptr<Renderer::Swapchain> InSwapchain, const u32& width, const u32& height)

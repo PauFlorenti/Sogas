@@ -83,7 +83,7 @@ ForwardPipeline::ForwardPipeline(std::shared_ptr<GPU_device> InRenderer, std::sh
     auto colorAtt    = renderer->CreateTexture(std::move(desc));
 
     RenderPassDescriptor rpDesc;
-    rpDesc.attachments.push_back(Attachment::RenderTarget(colorAtt.get(), nullptr /*&colorAttachment*/));
+    rpDesc.attachments.push_back(Attachment::RenderTarget(nullptr, &colorAttachment));
     rpDesc.attachments.push_back(Attachment::DepthStencil(nullptr, &depthAttachment));
     forwardRenderPass = new RenderPass(std::move(rpDesc));
     renderer->CreateRenderPass(forwardRenderPass);
@@ -138,6 +138,12 @@ ForwardPipeline::ForwardPipeline(std::shared_ptr<GPU_device> InRenderer, std::sh
     quadIdxBufferDesc.binding     = Renderer::BufferBindingPoint::Index;
     quadIdxBufferDesc.usage       = Renderer::BufferUsage::TRANSFER_DST;
     quadIdxBuffer                 = renderer->CreateBuffer(std::move(quadIdxBufferDesc), quadIdx.data());
+
+    BufferDescriptor test;
+    test.usage = BufferUsage::UNIFORM;
+    test.name = "Test buffer";
+    auto test_handle = renderer->CreateBuffer(test);
+    renderer->DestroyBuffer(test_handle);
 }
 
 void ForwardPipeline::update_constants() {}

@@ -266,7 +266,7 @@ void VulkanTexture::SetData(void* data)
     bufferInfo.pQueueFamilyIndices   = device->queueFamilies.data();
     bufferInfo.size                  = image_size;
 
-    if (vkCreateBuffer(device->Handle, &bufferInfo, nullptr, &stagingBuffer.handle) != VK_SUCCESS)
+    if (vkCreateBuffer(device->Handle, &bufferInfo, nullptr, &stagingBuffer.buffer) != VK_SUCCESS)
     {
         SERROR("Failed to create staging buffer for image texture.");
         return;
@@ -274,7 +274,7 @@ void VulkanTexture::SetData(void* data)
 
     stagingBuffer.Allocate_buffer_memory(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    vkBindBufferMemory(device->Handle, stagingBuffer.handle, stagingBuffer.memory, 0);
+    vkBindBufferMemory(device->Handle, stagingBuffer.buffer, stagingBuffer.memory, 0);
 
     stagingBuffer.SetData(data, image_size);
 
@@ -451,7 +451,7 @@ void VulkanTexture::CopyBufferToImage(const VulkanBuffer* buffer)
         region.imageOffset                     = {0, 0, 0};
         region.imageExtent                     = {descriptor.width, descriptor.height, 1};
 
-        vkCmdCopyBufferToImage(cmd, buffer->handle, handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+        vkCmdCopyBufferToImage(cmd, buffer->buffer, handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
         vkEndCommandBuffer(cmd);
 

@@ -58,6 +58,8 @@ class VulkanDevice : public GPU_device
     void                              UpdateDescriptorSet(const Pipeline *InPipeline) const override;
     void                              CreateAttachment(AttachmentFramebuffer *InAttachment) const override;
 
+    void DestroyBuffer(BufferHandle InBuffer) override;
+
     // API calls ...
     void SetWindowSize(std::shared_ptr<Swapchain> InSwapchain, const u32 &width, const u32 &height) override;
     void BindVertexBuffer(const std::shared_ptr<Buffer> &buffer, CommandBuffer cmd) override;

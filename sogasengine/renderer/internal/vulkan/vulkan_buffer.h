@@ -13,7 +13,8 @@ class VulkanDevice;
 
 class VulkanBuffer final : public Renderer::DeviceBuffer
 {
-  friend class VulkanTexture;
+    friend class VulkanTexture;
+
   public:
     explicit VulkanBuffer(const VulkanDevice* device = nullptr);
     VulkanBuffer(const VulkanBuffer&)                  = delete;
@@ -23,7 +24,7 @@ class VulkanBuffer final : public Renderer::DeviceBuffer
 
     void Release() override;
 
-    static BufferHandle Create(const BufferDescriptor& descriptor);
+    static BufferHandle Create(VulkanDevice* InDevice, const BufferDescriptor& InDescriptor);
 
     static std::unique_ptr<Renderer::Buffer>
     Create(const VulkanDevice* device, Renderer::BufferDescriptor desc, void* data);
@@ -33,7 +34,7 @@ class VulkanBuffer final : public Renderer::DeviceBuffer
         return std::dynamic_pointer_cast<VulkanBuffer>(InBuffer);
     }
 
-    const VkBuffer*      GetHandle() const { return &handle; }
+    const VkBuffer*      GetHandle() const { return &buffer; }
     const VkDeviceMemory GetMemory() const { return memory; }
     void                 SetData(void* data, const u64& size, const u64& offset = 0) override;
 
@@ -41,14 +42,22 @@ class VulkanBuffer final : public Renderer::DeviceBuffer
 
     VkDescriptorBufferInfo descriptorInfo;
 
+    VkBufferUsageFlags usage_flags   = 0;
+    u32                size          = 0;
+    u32                global_offset = 0; // Offset into global constant, if dynamic.
+
+    BufferHandle      handle;
+    std::string name;
+
   private:
     void Upload_data_to_buffer(const u64& size, void* data);
     void Allocate_buffer_memory(VkMemoryPropertyFlags memoryPropertyFlags);
 
     void*               mapdata = nullptr;
     const VulkanDevice* device  = nullptr;
-    VkBuffer            handle  = VK_NULL_HANDLE;
+    VkBuffer            buffer  = VK_NULL_HANDLE;
     VkDeviceMemory      memory  = VK_NULL_HANDLE;
+    VkDeviceSize        device_size;
 };
 } // namespace Vk
 } // namespace Renderer

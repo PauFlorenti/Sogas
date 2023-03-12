@@ -57,6 +57,8 @@ class GPU_device
     virtual void                     UpdateDescriptorSet(const Pipeline* InPipeline) const = 0;
     virtual void                     CreateAttachment(AttachmentFramebuffer* InAttachment) const = 0;
 
+    virtual void DestroyBuffer(BufferHandle InBuffer) = 0;
+
     // API calls
     // This are commands that will execute when submitCommands is called.
     virtual void SetWindowSize(std::shared_ptr<Swapchain> InSwapchain, const u32& width, const u32& height) = 0;
