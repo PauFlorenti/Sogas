@@ -1,6 +1,7 @@
 #pragma once
 
 #include "buffer.h"
+#include "device_resource_pool.h"
 #include "device_resources.h"
 #include "render_types.h"
 #include "renderpass.h"
@@ -11,12 +12,16 @@ struct GLFWwindow;
 
 namespace Sogas
 {
+namespace Memory
+{
+struct Allocator;
+}
 namespace Renderer
 {
 class GPU_device
 {
   public:
-    static std::shared_ptr<GPU_device> create(GraphicsAPI api, void* device, std::vector<const char*> extensions);
+    static std::shared_ptr<GPU_device> create(GraphicsAPI api, void* device, std::vector<const char*> extensions, Memory::Allocator* InAllocator);
 
     virtual ~GPU_device(){};
 
@@ -40,7 +45,7 @@ class GPU_device
 
     // Create gpu resources
     virtual void                     CreateSwapchain(std::shared_ptr<Swapchain> swapchain, GLFWwindow* window) = 0;
-    virtual BufferHandle             CreateBuffer(BufferDescriptor& InDescriptor) const = 0;
+    virtual BufferHandle             CreateBuffer(BufferDescriptor& InDescriptor) = 0;
     virtual std::shared_ptr<Buffer>  CreateBuffer(BufferDescriptor desc, void* data) const = 0;
     virtual std::shared_ptr<Buffer>  CreateBuffer(const u32& size, const u64& element_size, BufferBindingPoint binding, BufferUsage usage, void* data) const = 0;
     virtual void                     CreateTexture(Texture *texture, void* data) const = 0;
@@ -70,6 +75,11 @@ class GPU_device
     virtual void WaitCommand(CommandBuffer& cmd, CommandBuffer& cmdToWait) = 0;
 
     // clang-format on
+
+    Memory::Allocator* allocator = nullptr;
+
+    ResourcePool buffers;
+    ResourcePool textures;
 
   protected:
     GraphicsAPI api_type;

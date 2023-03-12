@@ -27,7 +27,26 @@ struct LinearAllocator : public Allocator
 
     void clear();
 
-    u8*  memory         = nullptr;
+    u8*    memory         = nullptr;
+    size_t allocated_size = 0;
+    size_t total_size     = 0;
+};
+
+struct StackAllocator : public Allocator
+{
+    ~StackAllocator() override;
+
+    void init(size_t size);
+    void shutdown();
+
+    void* allocate(size_t size, size_t alignment) override;
+    void  deallocate(void* memory) override;
+
+    size_t get_marker();
+    void free_marker();
+    void clear();
+
+    u8*    memory         = nullptr;
     size_t allocated_size = 0;
     size_t total_size     = 0;
 };

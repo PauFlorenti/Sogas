@@ -57,5 +57,59 @@ void LinearAllocator::clear()
 {
     allocated_size = 0;
 }
+
+StackAllocator::~StackAllocator() {}
+
+void StackAllocator::init(size_t size)
+{
+    memory         = static_cast<u8*>(malloc(size));
+    total_size     = size;
+    allocated_size = 0;
+}
+
+void StackAllocator::shutdown()
+{
+
+}
+
+void* StackAllocator::allocate(size_t size, size_t alignment)
+{
+    SASSERT(size < total_size);
+    
+    auto start = memory_align(allocated_size, alignment);
+    SASSERT(start < total_size);
+
+    const auto new_start = start + size;
+    SASSERT_MSG(new_start < total_size, "StackAllocator Overflow!");
+
+    allocated_size = new_start;
+    return memory + start;
+}
+
+void StackAllocator::deallocate(void* pointer)
+{
+    SASSERT(memory <= pointer);
+    SASSERT_MSG(pointer > (memory + total_size), "Out of bound total size.");
+    SASSERT_MSG(pointer < (memory + allocated_size), "Out of bound allocated size.");
+
+    const size_t size_at_pointer = (u8*)pointer - memory;
+    allocated_size = size_at_pointer;
+}
+
+size_t StackAllocator::get_marker()
+{
+    return allocated_size;
+}
+
+void StackAllocator::free_marker()
+{
+
+}
+
+void StackAllocator::clear()
+{
+    allocated_size = 0;
+}
+
 } // namespace Memory
 } // namespace Sogas

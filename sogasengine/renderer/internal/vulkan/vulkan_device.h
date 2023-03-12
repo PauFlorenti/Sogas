@@ -22,7 +22,7 @@ class VulkanDevice : public GPU_device
     friend class VulkanCommandBuffer;
 
   public:
-    explicit VulkanDevice(GraphicsAPI apiType, void* device, std::vector<const char*> extensions);
+    explicit VulkanDevice(GraphicsAPI apiType, void* device, std::vector<const char*> extensions, Memory::Allocator* InAllocator);
     VulkanDevice(const VulkanDevice&) = delete;
     VulkanDevice(VulkanDevice&&)      = delete;
     ~VulkanDevice() override;
@@ -46,7 +46,7 @@ class VulkanDevice : public GPU_device
 
     // Create gpu resources
     void                              CreateSwapchain(std::shared_ptr<Renderer::Swapchain> swapchain, GLFWwindow *window) override;
-    BufferHandle                      CreateBuffer(BufferDescriptor& InDescriptor) const override;
+    BufferHandle                      CreateBuffer(BufferDescriptor& InDescriptor) override;
     std::shared_ptr<Renderer::Buffer> CreateBuffer(Renderer::BufferDescriptor desc, void *data) const override;
     std::shared_ptr<Renderer::Buffer> CreateBuffer(const u32& size, const u64& element_size, Renderer::BufferBindingPoint binding, Renderer::BufferUsage usage, void* data = nullptr) const override;
     void                              CreateTexture(Texture *texture, void* data = nullptr) const override;

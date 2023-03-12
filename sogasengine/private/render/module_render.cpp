@@ -17,11 +17,13 @@ bool CRenderModule::Start()
 {
     // Start ImGui
 
+    allocator.init(4 * 1024 * 1024);
+
     // Start selected renderer. Vulkan only at the moment and by default.
     u32                      extensionsCount = 0;
     const char**             extensions      = glfwGetRequiredInstanceExtensions(&extensionsCount);
     std::vector<const char*> extensions_vector(extensions, extensions + extensionsCount);
-    renderer = Renderer::GPU_device::create(Renderer::GraphicsAPI::Vulkan, nullptr, extensions_vector);
+    renderer = Renderer::GPU_device::create(Renderer::GraphicsAPI::Vulkan, nullptr, extensions_vector, &allocator);
     renderer->Init();
 
     i32 width, height;

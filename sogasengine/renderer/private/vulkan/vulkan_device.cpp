@@ -15,6 +15,8 @@
 #include "vulkan/vulkan_texture.h"
 #include "vulkan/vulkan_types.h"
 
+#include "public/sgs_memory.h"
+
 namespace Sogas
 {
 namespace Renderer
@@ -118,10 +120,12 @@ void VulkanDevice::PickPhysicalDevice()
     // Is Device suitable ??
 }
 
-VulkanDevice::VulkanDevice(GraphicsAPI apiType, void* /*device*/, std::vector<const char*> extensions)
+VulkanDevice::VulkanDevice(GraphicsAPI apiType, void* /*device*/, std::vector<const char*> extensions, Memory::Allocator* InAllocator)
     : glfwExtensions(std::move(extensions))
 {
     api_type = apiType;
+
+    allocator = InAllocator;
 }
 
 VulkanDevice::~VulkanDevice()
@@ -184,6 +188,8 @@ bool VulkanDevice::Init()
         STRACE("\tFailed to create Vulkan Logical Device!");
         return false;
     }
+
+    buffers.Init(allocator, 512, sizeof(VulkanBuffer));
 
     CreateCommandResources();
 
@@ -511,9 +517,18 @@ void VulkanDevice::EndRenderPass(CommandBuffer cmd)
     vkCmdEndRenderPass(internalCmd->commandBuffers[GetFrameIndex()]);
 }
 
-BufferHandle VulkanDevice::CreateBuffer(BufferDescriptor& InDescriptor) const
+BufferHandle VulkanDevice::CreateBuffer(BufferDescriptor& InDescriptor)
 {
-    return BufferHandle();
+    BufferHandle handle = {buffers.ObtainResource()};
+
+    if (handle.index == INVALID_ID)
+    {
+        return handle;
+    }
+
+    VulkanBuffer* buffer = static_cast<VulkanBuffer*>(buffers.AccessResource(handle.index));
+ 
+    return handle;
 }
 
 std::shared_ptr<Renderer::Buffer> VulkanDevice::CreateBuffer(Renderer::BufferDescriptor desc, void* data) const

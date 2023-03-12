@@ -23,6 +23,8 @@ class VulkanBuffer final : public Renderer::DeviceBuffer
 
     void Release() override;
 
+    static BufferHandle Create(const BufferDescriptor& descriptor);
+
     static std::unique_ptr<Renderer::Buffer>
     Create(const VulkanDevice* device, Renderer::BufferDescriptor desc, void* data);
 

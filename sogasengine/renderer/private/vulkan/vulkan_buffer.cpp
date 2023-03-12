@@ -27,6 +27,11 @@ void VulkanBuffer::Release()
     vkFreeMemory(device->Handle, memory, nullptr);
 }
 
+BufferHandle VulkanBuffer::Create(const BufferDescriptor& InDescriptor)
+{
+    return BufferHandle();
+}
+
 std::unique_ptr<Renderer::Buffer>
 VulkanBuffer::Create(const VulkanDevice* device, Renderer::BufferDescriptor desc, void* data)
 {
