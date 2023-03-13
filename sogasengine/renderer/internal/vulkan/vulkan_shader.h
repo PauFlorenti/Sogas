@@ -20,6 +20,7 @@ class VulkanShader
     const VulkanShader& operator=(const VulkanShader& other) = delete;
     ~VulkanShader();
 
+    static ShaderStateHandle Create(VulkanDevice* InDevice, const ShaderStateDescriptor& InDescriptor);
     static void Create(const VulkanDevice* device, ShaderStage stage, std::string InFilename, Shader* OutShader);
 
     static inline std::shared_ptr<VulkanShader> ToInternal(const Shader* InShader)

@@ -18,6 +18,28 @@ VulkanDescriptorSet::~VulkanDescriptorSet()
     device                          = nullptr;
 }
 
+DescriptorSetHandle VulkanDescriptorSet::Create(VulkanDevice* InDevice, const DescriptorSetDescriptor& InDescriptor)
+{
+    DescriptorSetHandle handle = {InDevice->descriptorSets.ObtainResource()};
+
+    if (handle.index == INVALID_ID)
+    {
+        return handle;
+    }
+    return handle;
+}
+
+DescriptorSetLayoutHandle VulkanDescriptorSet::Create(VulkanDevice* InDevice, const DescriptorSetLayoutDescriptor& InDescriptor)
+{
+    DescriptorSetLayoutHandle handle = {InDevice->descriptorSetLayouts.ObtainResource()};
+
+    if (handle.index == INVALID_ID)
+    {
+        return handle;
+    }
+    return handle;
+}
+
 void VulkanDescriptorSet::Create(const VulkanDevice*                              InDevice,
                                  DescriptorSet*                                   InDescriptorSet,
                                  VkDescriptorSetLayout                            InDescriptorSetLayout,

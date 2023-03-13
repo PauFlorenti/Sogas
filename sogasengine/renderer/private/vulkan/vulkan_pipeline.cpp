@@ -48,6 +48,18 @@ VulkanPipeline::~VulkanPipeline()
     Destroy();
 }
 
+PipelineHandle VulkanPipeline::Create(VulkanDevice* InDevice, const PipelineDescriptor& InDescriptor)
+{
+    PipelineHandle handle = {InDevice->pipelines.ObtainResource()};
+
+    if (handle.index == INVALID_ID)
+    {
+        return handle;
+    }
+
+    return handle;
+}
+
 void VulkanPipeline::Create(const VulkanDevice*       device,
                             const PipelineDescriptor* desc,
                             Pipeline*                 pipeline,

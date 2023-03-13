@@ -201,6 +201,7 @@ bool VulkanDevice::Init()
     }
 
     buffers.Init(allocator, 512, sizeof(VulkanBuffer));
+    textures.Init(allocator, 8, sizeof(VulkanTexture));
 
     CreateCommandResources();
 
@@ -535,36 +536,36 @@ BufferHandle VulkanDevice::CreateBuffer(const BufferDescriptor& InDescriptor)
 
 TextureHandle VulkanDevice::CreateTexture(const TextureDescriptor& InDescriptor)
 {
-    return TextureHandle();
+    return VulkanTexture::Create(this, InDescriptor);
 }
 
 ShaderStateHandle VulkanDevice::CreateShaderState(const ShaderStateDescriptor& InDescriptor) 
 {
-    return ShaderStateHandle();
+    return VulkanShader::Create(this, InDescriptor);
 }
 
-SamplerHandle             VulkanDevice::CreateSampler(const SamplerDescriptor& InDescriptor) 
+SamplerHandle VulkanDevice::CreateSampler(const SamplerDescriptor& InDescriptor) 
 {
     return SamplerHandle();
 }
 DescriptorSetHandle VulkanDevice::CreateDescriptorSet(const DescriptorSetDescriptor& InDescriptor)
 {
-    return DescriptorSetHandle();
+    return VulkanDescriptorSet::Create(this, InDescriptor);
 }
 
 DescriptorSetLayoutHandle VulkanDevice::CreateDescriptorSetLayout(const DescriptorSetLayoutDescriptor& InDescriptor)
 {
-    return DescriptorSetLayoutHandle();
+    return VulkanDescriptorSet::Create(this, InDescriptor);
 }
 
 PipelineHandle VulkanDevice::CreatePipeline(const PipelineDescriptor& InDescriptor)
 {
-    return PipelineHandle();
+    return VulkanPipeline::Create(this, InDescriptor);
 }
 
 RenderPassHandle VulkanDevice::CreateRenderPass(const RenderPassDescriptor& InDescriptor)
 {
-    return RenderPassHandle();
+    return VulkanRenderPass::Create(this, InDescriptor);
 }
 
 void VulkanDevice::DestroyBuffer(BufferHandle InHandle)
@@ -969,9 +970,6 @@ bool VulkanDevice::CreateDevice()
         queueFamilies.push_back(queueFamily);
     }
 
-    VkPhysicalDeviceFeatures deviceFeatures{};
-    deviceFeatures.wideLines = VK_TRUE;
-
     VkPhysicalDeviceDescriptorIndexingFeatures indexing_features{
         VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES,
         nullptr};
@@ -987,7 +985,6 @@ bool VulkanDevice::CreateDevice()
     deviceCreateInfo.pQueueCreateInfos       = queueCreateInfos.data();
     deviceCreateInfo.enabledExtensionCount   = static_cast<u32>(requiredDeviceExtensions.size());
     deviceCreateInfo.ppEnabledExtensionNames = requiredDeviceExtensions.data();
-    deviceCreateInfo.pEnabledFeatures        = &deviceFeatures;
 
     if (bIsBindlessSupported)
     {

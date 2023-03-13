@@ -21,6 +21,17 @@ VulkanRenderPass::~VulkanRenderPass()
     Destroy();
 }
 
+RenderPassHandle VulkanRenderPass::Create(VulkanDevice* InDevice, const RenderPassDescriptor& InDescriptor)
+{
+    RenderPassHandle handle = {InDevice->renderpasses.ObtainResource()};
+
+    if (handle.index == INVALID_ID)
+    {
+        return handle;
+    }
+    return handle;
+}
+
 void VulkanRenderPass::Create(const VulkanDevice* InDevice, Renderer::RenderPass* InRenderpass)
 {
     SASSERT(InDevice != nullptr);

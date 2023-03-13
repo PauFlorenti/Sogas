@@ -18,6 +18,9 @@ class VulkanDescriptorSet
     const VulkanDescriptorSet& operator=(const VulkanDescriptorSet& other) = delete;
     ~VulkanDescriptorSet();
 
+    static DescriptorSetHandle Create(VulkanDevice* InDevice, const DescriptorSetDescriptor& InDescriptor);
+    static DescriptorSetLayoutHandle Create(VulkanDevice* InDevice, const DescriptorSetLayoutDescriptor& InDescriptor);
+
     static void Create(const VulkanDevice*                              InDevice,
                        DescriptorSet*                                   InDescriptorSet,
                        VkDescriptorSetLayout                            InDescriptorSetLayout,

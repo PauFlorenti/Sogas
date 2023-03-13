@@ -97,6 +97,12 @@ class GPU_device
 
     ResourcePool buffers;
     ResourcePool textures;
+    ResourcePool shaders;
+    ResourcePool samplers;
+    ResourcePool descriptorSets;
+    ResourcePool descriptorSetLayouts;
+    ResourcePool pipelines;
+    ResourcePool renderpasses;
 
   protected:
     GraphicsAPI api_type;

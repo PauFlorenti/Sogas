@@ -43,6 +43,7 @@ class VulkanTexture : public DeviceTexture
     const VulkanTexture& operator=(const VulkanTexture& other) = delete;
     ~VulkanTexture() { Release(); }
 
+    static TextureHandle Create(VulkanDevice* device, const TextureDescriptor& InDescriptor);
     static void Create(const VulkanDevice* device, Texture* texture, void* data);
     static std::shared_ptr<Texture>
     Create(const VulkanDevice* device, TextureDescriptor descriptor, void* data = nullptr);

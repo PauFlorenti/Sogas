@@ -24,6 +24,17 @@ VulkanTexture::VulkanTexture(const VulkanDevice* InDevice, const TextureDescript
     descriptor = InDescriptor;
 }
 
+TextureHandle VulkanTexture::Create(VulkanDevice* InDevice, const TextureDescriptor& InDescriptor)
+{
+    TextureHandle handle = {InDevice->textures.ObtainResource()};
+
+    if (handle.index == INVALID_ID)
+    {
+        return handle;
+    }
+    return handle;
+}
+
 void VulkanTexture::Create(const VulkanDevice* device, Texture* texture, void* data)
 {
     SASSERT(device);
@@ -141,8 +152,7 @@ void VulkanTexture::Create(const VulkanDevice* device, Texture* texture, void* d
     }
 }
 
-std::shared_ptr<Texture>
-VulkanTexture::Create(const VulkanDevice* device, TextureDescriptor descriptor, void* data )
+std::shared_ptr<Texture> VulkanTexture::Create(const VulkanDevice* device, TextureDescriptor descriptor, void* data)
 {
     SASSERT(device);
 

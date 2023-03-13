@@ -35,6 +35,17 @@ VulkanShader::~VulkanShader()
     pushConstantRanges.clear();
 }
 
+ShaderStateHandle VulkanShader::Create(VulkanDevice* InDevice, const ShaderStateDescriptor& InDescriptor)
+{
+    ShaderStateHandle handle = {InDevice->shaders.ObtainResource()};
+
+    if (handle.index == INVALID_ID)
+    {
+        return handle;
+    }
+    return handle;
+}
+
 void VulkanShader::Create(const VulkanDevice* device, ShaderStage InStage, std::string InFilename, Shader* OutShader)
 {
     std::string name = InFilename;
