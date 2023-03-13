@@ -44,8 +44,25 @@ class GPU_device
     virtual void                     EndRenderPass(CommandBuffer cmd) = 0;
 
     // Create gpu resources
+    virtual BufferHandle              CreateBuffer(const BufferDescriptor& InDescriptor) = 0;
+    virtual TextureHandle             CreateTexture(const TextureDescriptor& InDescriptor) = 0;
+    virtual ShaderStateHandle         CreateShaderState(const ShaderStateDescriptor& InDescriptor) = 0;
+    virtual SamplerHandle             CreateSampler(const SamplerDescriptor& InDescriptor) = 0;
+    virtual DescriptorSetHandle       CreateDescriptorSet(const DescriptorSetDescriptor& InDescriptor) = 0;
+    virtual DescriptorSetLayoutHandle CreateDescriptorSetLayout(const DescriptorSetLayoutDescriptor& InDescriptor) = 0;
+    virtual PipelineHandle            CreatePipeline(const PipelineDescriptor& InDescriptor) = 0;
+    virtual RenderPassHandle          CreateRenderPass(const RenderPassDescriptor& InDescriptor) = 0;
+
+    virtual void DestroyBuffer(BufferHandle InHandle) = 0;
+    virtual void DestroyTexture(TextureHandle InHandle) = 0;
+    virtual void DestroyShaderState(ShaderStateHandle InHandle) = 0;
+    virtual void DestroySampler(SamplerHandle InHandle) = 0;
+    virtual void DestroyDescriptorSet(DescriptorSetHandle InHandle) = 0;
+    virtual void DestroyDescriptorSetLayout(DescriptorSetLayoutHandle InHandle) = 0;
+    virtual void DestroyPipeline(PipelineHandle InPipInHandleeline) = 0;
+    virtual void DestroyRenderPass(RenderPassHandle InHandle) = 0;
+
     virtual void                     CreateSwapchain(std::shared_ptr<Swapchain> swapchain, GLFWwindow* window) = 0;
-    virtual BufferHandle             CreateBuffer(BufferDescriptor& InDescriptor) = 0;
     virtual std::shared_ptr<Buffer>  CreateBuffer(BufferDescriptor desc, void* data) const = 0;
     virtual std::shared_ptr<Buffer>  CreateBuffer(const u32& size, const u64& element_size, BufferBindingPoint binding, BufferUsage usage, void* data) const = 0;
     virtual void                     CreateTexture(Texture *texture, void* data) const = 0;
@@ -56,8 +73,6 @@ class GPU_device
     virtual void                     CreateShader(ShaderStage stage, std::string filename, Shader* shader) const = 0;
     virtual void                     UpdateDescriptorSet(const Pipeline* InPipeline) const = 0;
     virtual void                     CreateAttachment(AttachmentFramebuffer* InAttachment) const = 0;
-
-    virtual void DestroyBuffer(BufferHandle InBuffer) = 0;
 
     // API calls
     // This are commands that will execute when submitCommands is called.

@@ -48,8 +48,25 @@ class VulkanDevice : public GPU_device
     void EndRenderPass(CommandBuffer cmd) override;
 
     // Create gpu resources
+    BufferHandle              CreateBuffer(const BufferDescriptor& InDescriptor) override;
+    TextureHandle             CreateTexture(const TextureDescriptor& InDescriptor) override;
+    ShaderStateHandle         CreateShaderState(const ShaderStateDescriptor& InDescriptor) override;
+    SamplerHandle             CreateSampler(const SamplerDescriptor& InDescriptor) override;
+    DescriptorSetHandle       CreateDescriptorSet(const DescriptorSetDescriptor& InDescriptor) override;
+    DescriptorSetLayoutHandle CreateDescriptorSetLayout(const DescriptorSetLayoutDescriptor& InDescriptor) override;
+    PipelineHandle            CreatePipeline(const PipelineDescriptor& InDescriptor) override;
+    RenderPassHandle          CreateRenderPass(const RenderPassDescriptor& InDescriptor) override;
+
+    void DestroyBuffer(BufferHandle InHandle) override;
+    void DestroyTexture(TextureHandle InHandle) override;
+    void DestroyShaderState(ShaderStateHandle InHandle) override;
+    void DestroySampler(SamplerHandle InHandle) override;
+    void DestroyDescriptorSet(DescriptorSetHandle InHandle) override;
+    void DestroyDescriptorSetLayout(DescriptorSetLayoutHandle InHandle) override;
+    void DestroyPipeline(PipelineHandle InPipInHandleeline) override;
+    void DestroyRenderPass(RenderPassHandle InHandle) override;
+
     void                              CreateSwapchain(std::shared_ptr<Renderer::Swapchain> swapchain, GLFWwindow *window) override;
-    BufferHandle                      CreateBuffer(BufferDescriptor& InDescriptor) override;
     std::shared_ptr<Renderer::Buffer> CreateBuffer(Renderer::BufferDescriptor desc, void *data) const override;
     std::shared_ptr<Renderer::Buffer> CreateBuffer(const u32& size, const u64& element_size, Renderer::BufferBindingPoint binding, Renderer::BufferUsage usage, void* data = nullptr) const override;
     void                              CreateTexture(Texture *texture, void* data = nullptr) const override;
@@ -60,8 +77,6 @@ class VulkanDevice : public GPU_device
     void                              CreateShader(ShaderStage stage, std::string filename, Shader *shader) const override;
     void                              UpdateDescriptorSet(const Pipeline *InPipeline) const override;
     void                              CreateAttachment(AttachmentFramebuffer *InAttachment) const override;
-
-    void DestroyBuffer(BufferHandle InBuffer) override;
 
     // API calls ...
     void SetWindowSize(std::shared_ptr<Swapchain> InSwapchain, const u32 &width, const u32 &height) override;

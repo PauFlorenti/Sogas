@@ -19,6 +19,8 @@ class VulkanPipeline
     const VulkanPipeline& operator=(const VulkanPipeline& other) = delete;
     ~VulkanPipeline();
 
+    static PipelineHandle Create(const PipelineDescriptor& InDescriptor);
+
     static void Create(const VulkanDevice*       device,
                        const PipelineDescriptor* descriptor,
                        Pipeline*                 pipeline,

@@ -70,7 +70,16 @@ struct Descriptor
     // const Texture* texture     = nullptr;
 };
 
-enum CompareOperations
+struct ShaderStateDescriptor
+{};
+struct SamplerDescriptor
+{};
+struct DescriptorSetDescriptor
+{};
+struct DescriptorSetLayoutDescriptor
+{};
+
+enum class CompareOperations
 {
     NEVER = 0,
     LESS,
@@ -82,9 +91,35 @@ enum CompareOperations
     ALWAYS
 };
 
+enum class CullMode
+{
+    NONE           = 0x00000000,
+    FRONT          = 0x00000001,
+    BACK           = 0x00000002,
+    FRONT_AND_BACK = 0x00000003,
+    COUNT
+};
+
+enum class FrontFace
+{
+    COUNTER_CLOCKWISE = 0,
+    CLOCKWISE         = 1,
+    COUNT
+};
+
+enum class FillMode
+{
+    WIREFRAME,
+    SOLID,
+    POINT,
+    COUNT
+};
+
 struct RasterizationState
 {
-    // TODO WIP
+    CullMode  cull_mode  = CullMode::NONE;
+    FrontFace front_face = FrontFace::COUNTER_CLOCKWISE;
+    FillMode  fill_mode  = FillMode::SOLID;
 };
 
 struct DepthStencilState
@@ -98,6 +133,54 @@ struct DepthStencilState
     CompareOperations compareOp = CompareOperations::NEVER;
 };
 
+enum class BlendFactor
+{
+    ONE,
+    COUNT
+};
+
+enum class BlendOperation
+{
+    ADD = 0,
+    SUBSTRACT,
+    REVERSE_SUBSTRACT,
+    MIN,
+    MAX,
+    COUNT
+};
+
+struct BlendState
+{
+    BlendFactor    SourceColor      = BlendFactor::ONE;
+    BlendFactor    DestinationColor = BlendFactor::ONE;
+    BlendOperation ColorOperation   = BlendOperation::ADD;
+
+    BlendFactor    SourceAlpha      = BlendFactor::ONE;
+    BlendFactor    DestinationAlpha = BlendFactor::ONE;
+    BlendOperation AlphaOperation   = BlendOperation::ADD;
+
+    bool BlendEnabled = true;
+
+    // TODO mask ...
+
+    BlendState()
+        : BlendEnabled(false){};
+
+    BlendState& SetColor(BlendFactor InSourceColor, BlendFactor InDestinationColor, BlendOperation InColorOperation);
+    BlendState& SetAlpha(BlendFactor InSourceAlpha, BlendFactor InDestinationAlpha, BlendOperation InAlphaOperation);
+    // TODO Set mask ...
+};
+
+struct BlendStateDescriptor
+{
+    // TODO make it into constant values file ...
+    BlendState BlendStates[8];
+    u32        ActiveStates = 0;
+
+    BlendStateDescriptor& Reset();
+    BlendState&           AddBlendState();
+};
+
 struct Shader;
 struct PipelineDescriptor
 {
@@ -105,6 +188,7 @@ struct PipelineDescriptor
     const Shader*             ps                 = nullptr;
     const RasterizationState* rasterizationState = nullptr;
     const DepthStencilState*  depthStencilState  = nullptr;
+    const BlendState*         blendState         = nullptr;
     std::string               vertexDeclaration  = "";
 };
 

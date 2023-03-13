@@ -528,10 +528,63 @@ void VulkanDevice::EndRenderPass(CommandBuffer cmd)
     vkCmdEndRenderPass(internalCmd->commandBuffers[GetFrameIndex()]);
 }
 
-BufferHandle VulkanDevice::CreateBuffer(BufferDescriptor& InDescriptor)
+BufferHandle VulkanDevice::CreateBuffer(const BufferDescriptor& InDescriptor)
 {
     return VulkanBuffer::Create(this, InDescriptor);
 }
+
+TextureHandle VulkanDevice::CreateTexture(const TextureDescriptor& InDescriptor)
+{
+    return TextureHandle();
+}
+
+ShaderStateHandle VulkanDevice::CreateShaderState(const ShaderStateDescriptor& InDescriptor) 
+{
+    return ShaderStateHandle();
+}
+
+SamplerHandle             VulkanDevice::CreateSampler(const SamplerDescriptor& InDescriptor) 
+{
+    return SamplerHandle();
+}
+DescriptorSetHandle VulkanDevice::CreateDescriptorSet(const DescriptorSetDescriptor& InDescriptor)
+{
+    return DescriptorSetHandle();
+}
+
+DescriptorSetLayoutHandle VulkanDevice::CreateDescriptorSetLayout(const DescriptorSetLayoutDescriptor& InDescriptor)
+{
+    return DescriptorSetLayoutHandle();
+}
+
+PipelineHandle VulkanDevice::CreatePipeline(const PipelineDescriptor& InDescriptor)
+{
+    return PipelineHandle();
+}
+
+RenderPassHandle VulkanDevice::CreateRenderPass(const RenderPassDescriptor& InDescriptor)
+{
+    return RenderPassHandle();
+}
+
+void VulkanDevice::DestroyBuffer(BufferHandle InHandle)
+{
+    auto buffer = static_cast<VulkanBuffer*>(buffers.AccessResource(InHandle.index));
+
+    if (buffer)
+    {
+        buffer->Release();
+    }
+    buffers.ReleaseResource(InHandle.index);
+}
+
+void VulkanDevice::DestroyTexture(TextureHandle InHandle) {}
+void VulkanDevice::DestroyShaderState(ShaderStateHandle InHandle) {}
+void VulkanDevice::DestroySampler(SamplerHandle InHandle) {}
+void VulkanDevice::DestroyDescriptorSet(DescriptorSetHandle InHandle) {}
+void VulkanDevice::DestroyDescriptorSetLayout(DescriptorSetLayoutHandle InHandle) {}
+void VulkanDevice::DestroyPipeline(PipelineHandle InPipInHandleeline) {}
+void VulkanDevice::DestroyRenderPass(RenderPassHandle InHandle) {}
 
 std::shared_ptr<Renderer::Buffer> VulkanDevice::CreateBuffer(Renderer::BufferDescriptor desc, void* data) const
 {
@@ -603,17 +656,6 @@ void VulkanDevice::CreateAttachment(AttachmentFramebuffer* InAttachment) const
     SASSERT(InAttachment);
     // return VulkanTexture::Create(this, , nullptr);
     VulkanAttachment::Create(this, InAttachment);
-}
-
-void VulkanDevice::DestroyBuffer(BufferHandle InBuffer)
-{
-    auto buffer = static_cast<VulkanBuffer*>(buffers.AccessResource(InBuffer.index));
-
-    if (buffer)
-    {
-        buffer->Release();
-    }
-    buffers.ReleaseResource(InBuffer.index);
 }
 
 void VulkanDevice::SetWindowSize(std::shared_ptr<Renderer::Swapchain> InSwapchain, const u32& width, const u32& height)
