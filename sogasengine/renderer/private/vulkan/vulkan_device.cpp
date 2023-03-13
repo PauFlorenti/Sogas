@@ -23,6 +23,13 @@ namespace Renderer
 {
 namespace Vk
 {
+
+// TODO Make SASSERT_MSG to receive parameters so we can pass the code that failed.
+#define vkcheck(result)                                                                                                \
+    {                                                                                                                  \
+        SASSERT(result == VK_SUCCESS)                                                                                  \
+    }
+
 const std::vector<const char*> validationLayers = {"VK_LAYER_KHRONOS_validation"};
 
 const std::vector<const char*> requiredDeviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
@@ -75,7 +82,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityF
 u32 VulkanDevice::FindMemoryType(u32 typeFilter, VkMemoryPropertyFlags propertyFlags) const
 {
     VkPhysicalDeviceMemoryProperties memoryProperties;
-    vkGetPhysicalDeviceMemoryProperties(Gpu, &memoryProperties);
+    vkGetPhysicalDeviceMemoryProperties(Physical_device, &memoryProperties);
 
     for (u32 i = 0; i < memoryProperties.memoryTypeCount; ++i)
     {
@@ -93,7 +100,7 @@ u32 VulkanDevice::FindMemoryType(u32 typeFilter, VkMemoryPropertyFlags propertyF
 void VulkanDevice::PickPhysicalDevice()
 {
     u32 PhysicalDeviceCount = 0;
-    vkEnumeratePhysicalDevices(Instance, &PhysicalDeviceCount, nullptr);
+    vkcheck(vkEnumeratePhysicalDevices(Instance, &PhysicalDeviceCount, nullptr));
 
     if (PhysicalDeviceCount == 0)
     {
@@ -101,7 +108,7 @@ void VulkanDevice::PickPhysicalDevice()
     }
 
     std::vector<VkPhysicalDevice> PhysicalDevices(PhysicalDeviceCount);
-    vkEnumeratePhysicalDevices(Instance, &PhysicalDeviceCount, PhysicalDevices.data());
+    vkcheck(vkEnumeratePhysicalDevices(Instance, &PhysicalDeviceCount, PhysicalDevices.data()));
 
     STRACE("Available Physical Devices ...");
 
@@ -114,13 +121,17 @@ void VulkanDevice::PickPhysicalDevice()
 
     std::cout << "\t--\t--\t--\n\n";
 
-    Gpu = PhysicalDevices.at(0);
+    Physical_device = PhysicalDevices.at(0);
+    vkGetPhysicalDeviceProperties(Physical_device, &Physical_device_properties);
 
     // TODO Make a proper Physical device selector ...
     // Is Device suitable ??
 }
 
-VulkanDevice::VulkanDevice(GraphicsAPI apiType, void* /*device*/, std::vector<const char*> extensions, Memory::Allocator* InAllocator)
+VulkanDevice::VulkanDevice(GraphicsAPI apiType,
+                           void* /*device*/,
+                           std::vector<const char*> extensions,
+                           Memory::Allocator*       InAllocator)
     : glfwExtensions(std::move(extensions))
 {
     api_type = apiType;
@@ -159,7 +170,7 @@ void VulkanDevice::CreateSwapchain(std::shared_ptr<Renderer::Swapchain> swapchai
     for (const auto& queueFamily : queueFamilyProperties)
     {
         VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(Gpu, i, internalState->surface, &presentSupport);
+        vkGetPhysicalDeviceSurfaceSupportKHR(Physical_device, i, internalState->surface, &presentSupport);
         if (PresentFamily == VK_QUEUE_FAMILY_IGNORED && queueFamily.queueCount > 0 && presentSupport)
         {
             PresentFamily = i;
@@ -888,9 +899,9 @@ bool VulkanDevice::CreateDevice()
     PickPhysicalDevice();
 
     u32 queueFamilyCount = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(Gpu, &queueFamilyCount, nullptr);
+    vkGetPhysicalDeviceQueueFamilyProperties(Physical_device, &queueFamilyCount, nullptr);
     queueFamilyProperties.resize(queueFamilyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(Gpu, &queueFamilyCount, queueFamilyProperties.data());
+    vkGetPhysicalDeviceQueueFamilyProperties(Physical_device, &queueFamilyCount, queueFamilyProperties.data());
 
     u32 i = 0;
     for (const auto& queueFamily : queueFamilyProperties)
@@ -919,12 +930,27 @@ bool VulkanDevice::CreateDevice()
     VkPhysicalDeviceFeatures deviceFeatures{};
     deviceFeatures.wideLines = VK_TRUE;
 
+    VkPhysicalDeviceDescriptorIndexingFeatures indexing_features{
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES,
+        nullptr};
+
+    VkPhysicalDeviceFeatures2 physical_features2 = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, &indexing_features};
+    vkGetPhysicalDeviceFeatures2(Physical_device, &physical_features2);
+
+    bIsBindlessSupported =
+        indexing_features.descriptorBindingPartiallyBound && indexing_features.runtimeDescriptorArray;
+
     VkDeviceCreateInfo deviceCreateInfo      = {VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
     deviceCreateInfo.queueCreateInfoCount    = static_cast<u32>(queueCreateInfos.size());
     deviceCreateInfo.pQueueCreateInfos       = queueCreateInfos.data();
     deviceCreateInfo.enabledExtensionCount   = static_cast<u32>(requiredDeviceExtensions.size());
     deviceCreateInfo.ppEnabledExtensionNames = requiredDeviceExtensions.data();
     deviceCreateInfo.pEnabledFeatures        = &deviceFeatures;
+
+    if (bIsBindlessSupported)
+    {
+        deviceCreateInfo.pNext = &physical_features2;
+    }
 
     if (validationLayersEnabled)
     {
@@ -937,12 +963,8 @@ bool VulkanDevice::CreateDevice()
         deviceCreateInfo.ppEnabledLayerNames = nullptr;
     }
 
-    VkResult ok = vkCreateDevice(Gpu, &deviceCreateInfo, nullptr, &Handle);
-    if (ok != VK_SUCCESS)
-    {
-        SERROR("\tFailed to create logical device.");
-        return false;
-    }
+    VkResult ok = vkCreateDevice(Physical_device, &deviceCreateInfo, nullptr, &Handle);
+    vkcheck(ok);
 
     STRACE("\tRetrieving queue handles ...");
     vkGetDeviceQueue(Handle, GraphicsFamily, 0, &GraphicsQueue);

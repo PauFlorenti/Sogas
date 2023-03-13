@@ -22,7 +22,10 @@ class VulkanDevice : public GPU_device
     friend class VulkanCommandBuffer;
 
   public:
-    explicit VulkanDevice(GraphicsAPI apiType, void* device, std::vector<const char*> extensions, Memory::Allocator* InAllocator);
+    explicit VulkanDevice(GraphicsAPI              apiType,
+                          void*                    device,
+                          std::vector<const char*> extensions,
+                          Memory::Allocator*       InAllocator);
     VulkanDevice(const VulkanDevice&) = delete;
     VulkanDevice(VulkanDevice&&)      = delete;
     ~VulkanDevice() override;
@@ -32,7 +35,7 @@ class VulkanDevice : public GPU_device
     // clang-format off
 
     GraphicsAPI             getApiType() const { return api_type; }
-    const VkPhysicalDevice& GetGPU() const { return Gpu; }
+    const VkPhysicalDevice& GetGPU() const { return Physical_device; }
     constexpr u32 GetFrameCount() const { return FrameCount; }
     constexpr u32 GetFrameIndex() const { return GetFrameCount() % MAX_FRAMES_IN_FLIGHT; }
 
@@ -78,11 +81,13 @@ class VulkanDevice : public GPU_device
     // clang-format on
 
   private:
-    VkInstance               Instance       = VK_NULL_HANDLE;
-    VkDevice                 Handle         = VK_NULL_HANDLE;
-    VkPhysicalDevice         Gpu            = VK_NULL_HANDLE;
-    VkDebugUtilsMessengerEXT DebugMessenger = VK_NULL_HANDLE;
-    std::vector<const char*> glfwExtensions;
+    // Device
+    VkInstance                 Instance        = VK_NULL_HANDLE;
+    VkDevice                   Handle          = VK_NULL_HANDLE;
+    VkPhysicalDevice           Physical_device = VK_NULL_HANDLE;
+    VkDebugUtilsMessengerEXT   DebugMessenger  = VK_NULL_HANDLE;
+    VkPhysicalDeviceProperties Physical_device_properties;
+    std::vector<const char*>   glfwExtensions;
 
     // Queues
     std::vector<VkQueueFamilyProperties> queueFamilyProperties;
@@ -104,6 +109,8 @@ class VulkanDevice : public GPU_device
 
     std::vector<std::unique_ptr<VulkanCommandBuffer>> commandBuffers;
     u32                                               commandBufferCounter{0};
+
+    bool bIsBindlessSupported{false};
 
     bool CreateInstance();
     void SetupDebugMessenger();
