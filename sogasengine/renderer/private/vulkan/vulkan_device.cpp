@@ -25,9 +25,9 @@ namespace Vk
 {
 
 // TODO Make SASSERT_MSG to receive parameters so we can pass the code that failed.
-#define vkcheck(result)                                                                                                \
-    {                                                                                                                  \
-        SASSERT(result == VK_SUCCESS)                                                                                  \
+#define vkcheck(result)               \
+    {                                 \
+        SASSERT(result == VK_SUCCESS) \
     }
 
 const std::vector<const char*> validationLayers = {"VK_LAYER_KHRONOS_validation"};
@@ -132,7 +132,7 @@ VulkanDevice::VulkanDevice(GraphicsAPI apiType,
                            void* /*device*/,
                            std::vector<const char*> extensions,
                            Memory::Allocator*       InAllocator)
-    : glfwExtensions(std::move(extensions))
+: glfwExtensions(std::move(extensions))
 {
     api_type = apiType;
 
@@ -479,12 +479,12 @@ void VulkanDevice::BeginRenderPass(std::shared_ptr<Renderer::Swapchain> InSwapch
     VkClearValue clearValue = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
 
     VkRenderPassBeginInfo renderpassBeginInfo = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
-    renderpassBeginInfo.renderPass        = VulkanRenderPass::ToInternal(internalCommand->activeRenderPass)->renderpass;
-    renderpassBeginInfo.clearValueCount   = 1;
-    renderpassBeginInfo.pClearValues      = &clearValue;
-    renderpassBeginInfo.framebuffer       = internalSwapchain->framebuffers.at(internalSwapchain->imageIndex);
-    renderpassBeginInfo.renderArea.extent = internalSwapchain->extent;
-    renderpassBeginInfo.renderArea.offset = {0, 0};
+    renderpassBeginInfo.renderPass            = VulkanRenderPass::ToInternal(internalCommand->activeRenderPass)->renderpass;
+    renderpassBeginInfo.clearValueCount       = 1;
+    renderpassBeginInfo.pClearValues          = &clearValue;
+    renderpassBeginInfo.framebuffer           = internalSwapchain->framebuffers.at(internalSwapchain->imageIndex);
+    renderpassBeginInfo.renderArea.extent     = internalSwapchain->extent;
+    renderpassBeginInfo.renderArea.offset     = {0, 0};
 
     vkCmdBeginRenderPass(internalCommand->commandBuffers[GetFrameIndex()],
                          &renderpassBeginInfo,
@@ -539,12 +539,12 @@ TextureHandle VulkanDevice::CreateTexture(const TextureDescriptor& InDescriptor)
     return VulkanTexture::Create(this, InDescriptor);
 }
 
-ShaderStateHandle VulkanDevice::CreateShaderState(const ShaderStateDescriptor& InDescriptor) 
+ShaderStateHandle VulkanDevice::CreateShaderState(const ShaderStateDescriptor& InDescriptor)
 {
     return VulkanShader::Create(this, InDescriptor);
 }
 
-SamplerHandle VulkanDevice::CreateSampler(const SamplerDescriptor& InDescriptor) 
+SamplerHandle VulkanDevice::CreateSampler(const SamplerDescriptor& InDescriptor)
 {
     return SamplerHandle();
 }
@@ -579,13 +579,27 @@ void VulkanDevice::DestroyBuffer(BufferHandle InHandle)
     buffers.ReleaseResource(InHandle.index);
 }
 
-void VulkanDevice::DestroyTexture(TextureHandle InHandle) {}
-void VulkanDevice::DestroyShaderState(ShaderStateHandle InHandle) {}
-void VulkanDevice::DestroySampler(SamplerHandle InHandle) {}
-void VulkanDevice::DestroyDescriptorSet(DescriptorSetHandle InHandle) {}
-void VulkanDevice::DestroyDescriptorSetLayout(DescriptorSetLayoutHandle InHandle) {}
-void VulkanDevice::DestroyPipeline(PipelineHandle InPipInHandleeline) {}
-void VulkanDevice::DestroyRenderPass(RenderPassHandle InHandle) {}
+void VulkanDevice::DestroyTexture(TextureHandle InHandle)
+{
+}
+void VulkanDevice::DestroyShaderState(ShaderStateHandle InHandle)
+{
+}
+void VulkanDevice::DestroySampler(SamplerHandle InHandle)
+{
+}
+void VulkanDevice::DestroyDescriptorSet(DescriptorSetHandle InHandle)
+{
+}
+void VulkanDevice::DestroyDescriptorSetLayout(DescriptorSetLayoutHandle InHandle)
+{
+}
+void VulkanDevice::DestroyPipeline(PipelineHandle InPipInHandleeline)
+{
+}
+void VulkanDevice::DestroyRenderPass(RenderPassHandle InHandle)
+{
+}
 
 std::shared_ptr<Renderer::Buffer> VulkanDevice::CreateBuffer(Renderer::BufferDescriptor desc, void* data) const
 {
@@ -731,7 +745,7 @@ void VulkanDevice::BindBuffer(const std::shared_ptr<Renderer::Buffer>& InBuffer,
     auto bufferInternalState   = VulkanBuffer::ToInternal(InBuffer->device_buffer);
     auto pipelineInternalState = VulkanPipeline::ToInternal(InPipeline);
     auto descriptorSetInternalState =
-        VulkanDescriptorSet::ToInternal(&pipelineInternalState->descriptorSets[GetFrameIndex()].at(InDescriptorSet));
+      VulkanDescriptorSet::ToInternal(&pipelineInternalState->descriptorSets[GetFrameIndex()].at(InDescriptorSet));
 
     bufferInternalState->descriptorInfo.buffer = *bufferInternalState->GetHandle();
     bufferInternalState->descriptorInfo.offset = InOffset;
@@ -757,7 +771,7 @@ void VulkanDevice::BindTexture(const Texture*  InTexture,
     auto internalState         = VulkanTexture::ToInternal(InTexture);
     auto pipelineInternalState = VulkanPipeline::ToInternal(InPipeline);
     auto descriptorSetInternalState =
-        VulkanDescriptorSet::ToInternal(&pipelineInternalState->descriptorSets[GetFrameIndex()].at(InDescriptorSet));
+      VulkanDescriptorSet::ToInternal(&pipelineInternalState->descriptorSets[GetFrameIndex()].at(InDescriptorSet));
 
     internalState->descriptorImageInfo.imageView   = internalState->GetImageView();
     internalState->descriptorImageInfo.sampler     = internalState->GetSampler();
@@ -781,7 +795,7 @@ void VulkanDevice::BindAttachment(const AttachmentFramebuffer* InAttachment,
 {
     auto pipelineInternalState = VulkanPipeline::ToInternal(InPipeline);
     auto descriptorSetInternalState =
-        VulkanDescriptorSet::ToInternal(&pipelineInternalState->descriptorSets[GetFrameIndex()].at(InDescriptorSet));
+      VulkanDescriptorSet::ToInternal(&pipelineInternalState->descriptorSets[GetFrameIndex()].at(InDescriptorSet));
     auto attachmentInternalState = VulkanAttachment::ToInternal(InAttachment);
 
     attachmentInternalState->imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -804,18 +818,18 @@ void VulkanDevice::SetTopology(PrimitiveTopology topology)
     VkCommandBuffer& cmd = resourcesCommandBuffer[GetFrameIndex()];
     switch (topology)
     {
-    case PrimitiveTopology::POINTLIST:
-        vkCmdSetPrimitiveTopology(cmd, VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
-        break;
-    case PrimitiveTopology::LINELIST:
-        vkCmdSetPrimitiveTopology(cmd, VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
-        break;
-    case PrimitiveTopology::TRIANGLELIST:
-        vkCmdSetPrimitiveTopology(cmd, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-        break;
-    default:
-        SERROR("No valid topology!");
-        break;
+        case PrimitiveTopology::POINTLIST:
+            vkCmdSetPrimitiveTopology(cmd, VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
+            break;
+        case PrimitiveTopology::LINELIST:
+            vkCmdSetPrimitiveTopology(cmd, VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
+            break;
+        case PrimitiveTopology::TRIANGLELIST:
+            vkCmdSetPrimitiveTopology(cmd, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+            break;
+        default:
+            SERROR("No valid topology!");
+            break;
     }
 }
 
@@ -907,8 +921,8 @@ bool VulkanDevice::CreateInstance()
     instanceCreateInfo.pApplicationInfo        = &applicationInfo;
     instanceCreateInfo.enabledExtensionCount   = static_cast<u32>(glfwExtensions.size());
     instanceCreateInfo.ppEnabledExtensionNames = glfwExtensions.data();
-    instanceCreateInfo.enabledLayerCount   = validationLayersEnabled ? static_cast<u32>(validationLayers.size()) : 0;
-    instanceCreateInfo.ppEnabledLayerNames = validationLayersEnabled ? validationLayers.data() : nullptr;
+    instanceCreateInfo.enabledLayerCount       = validationLayersEnabled ? static_cast<u32>(validationLayers.size()) : 0;
+    instanceCreateInfo.ppEnabledLayerNames     = validationLayersEnabled ? validationLayers.data() : nullptr;
 
     VkResult ok = vkCreateInstance(&instanceCreateInfo, nullptr, &Instance);
 
@@ -916,16 +930,16 @@ bool VulkanDevice::CreateInstance()
     {
         switch (ok)
         {
-        case (VK_ERROR_OUT_OF_HOST_MEMORY):
-        case (VK_ERROR_OUT_OF_DEVICE_MEMORY):
-        case (VK_ERROR_INITIALIZATION_FAILED):
-        case (VK_ERROR_LAYER_NOT_PRESENT):
-        case (VK_ERROR_EXTENSION_NOT_PRESENT):
-        case (VK_ERROR_INCOMPATIBLE_DRIVER):
-            SERROR("\tError creating the Vulkan Instance");
-            break;
-        default:
-            break;
+            case (VK_ERROR_OUT_OF_HOST_MEMORY):
+            case (VK_ERROR_OUT_OF_DEVICE_MEMORY):
+            case (VK_ERROR_INITIALIZATION_FAILED):
+            case (VK_ERROR_LAYER_NOT_PRESENT):
+            case (VK_ERROR_EXTENSION_NOT_PRESENT):
+            case (VK_ERROR_INCOMPATIBLE_DRIVER):
+                SERROR("\tError creating the Vulkan Instance");
+                break;
+            default:
+                break;
         }
         return false;
     }
@@ -971,14 +985,14 @@ bool VulkanDevice::CreateDevice()
     }
 
     VkPhysicalDeviceDescriptorIndexingFeatures indexing_features{
-        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES,
-        nullptr};
+      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES,
+      nullptr};
 
     VkPhysicalDeviceFeatures2 physical_features2 = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, &indexing_features};
     vkGetPhysicalDeviceFeatures2(Physical_device, &physical_features2);
 
     bIsBindlessSupported =
-        indexing_features.descriptorBindingPartiallyBound && indexing_features.runtimeDescriptorArray;
+      indexing_features.descriptorBindingPartiallyBound && indexing_features.runtimeDescriptorArray;
 
     VkDeviceCreateInfo deviceCreateInfo      = {VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
     deviceCreateInfo.queueCreateInfoCount    = static_cast<u32>(queueCreateInfos.size());
@@ -1048,10 +1062,10 @@ void VulkanDevice::SetupDebugMessenger()
     }
 
     VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo = {
-        VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT};
+      VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT};
     debugMessengerCreateInfo.messageSeverity =
-        VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
-        VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+      VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
+      VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
     debugMessengerCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
                                            VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
                                            VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
