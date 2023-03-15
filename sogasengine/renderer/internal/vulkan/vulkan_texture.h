@@ -8,6 +8,7 @@ namespace Sogas
 {
 namespace Renderer
 {
+VkImageType ConverTextureType(TextureDescriptor::TextureType InType);
 namespace Vk
 {
 class VulkanDevice;
@@ -17,20 +18,24 @@ struct VulkanTextureDescriptor
 {
     void operator=(const TextureDescriptor& other)
     {
-        width                 = other.width;
-        height                = other.height;
-        texture_format        = ConvertFormat(other.format);
-        texture_format_stride = GetFormatStride(other.format);
-        texture_aspect        = other.bindPoint == BindPoint::DEPTH_STENCIL
-                                    ? (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)
-                                    : VK_IMAGE_ASPECT_COLOR_BIT;
+        width         = other.width;
+        height        = other.height;
+        depth         = other.depth;
+        mipmaps       = other.mipmaps;
+        format        = ConvertFormat(other.format);
+        format_stride = GetFormatStride(other.format);
+        type          = ConverTextureType(other.type);
+        aspect        = HasDepthOrStencil(other.format) ? (HasDepth(other.format) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0) : VK_IMAGE_ASPECT_COLOR_BIT;
     };
 
-    u32                width{0};
-    u32                height{0};
-    VkFormat           texture_format;
-    u32                texture_format_stride{0};
-    VkImageAspectFlags texture_aspect{VK_IMAGE_ASPECT_NONE};
+    u16                width{1};
+    u16                height{1};
+    u16                depth{1};
+    u8                 mipmaps{0};
+    u32                format_stride{0};
+    VkFormat           format;
+    VkImageType        type{VK_IMAGE_TYPE_MAX_ENUM};
+    VkImageAspectFlags aspect;
 };
 
 class VulkanTexture : public DeviceTexture
@@ -41,10 +46,13 @@ class VulkanTexture : public DeviceTexture
     VulkanTexture(const VulkanTexture&)                        = delete;
     VulkanTexture(VulkanTexture&&)                             = delete;
     const VulkanTexture& operator=(const VulkanTexture& other) = delete;
-    ~VulkanTexture() { Release(); }
+    ~VulkanTexture()
+    {
+        Release();
+    }
 
     static TextureHandle Create(VulkanDevice* device, const TextureDescriptor& InDescriptor);
-    static void Create(const VulkanDevice* device, Texture* texture, void* data);
+    static void          Create(const VulkanDevice* device, Texture* texture, void* data);
     static std::shared_ptr<Texture>
     Create(const VulkanDevice* device, TextureDescriptor descriptor, void* data = nullptr);
 
@@ -56,24 +64,34 @@ class VulkanTexture : public DeviceTexture
     void Release() override;
     void SetData(void* data);
 
-    const VkImage     GetHandle() const { return handle; }
-    const VkImageView GetImageView() const { return imageView; }
-    const VkSampler   GetSampler();
+    const VkImage GetHandle() const
+    {
+        return texture;
+    }
+    const VkImageView GetImageView() const
+    {
+        return image_view;
+    }
+    const VkSampler GetSampler();
 
     VkDescriptorImageInfo descriptorImageInfo;
+
+    TextureHandle           handle;
+    VulkanTextureDescriptor descriptor;
+    VkImage                 texture    = VK_NULL_HANDLE;
+    VkImageView             image_view = VK_NULL_HANDLE;
+    VkDeviceMemory          memory     = VK_NULL_HANDLE;
+    VkImageLayout           image_layout;
+
+    void Allocate_and_bind_texture_memory(VkMemoryPropertyFlags memory_properties);
 
   private:
     void TransitionLayout(VkImageLayout srcLayout, VkImageLayout dstLayout);
     void CopyBufferToImage(const VulkanBuffer* buffer);
-    void Allocate_and_bind_texture_memory(VkMemoryPropertyFlags memory_properties);
 
-    void*                   mapdata   = nullptr;
-    const VulkanDevice*     device    = nullptr;
-    VkImage                 handle    = VK_NULL_HANDLE;
-    VkImageView             imageView = VK_NULL_HANDLE;
-    VkDeviceMemory          memory    = VK_NULL_HANDLE;
-    VkSampler               sampler   = VK_NULL_HANDLE;
-    VulkanTextureDescriptor descriptor;
+    void*               mapdata = nullptr;
+    const VulkanDevice* device  = nullptr;
+    VkSampler           sampler = VK_NULL_HANDLE;
 };
 } // namespace Vk
 } // namespace Renderer

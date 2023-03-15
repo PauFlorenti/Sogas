@@ -9,6 +9,12 @@ namespace Renderer
 {
 namespace Vk
 {
+
+// TODO Make SASSERT_MSG to receive parameters so we can pass the code that failed.
+#define vkcheck(result)               \
+    {                                 \
+        SASSERT(result == VK_SUCCESS) \
+    }
 class VulkanDevice : public GPU_device
 {
     friend class VulkanAttachment;

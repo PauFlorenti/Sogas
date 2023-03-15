@@ -11,17 +11,111 @@ namespace Sogas
 {
 namespace Renderer
 {
+VkImageType ConverTextureType(TextureDescriptor::TextureType InType)
+{
+    switch (InType)
+    {
+        case TextureDescriptor::TextureType::TEXTURE_TYPE_1D:
+            return VK_IMAGE_TYPE_1D;
+            break;
+        default:
+        case TextureDescriptor::TextureType::TEXTURE_TYPE_2D:
+            return VK_IMAGE_TYPE_2D;
+            break;
+        case TextureDescriptor::TextureType::TEXTURE_TYPE_3D:
+            return VK_IMAGE_TYPE_3D;
+            break;
+    }
+}
+
+VkImageViewType ConvertTextureTypeToImageViewType(TextureDescriptor::TextureType InType)
+{
+    switch (InType)
+    {
+        case TextureDescriptor::TextureType::TEXTURE_TYPE_1D:
+            return VK_IMAGE_VIEW_TYPE_1D;
+        default:
+        case TextureDescriptor::TextureType::TEXTURE_TYPE_2D:
+            return VK_IMAGE_VIEW_TYPE_2D;
+        case TextureDescriptor::TextureType::TEXTURE_TYPE_3D:
+            return VK_IMAGE_VIEW_TYPE_3D;
+    }
+}
 namespace Vk
 {
 
 VulkanTexture::VulkanTexture(const VulkanDevice* InDevice)
-    : device(InDevice)
-{}
+: device(InDevice)
+{
+}
 
 VulkanTexture::VulkanTexture(const VulkanDevice* InDevice, const TextureDescriptor& InDescriptor)
-    : device(InDevice)
+: device(InDevice)
 {
     descriptor = InDescriptor;
+}
+
+static void CreateTexture(VkDevice InDevice, const TextureDescriptor& InDescriptor, TextureHandle InHandle, VulkanTexture* OutTexture)
+{
+    OutTexture->descriptor = InDescriptor;
+    OutTexture->handle     = InHandle;
+
+    const bool bIsRenderTarget = (InDescriptor.flags & TextureFlagsMask::RENDER_TARGET) == TextureFlagsMask::RENDER_TARGET;
+    const bool bIsComputeUsed  = (InDescriptor.flags & TextureFlagsMask::COMPUTE) == TextureFlagsMask::COMPUTE;
+
+    VkImageCreateInfo image_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
+    image_info.format            = OutTexture->descriptor.format;
+    image_info.flags             = 0;
+    image_info.imageType         = OutTexture->descriptor.type;
+    image_info.extent            = {InDescriptor.width, InDescriptor.height, InDescriptor.depth};
+    image_info.mipLevels         = OutTexture->descriptor.mipmaps;
+    image_info.arrayLayers       = 1;
+    image_info.samples           = VK_SAMPLE_COUNT_1_BIT;
+    image_info.tiling            = VK_IMAGE_TILING_OPTIMAL;
+
+    // Default to always redeable from shader.
+    image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_info.usage |= bIsComputeUsed ? VK_IMAGE_USAGE_STORAGE_BIT : 0;
+
+    if (HasDepthOrStencil(InDescriptor.format))
+    {
+        image_info.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    }
+    else
+    {
+        image_info.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        image_info.usage |= bIsRenderTarget ? VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT : 0;
+    }
+
+    image_info.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
+    image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    vkcheck(vkCreateImage(InDevice, &image_info, nullptr, &OutTexture->texture));
+
+    OutTexture->Allocate_and_bind_texture_memory(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    // TODO set name
+
+    VkImageViewCreateInfo info = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
+    info.image                 = OutTexture->texture;
+    info.viewType              = ConvertTextureTypeToImageViewType(InDescriptor.type);
+    info.format                = image_info.format;
+
+    if (HasDepthOrStencil(InDescriptor.format))
+    {
+        info.subresourceRange.aspectMask = HasDepth(InDescriptor.format) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0;
+    }
+    else
+    {
+        info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    }
+
+    info.subresourceRange.levelCount = 1;
+    info.subresourceRange.layerCount = 1;
+
+    vkcheck(vkCreateImageView(InDevice, &info, nullptr, &OutTexture->image_view));
+
+    OutTexture->image_layout = VK_IMAGE_LAYOUT_UNDEFINED;
 }
 
 TextureHandle VulkanTexture::Create(VulkanDevice* InDevice, const TextureDescriptor& InDescriptor)
@@ -32,6 +126,38 @@ TextureHandle VulkanTexture::Create(VulkanDevice* InDevice, const TextureDescrip
     {
         return handle;
     }
+
+    VulkanTexture* texture = static_cast<VulkanTexture*>(InDevice->textures.AccessResource(handle.index));
+    texture->device        = InDevice;
+
+    CreateTexture(InDevice->Handle, InDescriptor, handle, texture);
+
+    if (InDescriptor.data)
+    {
+        // Staging buffer
+        u32                image_size = InDescriptor.width * InDescriptor.height * texture->descriptor.format_stride;
+        VulkanBuffer       staging_buffer;
+        VkBufferCreateInfo buffer_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+        buffer_info.usage              = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        buffer_info.size               = image_size;
+
+        staging_buffer.Allocate_buffer_memory(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        vkcheck(vkBindBufferMemory(InDevice->Handle, staging_buffer.buffer, staging_buffer.memory, 0));
+
+        vkcheck(vkCreateBuffer(InDevice->Handle, &buffer_info, nullptr, &staging_buffer.buffer));
+
+        // Copy data
+        vkMapMemory(InDevice->Handle, staging_buffer.memory, 0, image_size, 0, &staging_buffer.mapdata);
+        memcpy(staging_buffer.mapdata, InDescriptor.data, image_size);
+        vkUnmapMemory(InDevice->Handle, staging_buffer.memory);
+
+        texture->TransitionLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        texture->CopyBufferToImage(&staging_buffer);
+        texture->TransitionLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+        texture->image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    }
+
     return handle;
 }
 
@@ -50,7 +176,7 @@ void VulkanTexture::Create(const VulkanDevice* device, Texture* texture, void* d
     // Create image
     VkImageCreateInfo imageInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
     {
-        imageInfo.format                = internalState->descriptor.texture_format;
+        imageInfo.format                = ConvertFormat(desc.format);
         imageInfo.extent                = {desc.width, desc.height, 1};
         imageInfo.mipLevels             = 1;
         imageInfo.arrayLayers           = 1;
@@ -60,20 +186,7 @@ void VulkanTexture::Create(const VulkanDevice* device, Texture* texture, void* d
         imageInfo.queueFamilyIndexCount = static_cast<u32>(device->queueFamilies.size());
         imageInfo.pQueueFamilyIndices   = device->queueFamilies.data();
         imageInfo.initialLayout         = VK_IMAGE_LAYOUT_UNDEFINED;
-
-        switch (desc.textureType)
-        {
-        case TextureDescriptor::TextureType::TEXTURE_TYPE_1D:
-            imageInfo.imageType = VK_IMAGE_TYPE_1D;
-            break;
-        default:
-        case TextureDescriptor::TextureType::TEXTURE_TYPE_2D:
-            imageInfo.imageType = VK_IMAGE_TYPE_2D;
-            break;
-        case TextureDescriptor::TextureType::TEXTURE_TYPE_3D:
-            imageInfo.imageType = VK_IMAGE_TYPE_3D;
-            break;
-        }
+        imageInfo.imageType             = ConverTextureType(desc.type);
 
         if (desc.usage == Usage::UPLOAD)
         {
@@ -101,7 +214,7 @@ void VulkanTexture::Create(const VulkanDevice* device, Texture* texture, void* d
         VkDeviceSize imageSize = imageInfo.extent.width * imageInfo.extent.height * imageInfo.extent.depth *
                                  imageInfo.arrayLayers * GetFormatStride(desc.format);
 
-        if (vkCreateImage(device->Handle, &imageInfo, nullptr, &internalState->handle) != VK_SUCCESS)
+        if (vkCreateImage(device->Handle, &imageInfo, nullptr, &internalState->texture) != VK_SUCCESS)
         {
             SFATAL("Could not create image.");
             return;
@@ -133,18 +246,16 @@ void VulkanTexture::Create(const VulkanDevice* device, Texture* texture, void* d
     // Create image view
     {
         VkImageViewCreateInfo imageViewInfo           = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
-        imageViewInfo.image                           = internalState->handle;
+        imageViewInfo.image                           = internalState->texture;
         imageViewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
         imageViewInfo.format                          = imageInfo.format;
-        imageViewInfo.subresourceRange.aspectMask     = desc.bindPoint == BindPoint::DEPTH_STENCIL
-                                                            ? (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)
-                                                            : VK_IMAGE_ASPECT_COLOR_BIT;
+        imageViewInfo.subresourceRange.aspectMask     = desc.bindPoint == BindPoint::DEPTH_STENCIL ? (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) : VK_IMAGE_ASPECT_COLOR_BIT;
         imageViewInfo.subresourceRange.layerCount     = 1;
         imageViewInfo.subresourceRange.baseArrayLayer = 0;
         imageViewInfo.subresourceRange.levelCount     = 1;
         imageViewInfo.subresourceRange.baseMipLevel   = 0;
 
-        if (vkCreateImageView(device->Handle, &imageViewInfo, nullptr, &internalState->imageView) != VK_SUCCESS)
+        if (vkCreateImageView(device->Handle, &imageViewInfo, nullptr, &internalState->image_view) != VK_SUCCESS)
         {
             SERROR("Failed to create image view!");
             return;
@@ -164,7 +275,7 @@ std::shared_ptr<Texture> VulkanTexture::Create(const VulkanDevice* device, Textu
     // Create image
     VkImageCreateInfo imageInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
     {
-        imageInfo.format                = desc.texture_format;
+        imageInfo.format                = desc.format;
         imageInfo.extent                = {desc.width, desc.height, 1};
         imageInfo.mipLevels             = 1;
         imageInfo.arrayLayers           = 1;
@@ -174,20 +285,7 @@ std::shared_ptr<Texture> VulkanTexture::Create(const VulkanDevice* device, Textu
         imageInfo.queueFamilyIndexCount = static_cast<u32>(device->queueFamilies.size());
         imageInfo.pQueueFamilyIndices   = device->queueFamilies.data();
         imageInfo.initialLayout         = VK_IMAGE_LAYOUT_UNDEFINED;
-
-        switch (texture->GetDescriptor().textureType)
-        {
-        case TextureDescriptor::TextureType::TEXTURE_TYPE_1D:
-            imageInfo.imageType = VK_IMAGE_TYPE_1D;
-            break;
-        default:
-        case TextureDescriptor::TextureType::TEXTURE_TYPE_2D:
-            imageInfo.imageType = VK_IMAGE_TYPE_2D;
-            break;
-        case TextureDescriptor::TextureType::TEXTURE_TYPE_3D:
-            imageInfo.imageType = VK_IMAGE_TYPE_3D;
-            break;
-        }
+        imageInfo.imageType             = ConverTextureType(texture->GetDescriptor().type);
 
         if (texture->GetDescriptor().usage == Usage::UPLOAD)
         {
@@ -214,7 +312,7 @@ std::shared_ptr<Texture> VulkanTexture::Create(const VulkanDevice* device, Textu
         VkDeviceSize imageSize = imageInfo.extent.width * imageInfo.extent.height * imageInfo.extent.depth *
                                  imageInfo.arrayLayers * GetFormatStride(texture->GetDescriptor().format);
 
-        if (vkCreateImage(device->Handle, &imageInfo, nullptr, &internalState->handle) != VK_SUCCESS)
+        if (vkCreateImage(device->Handle, &imageInfo, nullptr, &internalState->texture) != VK_SUCCESS)
         {
             SFATAL("Could not create image.");
             return std::make_shared<Texture>();
@@ -246,16 +344,16 @@ std::shared_ptr<Texture> VulkanTexture::Create(const VulkanDevice* device, Textu
     // Create image view
     {
         VkImageViewCreateInfo imageViewInfo           = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
-        imageViewInfo.image                           = internalState->handle;
+        imageViewInfo.image                           = internalState->texture;
         imageViewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
         imageViewInfo.format                          = imageInfo.format;
-        imageViewInfo.subresourceRange.aspectMask     = desc.texture_aspect;
+        imageViewInfo.subresourceRange.aspectMask     = HasDepthOrStencil(descriptor.format) ? (HasDepth(descriptor.format) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0) : VK_IMAGE_ASPECT_COLOR_BIT;
         imageViewInfo.subresourceRange.layerCount     = 1;
         imageViewInfo.subresourceRange.baseArrayLayer = 0;
         imageViewInfo.subresourceRange.levelCount     = 1;
         imageViewInfo.subresourceRange.baseMipLevel   = 0;
 
-        if (vkCreateImageView(device->Handle, &imageViewInfo, nullptr, &internalState->imageView) != VK_SUCCESS)
+        if (vkCreateImageView(device->Handle, &imageViewInfo, nullptr, &internalState->image_view) != VK_SUCCESS)
         {
             SERROR("Failed to create image view!");
             return std::make_shared<Texture>();
@@ -267,7 +365,7 @@ std::shared_ptr<Texture> VulkanTexture::Create(const VulkanDevice* device, Textu
 
 void VulkanTexture::SetData(void* data)
 {
-    auto image_size = descriptor.width * descriptor.height * descriptor.texture_format_stride;
+    auto image_size = descriptor.width * descriptor.height * descriptor.format_stride;
 
     VulkanBuffer       stagingBuffer(device);
     VkBufferCreateInfo bufferInfo    = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
@@ -327,13 +425,13 @@ void VulkanTexture::Release()
 {
     {
         vkFreeMemory(device->Handle, memory, nullptr);
-        vkDestroyImageView(device->Handle, imageView, nullptr);
-        vkDestroyImage(device->Handle, handle, nullptr);
+        vkDestroyImageView(device->Handle, image_view, nullptr);
+        vkDestroyImage(device->Handle, texture, nullptr);
         vkDestroySampler(device->Handle, sampler, nullptr);
     }
 
     VkDevice       device    = VK_NULL_HANDLE;
-    VkImage        handle    = VK_NULL_HANDLE;
+    VkImage        texture   = VK_NULL_HANDLE;
     VkImageView    imageView = VK_NULL_HANDLE;
     VkDeviceMemory memory    = VK_NULL_HANDLE;
     VkSampler      sampler   = VK_NULL_HANDLE;
@@ -357,14 +455,14 @@ void VulkanTexture::TransitionLayout(VkImageLayout srcLayout, VkImageLayout dstL
     if (vkBeginCommandBuffer(cmd, &beginInfo) == VK_SUCCESS)
     {
         VkImageMemoryBarrier barrier            = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
-        barrier.image                           = handle;
+        barrier.image                           = texture;
         barrier.oldLayout                       = srcLayout;
         barrier.newLayout                       = dstLayout;
         barrier.srcAccessMask                   = 0;
         barrier.dstAccessMask                   = VK_ACCESS_TRANSFER_WRITE_BIT;
         barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-        barrier.subresourceRange.aspectMask     = descriptor.texture_aspect;
+        barrier.subresourceRange.aspectMask     = descriptor.aspect;
         barrier.subresourceRange.layerCount     = 1;
         barrier.subresourceRange.baseArrayLayer = 0;
         barrier.subresourceRange.levelCount     = 1;
@@ -395,7 +493,7 @@ void VulkanTexture::TransitionLayout(VkImageLayout srcLayout, VkImageLayout dstL
         {
             barrier.srcAccessMask = 0;
             barrier.dstAccessMask =
-                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+              VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
             srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
             dstStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
@@ -461,7 +559,7 @@ void VulkanTexture::CopyBufferToImage(const VulkanBuffer* buffer)
         region.imageOffset                     = {0, 0, 0};
         region.imageExtent                     = {descriptor.width, descriptor.height, 1};
 
-        vkCmdCopyBufferToImage(cmd, buffer->buffer, handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+        vkCmdCopyBufferToImage(cmd, buffer->buffer, texture, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
         vkEndCommandBuffer(cmd);
 
@@ -483,14 +581,14 @@ void VulkanTexture::CopyBufferToImage(const VulkanBuffer* buffer)
 void VulkanTexture::Allocate_and_bind_texture_memory(VkMemoryPropertyFlags memory_properties)
 {
     VkMemoryRequirements memoryRequirements;
-    vkGetImageMemoryRequirements(device->Handle, handle, &memoryRequirements);
+    vkGetImageMemoryRequirements(device->Handle, texture, &memoryRequirements);
     {
         VkMemoryAllocateInfo allocInfo = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
         allocInfo.allocationSize       = memoryRequirements.size;
         allocInfo.memoryTypeIndex      = device->FindMemoryType(memoryRequirements.memoryTypeBits, memory_properties);
 
         vkAllocateMemory(device->Handle, &allocInfo, nullptr, &memory);
-        vkBindImageMemory(device->Handle, handle, memory, 0);
+        vkBindImageMemory(device->Handle, texture, memory, 0);
     }
 }
 

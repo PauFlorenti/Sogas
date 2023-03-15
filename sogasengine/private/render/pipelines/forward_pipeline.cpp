@@ -11,10 +11,10 @@
 #include "renderer/public/swapchain.h"
 
 std::vector<Sogas::Renderer::VertexLayout> quad = {
-    {{1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
-    {{-1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
-    {{-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
-    {{1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+  {{1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+  {{-1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+  {{-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+  {{1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
 };
 
 std::vector<u32> quadIdx = {0, 1, 2, 2, 3, 0};
@@ -54,7 +54,7 @@ namespace Sogas
 namespace Renderer
 {
 ForwardPipeline::ForwardPipeline(std::shared_ptr<GPU_device> InRenderer, std::shared_ptr<Swapchain> swapchain)
-    : renderer(InRenderer)
+: renderer(InRenderer)
 {
     SASSERT(renderer != nullptr);
     SASSERT(swapchain.get() != nullptr);
@@ -73,14 +73,15 @@ ForwardPipeline::ForwardPipeline(std::shared_ptr<GPU_device> InRenderer, std::sh
     renderer->CreateAttachment(&depthAttachment);
 
     TextureDescriptor desc;
-    desc.format      = Format::R8G8B8A8_SRGB;
-    desc.bindPoint   = BindPoint::RENDER_TARGET;
-    desc.width       = 640;
-    desc.height      = 480;
-    desc.depth       = 1;
-    desc.textureType = TextureDescriptor::TEXTURE_TYPE_2D;
-    desc.usage       = Usage::DEFAULT;
-    auto colorAtt    = renderer->CreateTexture(std::move(desc));
+    desc.format    = Format::R8G8B8A8_SRGB;
+    desc.bindPoint = BindPoint::RENDER_TARGET;
+    desc.width     = 640;
+    desc.height    = 480;
+    desc.depth     = 1;
+    desc.type      = TextureDescriptor::TextureType::TEXTURE_TYPE_2D;
+    desc.usage     = Usage::DEFAULT;
+    auto colorAtt  = renderer->CreateTexture(std::move(desc));
+    renderer->DestroyTexture(colorAtt);
 
     RenderPassDescriptor rpDesc;
     rpDesc.attachments.push_back(Attachment::RenderTarget(nullptr, &colorAttachment));
@@ -140,13 +141,15 @@ ForwardPipeline::ForwardPipeline(std::shared_ptr<GPU_device> InRenderer, std::sh
     quadIdxBuffer                 = renderer->CreateBuffer(std::move(quadIdxBufferDesc), quadIdx.data());
 
     BufferDescriptor test;
-    test.usage = BufferUsage::UNIFORM;
-    test.name = "Test buffer";
+    test.usage       = BufferUsage::UNIFORM;
+    test.name        = "Test buffer";
     auto test_handle = renderer->CreateBuffer(test);
     renderer->DestroyBuffer(test_handle);
 }
 
-void ForwardPipeline::update_constants() {}
+void ForwardPipeline::update_constants()
+{
+}
 
 void ForwardPipeline::render(std::shared_ptr<Swapchain> swapchain)
 {
@@ -173,17 +176,17 @@ void ForwardPipeline::render(std::shared_ptr<Swapchain> swapchain)
 
     u32 i = 0;
     GetObjectManager<TCompPointLight>()->ForEach(
-        [&](TCompPointLight* light)
-        {
-            Light l;
-            l.color     = light->color;
-            l.position  = light->position;
-            l.intensity = light->intensity;
-            l.radius    = light->radius;
+      [&](TCompPointLight* light)
+      {
+          Light l;
+          l.color     = light->color;
+          l.position  = light->position;
+          l.intensity = light->intensity;
+          l.radius    = light->radius;
 
-            lightBuffer->SetData(&l, sizeof(Light), sizeof(Light) * i);
-            i++;
-        });
+          lightBuffer->SetData(&l, sizeof(Light), sizeof(Light) * i);
+          i++;
+      });
 
     // Bind constants per frame.
     renderer->BindDescriptor(cmd);

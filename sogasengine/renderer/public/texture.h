@@ -99,11 +99,36 @@ enum class Format
     D32_UNORM_S8_UINT
 };
 
+inline bool IsDepthStencil(Format InFormat)
+{
+    return InFormat >= Format::D16_UNORM_S8_UINT || InFormat == Format::D24_UNORM_S8_UINT || InFormat == Format::D32_SFLOAT;
+}
+
+inline bool IsDepthOnly(Format InFormat)
+{
+    return InFormat == Format::D32_SFLOAT;
+}
+
+inline bool IsStencilOnly(Format InFormat)
+{
+    return InFormat == Format::S8_UINT;
+}
+
+inline bool HasDepth(Format InFormat)
+{
+    return InFormat >= Format::D16_UNORM_S8_UINT || InFormat == Format::D32_SFLOAT;
+}
+
+inline bool HasDepthOrStencil(Format InFormat)
+{
+    return InFormat >= Format::D16_UNORM_S8_UINT && InFormat <= Format::D32_SFLOAT;
+}
+
 enum class Usage
 {
     DEFAULT  = 0, // no CPU access, GPU read/write
     UPLOAD   = 1, // CPU write, GPU read
-    READBACK = 2  // CPU read, GPU write
+    READBACK = 2 // CPU read, GPU write
 };
 
 enum class BindPoint
@@ -117,23 +142,50 @@ enum class BindPoint
     SHADER_SAMPLE = 1 << 5
 };
 
-class DeviceTexture;
+enum class TextureFlags
+{
+    DEFAULT,
+    RENDER_TARGET,
+    COMPUTE,
+    COUNT
+};
 
+enum TextureFlagsMask
+{
+    DEFAULT       = 1 << 0,
+    RENDER_TARGET = 1 << 1,
+    COMPUTE       = 1 << 2
+};
+
+class DeviceTexture;
 struct TextureDescriptor
 {
-    enum TextureType
+    enum class TextureType
     {
         TEXTURE_TYPE_1D,
         TEXTURE_TYPE_2D,
         TEXTURE_TYPE_3D
-    } textureType = TextureType::TEXTURE_TYPE_2D;
+    };
 
-    u32       width     = 0;
-    u32       height    = 0;
-    u32       depth     = 0;
-    Format    format    = Format::UNDEFINED;
-    Usage     usage     = Usage::DEFAULT;
-    BindPoint bindPoint = BindPoint::NONE;
+    u16 width   = 1;
+    u16 height  = 1;
+    u16 depth   = 1;
+    u8  mipmaps = 1;
+    u8  flags   = 0;
+
+    void*       data = nullptr;
+    std::string name;
+
+    TextureType type      = TextureType::TEXTURE_TYPE_2D;
+    Format      format    = Format::UNDEFINED;
+    Usage       usage     = Usage::DEFAULT;
+    BindPoint   bindPoint = BindPoint::NONE;
+
+    TextureDescriptor& SetSize(u16 InWidth, u16 InHeight, u16 InDepth);
+    TextureDescriptor& SetFlags(u8 InMipmaps, u8 InFlags);
+    TextureDescriptor& SetFormatType(Format InFormat, TextureType InType);
+    TextureDescriptor& SetName(std::string InName);
+    TextureDescriptor& SetData(void* InData);
 };
 
 class Texture final : public IResource
@@ -141,7 +193,10 @@ class Texture final : public IResource
   public:
     Texture() = default;
     Texture(TextureDescriptor descriptor, void* data = nullptr);
-    ~Texture() { Destroy(); };
+    ~Texture()
+    {
+        Destroy();
+    };
 
     void Destroy() override;
 
@@ -153,8 +208,9 @@ class Texture final : public IResource
 
     DeviceTexture* internalState = nullptr;
 
-  private:
     TextureDescriptor descriptor;
+
+  private:
 };
 } // namespace Renderer
 } // namespace Sogas

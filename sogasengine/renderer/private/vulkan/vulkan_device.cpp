@@ -24,12 +24,6 @@ namespace Renderer
 namespace Vk
 {
 
-// TODO Make SASSERT_MSG to receive parameters so we can pass the code that failed.
-#define vkcheck(result)               \
-    {                                 \
-        SASSERT(result == VK_SUCCESS) \
-    }
-
 const std::vector<const char*> validationLayers = {"VK_LAYER_KHRONOS_validation"};
 
 const std::vector<const char*> requiredDeviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
@@ -576,11 +570,23 @@ void VulkanDevice::DestroyBuffer(BufferHandle InHandle)
     {
         buffer->Release();
     }
+
     buffers.ReleaseResource(InHandle.index);
 }
 
 void VulkanDevice::DestroyTexture(TextureHandle InHandle)
 {
+    VulkanTexture* texture = static_cast<VulkanTexture*>(textures.AccessResource(InHandle.index));
+
+    if (texture)
+    {
+        vkFreeMemory(Handle, texture->memory, nullptr);
+        vkDestroyImageView(Handle, texture->image_view, nullptr);
+        vkDestroyImage(Handle, texture->texture, nullptr);
+        //texture->Release();
+    }
+
+    textures.ReleaseResource(InHandle.index);
 }
 void VulkanDevice::DestroyShaderState(ShaderStateHandle InHandle)
 {

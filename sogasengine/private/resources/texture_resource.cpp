@@ -17,7 +17,6 @@ class TextureResource : public IResourceType
 
     Texture* LoadTexture(std::string InName) const
     {
-
         Renderer::GPU_device* render = CEngine::Get()->GetRenderModule()->GetGraphicsDevice().get();
         SASSERT(render);
 
@@ -32,20 +31,19 @@ class TextureResource : public IResourceType
             stbi_uc*   pixels = stbi_load(filename.c_str(), &width, &height, &channels, STBI_rgb_alpha);
             SASSERT(pixels);
 
-            desc.textureType                 = TextureDescriptor::TEXTURE_TYPE_2D;
-            desc.width                       = width;
-            desc.height                      = height;
-            desc.format                      = Format::R8G8B8A8_SRGB;
-            desc.usage                       = Usage::UPLOAD;
-            desc.bindPoint                   = BindPoint::SHADER_SAMPLE;
-            //std::shared_ptr<Texture> texture = render->CreateTexture(std::move(desc));
+            desc.type      = TextureDescriptor::TextureType::TEXTURE_TYPE_2D;
+            desc.width     = static_cast<i16>(width);
+            desc.height    = static_cast<i16>(height);
+            desc.format    = Format::R8G8B8A8_SRGB;
+            desc.usage     = Usage::UPLOAD;
+            desc.bindPoint = BindPoint::SHADER_SAMPLE;
             Texture* texture = new Texture(std::move(desc));
             render->CreateTexture(texture, pixels);
             return texture;
         }
         else if (extension == extensions[1])
         {
-            desc.textureType = TextureDescriptor::TEXTURE_TYPE_2D;
+            desc.type        = TextureDescriptor::TextureType::TEXTURE_TYPE_2D;
             desc.width       = 1;
             desc.height      = 1;
             desc.format      = Format::R8G8B8A8_SRGB;
@@ -69,13 +67,25 @@ class TextureResource : public IResourceType
     }
 
   public:
-    const char* GetExtension(const i32 i) const override { return extensions[i].c_str(); }
+    const char* GetExtension(const i32 i) const override
+    {
+        return extensions[i].c_str();
+    }
 
-    u32 GetNumResourceTypeExtensions() override { return extensionNumber; }
+    u32 GetNumResourceTypeExtensions() override
+    {
+        return extensionNumber;
+    }
 
-    const char* GetName() const override { return "Texture"; }
+    const char* GetName() const override
+    {
+        return "Texture";
+    }
 
-    IResource* Create(std::string InName) const override { return LoadTexture(std::move(InName)); }
+    IResource* Create(std::string InName) const override
+    {
+        return LoadTexture(std::move(InName));
+    }
 };
 
 template <>
