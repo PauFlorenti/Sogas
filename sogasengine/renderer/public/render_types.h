@@ -52,6 +52,14 @@ enum class UniformType
     SAMPLED
 };
 
+enum class RenderPassOperation
+{
+    DONTCARE,
+    LOAD,
+    CLEAR,
+    COUNT
+};
+
 // Resource descriptors
 
 struct PushConstantDescriptor
@@ -205,15 +213,38 @@ struct BlendStateDescriptor
     BlendState&           AddBlendState();
 };
 
+enum class Format;
+struct RenderPassOutput
+{
+    Format ColorFormats[MAX_IMAGE_OUTPUTS];
+    Format DepthStencilFormat;
+    u32    ColorFormatCounts;
+
+    RenderPassOperation ColorOperation   = RenderPassOperation::DONTCARE;
+    RenderPassOperation DepthOperation   = RenderPassOperation::DONTCARE;
+    RenderPassOperation StencilOperation = RenderPassOperation::DONTCARE;
+
+    RenderPassOutput& Reset();
+    RenderPassOutput& AddColor(Format InFormat);
+    RenderPassOutput& SetDepth(Format InFormat);
+    RenderPassOutput& SetOperations(RenderPassOperation InColor, RenderPassOperation InDepth, RenderPassOperation InStencil);
+};
+
 struct Shader;
 struct PipelineDescriptor
 {
-    const Shader*             vs                 = nullptr;
-    const Shader*             ps                 = nullptr;
-    const RasterizationState* rasterizationState = nullptr;
-    const DepthStencilState*  depthStencilState  = nullptr;
-    const BlendState*         blendState         = nullptr;
-    std::string               vertexDeclaration  = "";
+    const Shader* vs                = nullptr;
+    const Shader* ps                = nullptr;
+    std::string   vertexDeclaration = "";
+
+    RasterizationState    rasterizationState;
+    DepthStencilState     depthStencilState;
+    BlendState            blendState;
+    ShaderStateDescriptor shaders;
+
+    std::string name;
+
+    PipelineDescriptor& AddDescriptorSetLayout(DescriptorSetLayoutHandle InHandle);
 };
 
 // GPU Resources

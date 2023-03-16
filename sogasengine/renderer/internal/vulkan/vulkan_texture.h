@@ -18,14 +18,15 @@ struct VulkanTextureDescriptor
 {
     void operator=(const TextureDescriptor& other)
     {
-        width         = other.width;
-        height        = other.height;
-        depth         = other.depth;
-        mipmaps       = other.mipmaps;
-        format        = ConvertFormat(other.format);
-        format_stride = GetFormatStride(other.format);
-        type          = ConverTextureType(other.type);
-        aspect        = HasDepthOrStencil(other.format) ? (HasDepth(other.format) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0) : VK_IMAGE_ASPECT_COLOR_BIT;
+        width          = other.width;
+        height         = other.height;
+        depth          = other.depth;
+        mipmaps        = other.mipmaps;
+        generic_format = other.format;
+        format         = ConvertFormat(other.format);
+        format_stride  = GetFormatStride(other.format);
+        type           = ConverTextureType(other.type);
+        aspect         = HasDepthOrStencil(other.format) ? (HasDepth(other.format) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0) : VK_IMAGE_ASPECT_COLOR_BIT;
     };
 
     u16                width{1};
@@ -33,6 +34,7 @@ struct VulkanTextureDescriptor
     u16                depth{1};
     u8                 mipmaps{0};
     u32                format_stride{0};
+    Format             generic_format;
     VkFormat           format;
     VkImageType        type{VK_IMAGE_TYPE_MAX_ENUM};
     VkImageAspectFlags aspect;

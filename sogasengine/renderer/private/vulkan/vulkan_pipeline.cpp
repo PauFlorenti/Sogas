@@ -143,21 +143,21 @@ void VulkanPipeline::Create(const VulkanDevice*       device,
     rasterizationStateInfo.frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizationStateInfo.depthBiasEnable         = VK_FALSE;
 
-    VkPipelineDepthStencilStateCreateInfo depthStencilStateInfo = {
-        VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
-    if (desc->depthStencilState != nullptr)
-    {
-        depthStencilStateInfo.depthTestEnable   = desc->depthStencilState->depthTestEnabled ? VK_TRUE : VK_FALSE;
-        depthStencilStateInfo.depthWriteEnable  = desc->depthStencilState->writeDepthEnabled ? VK_TRUE : VK_FALSE;
-        depthStencilStateInfo.stencilTestEnable = desc->depthStencilState->stencilTestEnabled ? VK_TRUE : VK_FALSE;
-        depthStencilStateInfo.depthBoundsTestEnable =
-            desc->depthStencilState->depthBoundTestEnabled ? VK_TRUE : VK_FALSE;
-        depthStencilStateInfo.depthCompareOp = ConvertCompareOperation(desc->depthStencilState->compareOp);
-        depthStencilStateInfo.minDepthBounds = desc->depthStencilState->minDepthBound;
-        depthStencilStateInfo.maxDepthBounds = desc->depthStencilState->maxDepthBound;
-        depthStencilStateInfo.front          = {}; // TODO check them out
-        depthStencilStateInfo.back           = {};
-    }
+    // VkPipelineDepthStencilStateCreateInfo depthStencilStateInfo = {
+    //     VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
+    // if (desc->depthStencilState != nullptr)
+    // {
+    //     depthStencilStateInfo.depthTestEnable   = desc->depthStencilState.depthTestEnabled ? VK_TRUE : VK_FALSE;
+    //     depthStencilStateInfo.depthWriteEnable  = desc->depthStencilState.writeDepthEnabled ? VK_TRUE : VK_FALSE;
+    //     depthStencilStateInfo.stencilTestEnable = desc->depthStencilState.stencilTestEnabled ? VK_TRUE : VK_FALSE;
+    //     depthStencilStateInfo.depthBoundsTestEnable =
+    //         desc->depthStencilState->depthBoundTestEnabled ? VK_TRUE : VK_FALSE;
+    //     depthStencilStateInfo.depthCompareOp = ConvertCompareOperation(desc->depthStencilState->compareOp);
+    //     depthStencilStateInfo.minDepthBounds = desc->depthStencilState->minDepthBound;
+    //     depthStencilStateInfo.maxDepthBounds = desc->depthStencilState->maxDepthBound;
+    //     depthStencilStateInfo.front          = {}; // TODO check them out
+    //     depthStencilStateInfo.back           = {};
+    // }
 
     VkPipelineMultisampleStateCreateInfo multisampleStateInfo = {
         VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
@@ -253,7 +253,7 @@ void VulkanPipeline::Create(const VulkanDevice*       device,
     pipelineInfo.layout                       = internalState->pipelineLayout;
     pipelineInfo.pColorBlendState             = &colorBlendStateInfo;
     pipelineInfo.pDynamicState                = &dynamicStateInfo;
-    pipelineInfo.pDepthStencilState           = &depthStencilStateInfo;
+    //pipelineInfo.pDepthStencilState           = &depthStencilStateInfo;
     pipelineInfo.pInputAssemblyState          = &inputAssemblyInfo;
     pipelineInfo.pMultisampleState            = &multisampleStateInfo;
     pipelineInfo.pRasterizationState          = &rasterizationStateInfo;

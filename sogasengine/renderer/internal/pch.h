@@ -23,6 +23,8 @@
 #include <glm/gtx/hash.hpp>
 #pragma warning (default : 4201 )
 
+#include <../external/wyhash.h>
+
 #include "defines.h"
 
 // application

@@ -24,6 +24,8 @@ namespace Renderer
 namespace Vk
 {
 
+static std::unordered_map<u64, VkRenderPass> render_pass_cache;
+
 const std::vector<const char*> validationLayers = {"VK_LAYER_KHRONOS_validation"};
 
 const std::vector<const char*> requiredDeviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
@@ -1117,6 +1119,22 @@ void VulkanDevice::CreateCommandResources()
         }
     }
 }
+
+VkRenderPass VulkanDevice::GetVulkanRenderPass(const RenderPassOutput& InOutput, std::string InName)
+{
+    u64 hashed = wyhash((void*)&InOutput, sizeof(RenderPassOutput), 0, _wyp);
+    VkRenderPass render_pass = render_pass_cache.at(hashed);
+    if(render_pass)
+    {
+        return render_pass;
+    }
+
+    render_pass = VulkanRenderPass::CreateRenderPass(this, InOutput, InName);
+    render_pass_cache.insert(std::pair<u64, VkRenderPass>(hashed, render_pass));
+
+    return render_pass;
+}
+
 } // namespace Vk
 } // namespace Renderer
 } // namespace Sogas

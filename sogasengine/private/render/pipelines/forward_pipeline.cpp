@@ -92,7 +92,7 @@ ForwardPipeline::ForwardPipeline(std::shared_ptr<GPU_device> InRenderer, std::sh
     fwdDesc.vs                = &forwardShaders[0];
     fwdDesc.ps                = &forwardShaders[1];
     fwdDesc.vertexDeclaration = "PosNormalUvColor";
-    fwdDesc.depthStencilState = &depthState;
+    //fwdDesc.depthStencilState = &depthState;
     renderer->CreatePipeline(&fwdDesc, &pipeline, forwardRenderPass);
     PipelineDescriptor psoDesc;
     psoDesc.vs                = &presentShaders[0];

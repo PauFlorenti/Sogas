@@ -54,5 +54,32 @@ ShaderStateDescriptor& ShaderStateDescriptor::SetSpvInput(bool InValue)
     return *this;
 }
 
+RenderPassOutput& RenderPassOutput::Reset()
+{
+    ColorFormatCounts = 0;
+    return *this;
+}
+
+RenderPassOutput& RenderPassOutput::AddColor(Format InFormat)
+{
+    ColorFormats[ColorFormatCounts] = InFormat;
+    ColorFormatCounts++;
+    return *this;
+}
+
+RenderPassOutput& RenderPassOutput::SetDepth(Format InFormat)
+{
+    DepthStencilFormat = InFormat;
+    return *this;
+}
+
+RenderPassOutput& RenderPassOutput::SetOperations(RenderPassOperation InColor, RenderPassOperation InDepth, RenderPassOperation InStencil)
+{
+    ColorOperation   = InColor;
+    DepthOperation   = InDepth;
+    StencilOperation = InStencil;
+    return *this;
+}
+
 } // namespace Renderer
 } // namespace Sogas

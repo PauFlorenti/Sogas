@@ -27,13 +27,34 @@ class VulkanRenderPass : public Renderer::DeviceRenderpass
     }
 
     static RenderPassHandle Create(VulkanDevice* InDevice, const RenderPassDescriptor& InDescriptor);
-    static void Create(const VulkanDevice* device, Renderer::RenderPass* renderpass);
+    static void             Create(const VulkanDevice* device, Renderer::RenderPass* renderpass);
+
+    static VkRenderPass CreateRenderPass(const VulkanDevice* InDevice, const RenderPassOutput& InOutput, std::string InName);
 
     void Destroy() override;
 
-    VkRenderPass          renderpass  = VK_NULL_HANDLE;
-    VkFramebuffer         framebuffer = VK_NULL_HANDLE;
-    VkRenderPassBeginInfo beginInfo   = {};
+    VkRenderPass     renderpass  = VK_NULL_HANDLE;
+    VkFramebuffer    framebuffer = VK_NULL_HANDLE;
+    RenderPassType   type;
+    RenderPassOutput output;
+
+    TextureHandle output_texture[MAX_IMAGE_OUTPUTS];
+    TextureHandle depth_texture;
+
+    f32 scale_x;
+    f32 scale_y;
+    u16 width      = 0;
+    u16 heigh      = 0;
+    u16 dispatch_x = 0;
+    u16 dispatch_y = 0;
+    u16 dispatch_z = 0;
+
+    u8 resize               = 0;
+    u8 render_targets_count = 0;
+
+    std::string name;
+
+    VkRenderPassBeginInfo beginInfo = {};
     VkClearValue          clearColor[8]; // Maximum of 8 attachments at the moment.
 
   private:

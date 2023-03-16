@@ -101,6 +101,8 @@ class VulkanDevice : public GPU_device
     void WaitCommand(CommandBuffer &cmd, CommandBuffer &cmdToWait) override;
     // clang-format on
 
+    VkRenderPass GetVulkanRenderPass(const RenderPassOutput& InOutput, std::string InName);
+
   private:
     // Device
     VkInstance                 Instance        = VK_NULL_HANDLE;
