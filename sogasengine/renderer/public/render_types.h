@@ -3,6 +3,8 @@
 // TODO FIX THIS
 #include "../internal/resources/resource.h"
 
+#include "device_resources.h"
+
 namespace Sogas
 {
 namespace Renderer
@@ -35,10 +37,11 @@ enum class DrawChannel
     COUNT         = TRANSPARENT
 };
 
-enum class ShaderStage
+enum class ShaderStageType
 {
     FRAGMENT = 0,
     VERTEX,
+    COMPUTE,
     UNDEFINED,
     COUNT = UNDEFINED
 };
@@ -53,31 +56,52 @@ enum class UniformType
 
 struct PushConstantDescriptor
 {
-    u32         size{0};
-    u32         offset{0};
-    ShaderStage stage = ShaderStage::UNDEFINED;
+    u32             size{0};
+    u32             offset{0};
+    ShaderStageType stage = ShaderStageType::UNDEFINED;
 };
 
 struct DescriptorSet;
 struct Descriptor
 {
-    u32         binding     = 0;
-    u32         size        = 0;
-    u32         offset      = 0;
-    u32         count       = 0;
-    UniformType uniformType = UniformType::UNIFORM;
-    ShaderStage stage       = ShaderStage::UNDEFINED;
+    u32             binding     = 0;
+    u32             size        = 0;
+    u32             offset      = 0;
+    u32             count       = 0;
+    UniformType     uniformType = UniformType::UNIFORM;
+    ShaderStageType stage       = ShaderStageType::UNDEFINED;
     // const Texture* texture     = nullptr;
 };
 
+struct ShaderStage
+{
+    const char*     code = nullptr;
+    u32             size = 0;
+    ShaderStageType type = ShaderStageType::UNDEFINED;
+};
+
 struct ShaderStateDescriptor
-{};
+{
+    ShaderStage stages[MAX_SHADER_STAGES];
+    std::string name;
+    u32         stages_count = 0;
+    u32         spv_input    = 0;
+
+    ShaderStateDescriptor& Reset();
+    ShaderStateDescriptor& SetName(const std::string& InName);
+    ShaderStateDescriptor& AddStage(const char* InCode, u32 InSize, ShaderStageType InType);
+    ShaderStateDescriptor& SetSpvInput(bool InValue);
+};
+
 struct SamplerDescriptor
-{};
+{
+};
 struct DescriptorSetDescriptor
-{};
+{
+};
 struct DescriptorSetLayoutDescriptor
-{};
+{
+};
 
 enum class CompareOperations
 {
@@ -164,7 +188,7 @@ struct BlendState
     // TODO mask ...
 
     BlendState()
-        : BlendEnabled(false){};
+    : BlendEnabled(false){};
 
     BlendState& SetColor(BlendFactor InSourceColor, BlendFactor InDestinationColor, BlendOperation InColorOperation);
     BlendState& SetAlpha(BlendFactor InSourceAlpha, BlendFactor InDestinationAlpha, BlendOperation InAlphaOperation);
@@ -197,8 +221,14 @@ struct PipelineDescriptor
 struct GPUBase
 {
     std::shared_ptr<void> internalState;
-    virtual void          Destroy() { internalState.reset(); };
-    bool                  IsValid() const { return internalState.get() != nullptr; }
+    virtual void          Destroy()
+    {
+        internalState.reset();
+    };
+    bool IsValid() const
+    {
+        return internalState.get() != nullptr;
+    }
 };
 
 struct GPUResource : public GPUBase
@@ -210,8 +240,14 @@ struct GPUResource : public GPUBase
         UNKNOWN
     } resourceType = ResourceType::UNKNOWN;
 
-    constexpr bool IsBuffer() const { return resourceType == ResourceType::BUFFER; }
-    constexpr bool IsTexture() const { return resourceType == ResourceType::TEXTURE; }
+    constexpr bool IsBuffer() const
+    {
+        return resourceType == ResourceType::BUFFER;
+    }
+    constexpr bool IsTexture() const
+    {
+        return resourceType == ResourceType::TEXTURE;
+    }
 
     void* mapdata;
 };
@@ -225,11 +261,17 @@ struct Pipeline : public GPUBase
 
 struct Shader : public GPUBase
 {
-    ~Shader() { Destroy(); }
+    ~Shader()
+    {
+        Destroy();
+    }
 
-    void Destroy() override { internalState.reset(); }
+    void Destroy() override
+    {
+        internalState.reset();
+    }
 
-    ShaderStage stage = ShaderStage::COUNT;
+    ShaderStageType stage = ShaderStageType::COUNT;
 };
 
 struct DescriptorSet : public GPUBase

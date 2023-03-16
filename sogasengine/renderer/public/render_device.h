@@ -70,7 +70,7 @@ class GPU_device
     virtual void                     CreateRenderPass(RenderPass* renderpass) const = 0;
     virtual void                     CreatePipeline(const PipelineDescriptor* desc, Pipeline* pipeline, RenderPass* renderpass = nullptr) const = 0;
     virtual void                     CreateAttachment() const = 0;
-    virtual void                     CreateShader(ShaderStage stage, std::string filename, Shader* shader) const = 0;
+    virtual void                     CreateShader(ShaderStageType stage, std::string filename, Shader* shader) const = 0;
     virtual void                     UpdateDescriptorSet(const Pipeline* InPipeline) const = 0;
     virtual void                     CreateAttachment(AttachmentFramebuffer* InAttachment) const = 0;
 

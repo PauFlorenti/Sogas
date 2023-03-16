@@ -434,15 +434,15 @@ constexpr inline VkAttachmentStoreOp ConvertStoreOperation(Attachment::StoreOp I
     }
 }
 
-constexpr VkShaderStageFlagBits ConvertShaderStage(ShaderStage stage)
+constexpr VkShaderStageFlagBits ConvertShaderStage(ShaderStageType stage)
 {
     switch (stage)
     {
-    case ShaderStage::FRAGMENT:
+    case ShaderStageType::FRAGMENT:
         return VK_SHADER_STAGE_FRAGMENT_BIT;
-    case ShaderStage::VERTEX:
+    case ShaderStageType::VERTEX:
         return VK_SHADER_STAGE_VERTEX_BIT;
-    case ShaderStage::UNDEFINED:
+    case ShaderStageType::UNDEFINED:
     default:
         return VK_SHADER_STAGE_ALL;
     }

@@ -59,10 +59,10 @@ ForwardPipeline::ForwardPipeline(std::shared_ptr<GPU_device> InRenderer, std::sh
     SASSERT(renderer != nullptr);
     SASSERT(swapchain.get() != nullptr);
 
-    renderer->CreateShader(ShaderStage::VERTEX, std::move(CEngine::FindFile("forward.vert.spv")), &forwardShaders[0]);
-    renderer->CreateShader(ShaderStage::FRAGMENT, std::move(CEngine::FindFile("forward.frag.spv")), &forwardShaders[1]);
-    renderer->CreateShader(ShaderStage::VERTEX, std::move(CEngine::FindFile("quad.vert.spv")), &presentShaders[0]);
-    renderer->CreateShader(ShaderStage::FRAGMENT, std::move(CEngine::FindFile("quad.frag.spv")), &presentShaders[1]);
+    renderer->CreateShader(ShaderStageType::VERTEX, std::move(CEngine::FindFile("forward.vert.spv")), &forwardShaders[0]);
+    renderer->CreateShader(ShaderStageType::FRAGMENT, std::move(CEngine::FindFile("forward.frag.spv")), &forwardShaders[1]);
+    renderer->CreateShader(ShaderStageType::VERTEX, std::move(CEngine::FindFile("quad.vert.spv")), &presentShaders[0]);
+    renderer->CreateShader(ShaderStageType::FRAGMENT, std::move(CEngine::FindFile("quad.frag.spv")), &presentShaders[1]);
 
     colorAttachment.format = Format::R8G8B8A8_SRGB;
     colorAttachment.usage  = BindPoint::RENDER_TARGET;
@@ -72,14 +72,8 @@ ForwardPipeline::ForwardPipeline(std::shared_ptr<GPU_device> InRenderer, std::sh
     depthAttachment.usage  = BindPoint::DEPTH_STENCIL;
     renderer->CreateAttachment(&depthAttachment);
 
-    TextureDescriptor desc;
-    desc.format    = Format::R8G8B8A8_SRGB;
-    desc.bindPoint = BindPoint::RENDER_TARGET;
-    desc.width     = 640;
-    desc.height    = 480;
-    desc.depth     = 1;
-    desc.type      = TextureDescriptor::TextureType::TEXTURE_TYPE_2D;
-    desc.usage     = Usage::DEFAULT;
+    TextureDescriptor desc{};
+    desc.SetSize(640, 480, 1).SetFormatType(Format::R8G8B8A8_SRGB, TextureDescriptor::TextureType::TEXTURE_TYPE_2D);
     auto colorAtt  = renderer->CreateTexture(std::move(desc));
     renderer->DestroyTexture(colorAtt);
 
@@ -109,7 +103,7 @@ ForwardPipeline::ForwardPipeline(std::shared_ptr<GPU_device> InRenderer, std::sh
     PushConstantDescriptor modelPushConstant;
     modelPushConstant.offset = 0;
     modelPushConstant.size   = sizeof(ConstantsMesh);
-    modelPushConstant.stage  = ShaderStage::VERTEX;
+    modelPushConstant.stage  = ShaderStageType::VERTEX;
 
     Renderer::BufferDescriptor constantBufferDesc;
     constantBufferDesc.size        = 1;

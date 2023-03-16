@@ -80,7 +80,7 @@ class VulkanDevice : public GPU_device
     void                              CreateRenderPass(RenderPass *renderpass) const override;
     void                              CreatePipeline(const PipelineDescriptor *desc, Pipeline *pipeline, RenderPass *renderpass = nullptr) const override;
     void                              CreateAttachment() const override{};
-    void                              CreateShader(ShaderStage stage, std::string filename, Shader *shader) const override;
+    void                              CreateShader(ShaderStageType stage, std::string filename, Shader *shader) const override;
     void                              UpdateDescriptorSet(const Pipeline *InPipeline) const override;
     void                              CreateAttachment(AttachmentFramebuffer *InAttachment) const override;
 

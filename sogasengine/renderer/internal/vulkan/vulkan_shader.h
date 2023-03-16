@@ -11,6 +11,15 @@ namespace Vk
 {
 class VulkanDevice;
 
+struct VulkanShaderState
+{
+    VkPipelineShaderStageCreateInfo ShaderStageInfo[MAX_SHADER_STAGES];
+
+    std::string Name;
+    u8          ActiveShaders{0};
+    bool        bIsGraphicsPipeline{false};
+};
+
 class VulkanShader
 {
   public:
@@ -21,7 +30,7 @@ class VulkanShader
     ~VulkanShader();
 
     static ShaderStateHandle Create(VulkanDevice* InDevice, const ShaderStateDescriptor& InDescriptor);
-    static void Create(const VulkanDevice* device, ShaderStage stage, std::string InFilename, Shader* OutShader);
+    static void              Create(const VulkanDevice* device, ShaderStageType stage, std::string InFilename, Shader* OutShader);
 
     static inline std::shared_ptr<VulkanShader> ToInternal(const Shader* InShader)
     {

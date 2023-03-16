@@ -649,9 +649,9 @@ void VulkanDevice::CreatePipeline(const PipelineDescriptor* desc,
     VulkanPipeline::Create(this, desc, pipeline, renderpass);
 }
 
-void VulkanDevice::CreateShader(ShaderStage stage, std::string filename, Shader* shader) const
+void VulkanDevice::CreateShader(ShaderStageType InStageType, std::string filename, Shader* shader) const
 {
-    VulkanShader::Create(this, stage, std::move(filename), shader);
+    VulkanShader::Create(this, InStageType, std::move(filename), shader);
 }
 
 void VulkanDevice::UpdateDescriptorSet(const Pipeline* InPipeline) const

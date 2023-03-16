@@ -8,9 +8,9 @@ namespace Renderer
 {
 namespace Vk
 {
+
 static std::vector<u32> ReadShaderFile(const std::string& InFilename)
 {
-
     FILE* file;
     fopen_s(&file, InFilename.c_str(), "rb");
     SASSERT_MSG(file, "No file provided with name '%s'", InFilename.c_str());
@@ -35,18 +35,91 @@ VulkanShader::~VulkanShader()
     pushConstantRanges.clear();
 }
 
+VkShaderModuleCreateInfo CompileShader(const char* code, u32 size, VkShaderStageFlagBits stage, std::string name)
+{
+    VkShaderModuleCreateInfo ShaderCreateInfo{VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
+
+    return ShaderCreateInfo;
+}
+
 ShaderStateHandle VulkanShader::Create(VulkanDevice* InDevice, const ShaderStateDescriptor& InDescriptor)
 {
-    ShaderStateHandle handle = {InDevice->shaders.ObtainResource()};
+    ShaderStateHandle handle = {INVALID_ID};
+
+    if (InDescriptor.stages_count == 0 || InDescriptor.stages == nullptr)
+    {
+        SERROR("Shader %s does not contain any stages.\n", InDescriptor.name);
+        return handle;
+    }
+
+    handle.index = InDevice->shaders.ObtainResource();
 
     if (handle.index == INVALID_ID)
     {
         return handle;
     }
+
+    VulkanShaderState* ShaderState   = static_cast<VulkanShaderState*>(InDevice->shaders.AccessResource(handle.index));
+    ShaderState->bIsGraphicsPipeline = true;
+    ShaderState->ActiveShaders       = 0;
+    u32 CompiledShaders              = 0;
+
+    for (CompiledShaders; CompiledShaders < InDescriptor.stages_count; ++CompiledShaders)
+    {
+        const ShaderStage& stage = InDescriptor.stages[CompiledShaders];
+
+        if (stage.type == ShaderStageType::COMPUTE)
+        {
+            ShaderState->bIsGraphicsPipeline = false;
+        }
+
+        VkShaderModuleCreateInfo ShaderModuleInfo = {VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
+
+        if (InDescriptor.spv_input)
+        {
+            ShaderModuleInfo.codeSize = stage.size;
+            ShaderModuleInfo.pCode    = reinterpret_cast<const u32*>(stage.code);
+        }
+        else
+        {
+            //ShaderModuleInfo = CompileShader(stage.code, stage.code_size, stage.type, InDescriptor.name);
+        }
+
+        VkPipelineShaderStageCreateInfo ShaderStageInfo = ShaderState->ShaderStageInfo[CompiledShaders];
+        memset(&ShaderStageInfo, 0, sizeof(VkPipelineShaderStageCreateInfo));
+        ShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        ShaderStageInfo.pName = "main";
+        ShaderStageInfo.stage = ConvertShaderStage(stage.type);
+
+        if (vkCreateShaderModule(InDevice->Handle, &ShaderModuleInfo, nullptr, &ShaderState->ShaderStageInfo[CompiledShaders].module) != VK_SUCCESS)
+        {
+            break;
+        }
+
+        // TODO Set resource name.
+    }
+
+    bool bCreationFailed = CompiledShaders != InDescriptor.stages_count;
+
+    if (!bCreationFailed)
+    {
+        ShaderState->ActiveShaders = CompiledShaders;
+        ShaderState->Name = InDescriptor.name;
+    }
+    else
+    {
+        for (u32 i = 0; i < ShaderState->ActiveShaders; ++i)
+        {
+            vkDestroyShaderModule(InDevice->Handle, ShaderState->ShaderStageInfo[i].module, nullptr);
+        }
+
+        SERROR("Failed to create shader %s.\n", InDescriptor.name);
+    }
+
     return handle;
 }
 
-void VulkanShader::Create(const VulkanDevice* device, ShaderStage InStage, std::string InFilename, Shader* OutShader)
+void VulkanShader::Create(const VulkanDevice* device, ShaderStageType InStage, std::string InFilename, Shader* OutShader)
 {
     std::string name = InFilename;
     auto        code = ReadShaderFile(name);
