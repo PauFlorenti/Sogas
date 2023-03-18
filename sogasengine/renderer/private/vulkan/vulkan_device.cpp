@@ -729,7 +729,7 @@ void VulkanDevice::BindPipeline(const Pipeline* InPipeline, CommandBuffer& cmd)
 
     vkCmdBindPipeline(VulkanCommandBuffer::ToInternal(&cmd)->commandBuffers[GetFrameIndex()],
                       VK_PIPELINE_BIND_POINT_GRAPHICS,
-                      pipelineInternalState->handle);
+                      pipelineInternalState->pipeline);
 }
 
 void VulkanDevice::BindDescriptor(CommandBuffer cmd)
@@ -1122,9 +1122,9 @@ void VulkanDevice::CreateCommandResources()
 
 VkRenderPass VulkanDevice::GetVulkanRenderPass(const RenderPassOutput& InOutput, std::string InName)
 {
-    u64 hashed = wyhash((void*)&InOutput, sizeof(RenderPassOutput), 0, _wyp);
+    u64          hashed      = wyhash((void*)&InOutput, sizeof(RenderPassOutput), 0, _wyp);
     VkRenderPass render_pass = render_pass_cache.at(hashed);
-    if(render_pass)
+    if (render_pass)
     {
         return render_pass;
     }
@@ -1133,6 +1133,41 @@ VkRenderPass VulkanDevice::GetVulkanRenderPass(const RenderPassOutput& InOutput,
     render_pass_cache.insert(std::pair<u64, VkRenderPass>(hashed, render_pass));
 
     return render_pass;
+}
+
+VulkanBuffer* VulkanDevice::GetBufferResource(BufferHandle handle)
+{
+    return static_cast<VulkanBuffer*>(buffers.AccessResource(handle.index));
+}
+
+VulkanShaderState* VulkanDevice::GetShaderResource(ShaderStateHandle handle)
+{
+    return static_cast<VulkanShaderState*>(shaders.AccessResource(handle.index));
+}
+
+VulkanTexture* VulkanDevice::GetTextureResource(TextureHandle handle)
+{
+    return static_cast<VulkanTexture*>(textures.AccessResource(handle.index));
+}
+
+VulkanDescriptorSet* VulkanDevice::GetDescriptorSetResource(DescriptorSetHandle handle)
+{
+    return static_cast<VulkanDescriptorSet*>(descriptorSets.AccessResource(handle.index));
+}
+
+VulkanDescriptorSetLayout* VulkanDevice::GetDescriptorSetLayoutResource(DescriptorSetLayoutHandle handle)
+{
+    return static_cast<VulkanDescriptorSetLayout*>(descriptorSetLayouts.AccessResource(handle.index));
+}
+
+VulkanPipeline* VulkanDevice::GetPipelineResource(PipelineHandle handle)
+{
+    return static_cast<VulkanPipeline*>(pipelines.AccessResource(handle.index));
+}
+
+VulkanRenderPass* VulkanDevice::GetRenderPassResource(RenderPassHandle handle)
+{
+    return static_cast<VulkanRenderPass*>(renderpasses.AccessResource(handle.index));
 }
 
 } // namespace Vk

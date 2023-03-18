@@ -60,6 +60,34 @@ enum class RenderPassOperation
     COUNT
 };
 
+enum class VertexInputRate
+{
+    PER_VERTEX,
+    PER_INSTANCE,
+    COUNT
+};
+
+enum class VertexFormat
+{
+    FLOAT,
+    FLOAT2,
+    FLOAT3,
+    FLOAT4,
+    MAT4,
+    BYTE,
+    BYTE4N,
+    UBYTE,
+    UBYTE4N,
+    SHORT2,
+    SHORT2N,
+    SHORT4,
+    SHORT4N,
+    UINT,
+    UINT2,
+    UINT4,
+    COUNT
+};
+
 // Resource descriptors
 
 struct PushConstantDescriptor
@@ -111,7 +139,7 @@ struct DescriptorSetLayoutDescriptor
 {
 };
 
-enum class CompareOperations
+enum class CompareOperation
 {
     NEVER = 0,
     LESS,
@@ -156,13 +184,13 @@ struct RasterizationState
 
 struct DepthStencilState
 {
-    bool              depthTestEnabled{false};
-    bool              writeDepthEnabled{false};
-    bool              depthBoundTestEnabled{false};
-    bool              stencilTestEnabled{false};
-    f32               minDepthBound{0.0f};
-    f32               maxDepthBound{1.0f};
-    CompareOperations compareOp = CompareOperations::NEVER;
+    bool             depthTestEnabled{false};
+    bool             writeDepthEnabled{false};
+    bool             depthBoundTestEnabled{false};
+    bool             stencilTestEnabled{false};
+    f32              minDepthBound{0.0f};
+    f32              maxDepthBound{1.0f};
+    CompareOperation compareOp = CompareOperation::NEVER;
 };
 
 enum class BlendFactor
@@ -191,7 +219,9 @@ struct BlendState
     BlendFactor    DestinationAlpha = BlendFactor::ONE;
     BlendOperation AlphaOperation   = BlendOperation::ADD;
 
-    bool BlendEnabled = true;
+    bool BlendEnabled  = true;
+    bool SeparateBlend = true;
+    u8   pad           = 6;
 
     // TODO mask ...
 
@@ -230,6 +260,34 @@ struct RenderPassOutput
     RenderPassOutput& SetOperations(RenderPassOperation InColor, RenderPassOperation InDepth, RenderPassOperation InStencil);
 };
 
+struct VertexStream
+{
+    u16             binding    = 0;
+    u16             stride     = 0;
+    VertexInputRate input_rate = VertexInputRate::COUNT;
+};
+
+struct VertexAttribute
+{
+    u16          location = 0;
+    u16          binding  = 0;
+    u32          offset   = 0;
+    VertexFormat format   = VertexFormat::COUNT;
+};
+
+struct VertexInputDescriptor
+{
+    u32 vertex_streams_count    = 0;
+    u32 vertex_attributes_count = 0;
+
+    VertexStream    vertex_stream[MAX_VERTEX_STREAMS];
+    VertexAttribute vertex_attribute[MAX_VERTEX_ATTRIBUTE];
+
+    VertexInputDescriptor& Reset();
+    VertexInputDescriptor& AddVertexStream(const VertexStream& InVertexStream);
+    VertexInputDescriptor& AddVertexAttribute(const VertexAttribute& InVertexAttribute);
+};
+
 struct Shader;
 struct PipelineDescriptor
 {
@@ -239,10 +297,16 @@ struct PipelineDescriptor
 
     RasterizationState    rasterizationState;
     DepthStencilState     depthStencilState;
-    BlendState            blendState;
+    VertexInputDescriptor vertexInputState;
+    BlendStateDescriptor  blendState;
     ShaderStateDescriptor shaders;
 
+    RenderPassOutput          render_pass;
+    DescriptorSetLayoutHandle descriptor_set_layout[MAX_DESCRIPTOR_SET_LAYOUTS];
+
     std::string name;
+
+    u32 active_layouts_count = 0;
 
     PipelineDescriptor& AddDescriptorSetLayout(DescriptorSetLayoutHandle InHandle);
 };

@@ -84,7 +84,7 @@ ForwardPipeline::ForwardPipeline(std::shared_ptr<GPU_device> InRenderer, std::sh
     renderer->CreateRenderPass(forwardRenderPass);
 
     DepthStencilState depthState;
-    depthState.compareOp         = CompareOperations::LESS_OR_EQUAL;
+    depthState.compareOp         = CompareOperation::LESS_OR_EQUAL;
     depthState.depthTestEnabled  = true;
     depthState.writeDepthEnabled = true;
 

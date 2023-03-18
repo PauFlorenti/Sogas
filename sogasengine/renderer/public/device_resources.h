@@ -29,8 +29,12 @@ static RenderPassHandle             InvalidRenderPass { INVALID_ID };
 static PipelineHandle               InvalidPipeline { INVALID_ID };
 // clang-format on
 
-static const u8 MAX_SHADER_STAGES = 5;
-static const u8 MAX_IMAGE_OUTPUTS = 8;
+static const u8 MAX_SHADER_STAGES          = 5;
+static const u8 MAX_IMAGE_OUTPUTS          = 8;
+static const u8 MAX_DESCRIPTOR_SET_LAYOUTS = 8;
+static const u8 MAX_DESCRIPTOR_PER_SET     = 16;
+static const u8 MAX_VERTEX_STREAMS         = 16;
+static const u8 MAX_VERTEX_ATTRIBUTE       = 16;
 
 } // namespace Renderer
 } // namespace Sogas

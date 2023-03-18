@@ -10,6 +10,7 @@ class RenderPass;
 namespace Vk
 {
 class VulkanDevice;
+class VulkanDescriptorSetLayout;
 class VulkanPipeline
 {
   public:
@@ -35,8 +36,19 @@ class VulkanPipeline
     void Destroy();
 
     // TODO rethink this, probably make them private ...
-    VkPipeline                                handle         = VK_NULL_HANDLE;
-    VkPipelineLayout                          pipelineLayout = VK_NULL_HANDLE;
+    VkPipeline          pipeline       = VK_NULL_HANDLE;
+    VkPipelineLayout    pipelineLayout = VK_NULL_HANDLE;
+    VkPipelineBindPoint bind_point;
+
+    ShaderStateHandle shader_state;
+
+    const VulkanDescriptorSetLayout* descriptor_set_layout[MAX_DESCRIPTOR_SET_LAYOUTS];
+    DescriptorSetLayoutHandle        descriptor_set_layout_handle[MAX_DESCRIPTOR_SET_LAYOUTS];
+    u32                              active_layout_count = 0;
+
+    PipelineHandle handle;
+    bool           graphics_pipeline = true;
+
     std::vector<VkDescriptorSetLayout>        descriptorSetLayouts;
     std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindingsPerSet[8];
     std::vector<DescriptorSet>                descriptorSets[MAX_FRAMES_IN_FLIGHT];

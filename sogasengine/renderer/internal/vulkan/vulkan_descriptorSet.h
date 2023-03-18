@@ -12,13 +12,13 @@ class VulkanDescriptorSet
 {
   public:
     explicit VulkanDescriptorSet(const u32 InSetNumber)
-        : setNumber(InSetNumber){};
+    : setNumber(InSetNumber){};
     VulkanDescriptorSet(const VulkanDescriptorSet&)                        = delete;
     VulkanDescriptorSet(VulkanDescriptorSet&&)                             = delete;
     const VulkanDescriptorSet& operator=(const VulkanDescriptorSet& other) = delete;
     ~VulkanDescriptorSet();
 
-    static DescriptorSetHandle Create(VulkanDevice* InDevice, const DescriptorSetDescriptor& InDescriptor);
+    static DescriptorSetHandle       Create(VulkanDevice* InDevice, const DescriptorSetDescriptor& InDescriptor);
     static DescriptorSetLayoutHandle Create(VulkanDevice* InDevice, const DescriptorSetLayoutDescriptor& InDescriptor);
 
     static void Create(const VulkanDevice*                              InDevice,
@@ -35,7 +35,10 @@ class VulkanDescriptorSet
 
     void BindDescriptor(VkCommandBuffer cmd) const;
 
-    const VkDescriptorSet& GetDescriptorSet() const { return descriptorSet; }
+    const VkDescriptorSet& GetDescriptorSet() const
+    {
+        return descriptorSet;
+    }
 
     std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
     std::vector<VkWriteDescriptorSet>         writes;
@@ -48,6 +51,29 @@ class VulkanDescriptorSet
     VkDescriptorPool    descriptorPool = VK_NULL_HANDLE;
     VkDescriptorSet     descriptorSet  = VK_NULL_HANDLE;
 };
+
+struct DescriptorBinding
+{
+    VkDescriptorType type;
+    u16              start = 0;
+    u16              count = 0;
+    u16              set   = 0;
+
+    std::string name;
+};
+
+class VulkanDescriptorSetLayout
+{
+  public:
+    VkDescriptorSetLayout         descriptor_set_layout;
+    VkDescriptorSetLayoutBinding* binding        = nullptr;
+    DescriptorBinding*            bindings       = nullptr;
+    u16                           bindings_count = 0;
+    u16                           set_index      = 0;
+
+    DescriptorSetLayoutHandle handle;
+};
+
 } // namespace Vk
 } // namespace Renderer
 } // namespace Sogas

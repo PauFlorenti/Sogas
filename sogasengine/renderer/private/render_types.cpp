@@ -81,5 +81,26 @@ RenderPassOutput& RenderPassOutput::SetOperations(RenderPassOperation InColor, R
     return *this;
 }
 
+VertexInputDescriptor& VertexInputDescriptor::Reset()
+{
+    vertex_streams_count    = 0;
+    vertex_attributes_count = 0;
+    return *this;
+}
+
+VertexInputDescriptor& VertexInputDescriptor::AddVertexStream(const VertexStream& InVertexStream)
+{
+    vertex_stream[vertex_streams_count] = InVertexStream;
+    ++vertex_streams_count;
+    return *this;
+}
+
+VertexInputDescriptor& VertexInputDescriptor::AddVertexAttribute(const VertexAttribute& InVertexAttribute)
+{
+    vertex_attribute[vertex_attributes_count] = InVertexAttribute;
+    ++vertex_attributes_count;
+    return *this;
+}
+
 } // namespace Renderer
 } // namespace Sogas

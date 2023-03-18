@@ -10,6 +10,8 @@ namespace Renderer
 namespace Vk
 {
 
+struct VulkanShaderState;
+
 // TODO Make SASSERT_MSG to receive parameters so we can pass the code that failed.
 #define vkcheck(result)               \
     {                                 \
@@ -20,6 +22,7 @@ class VulkanDevice : public GPU_device
     friend class VulkanAttachment;
     friend class VulkanBuffer;
     friend class VulkanDescriptorSet;
+    friend class VulkanDescriptorSetLayout;
     friend class VulkanPipeline;
     friend class VulkanRenderPass;
     friend class VulkanShader;
@@ -102,6 +105,14 @@ class VulkanDevice : public GPU_device
     // clang-format on
 
     VkRenderPass GetVulkanRenderPass(const RenderPassOutput& InOutput, std::string InName);
+
+    VulkanBuffer*              GetBufferResource(BufferHandle handle);
+    VulkanShaderState*         GetShaderResource(ShaderStateHandle handle);
+    VulkanTexture*             GetTextureResource(TextureHandle handle);
+    VulkanDescriptorSet*       GetDescriptorSetResource(DescriptorSetHandle handle);
+    VulkanDescriptorSetLayout* GetDescriptorSetLayoutResource(DescriptorSetLayoutHandle handle);
+    VulkanPipeline*            GetPipelineResource(PipelineHandle handle);
+    VulkanRenderPass*          GetRenderPassResource(RenderPassHandle handle);
 
   private:
     // Device
