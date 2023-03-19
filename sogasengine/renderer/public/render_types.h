@@ -151,6 +151,19 @@ enum class CompareOperation
     ALWAYS
 };
 
+enum class StencilOperation
+{
+    KEEP = 0,
+    ZERO,
+    REPLACE,
+    INCREMENT_AND_CLAMP,
+    DECREMENT_AND_CLAMP,
+    INVERT,
+    INCREMENT_AND_WRAP,
+    DECREMENT_AND_WRAP,
+    COUNT
+};
+
 enum class CullMode
 {
     NONE           = 0x00000000,
@@ -182,15 +195,39 @@ struct RasterizationState
     FillMode  fill_mode  = FillMode::SOLID;
 };
 
+struct StencilOperationState
+{
+    StencilOperation fail       = StencilOperation::KEEP;
+    StencilOperation pass       = StencilOperation::KEEP;
+    StencilOperation depth_fail = StencilOperation::KEEP;
+    CompareOperation compare    = CompareOperation::ALWAYS;
+
+    u32 compare_mask = 0xff;
+    u32 write_mask   = 0xff;
+    u32 reference    = 0xff;
+};
+
 struct DepthStencilState
 {
-    bool             depthTestEnabled{false};
-    bool             writeDepthEnabled{false};
-    bool             depthBoundTestEnabled{false};
-    bool             stencilTestEnabled{false};
-    f32              minDepthBound{0.0f};
-    f32              maxDepthBound{1.0f};
-    CompareOperation compareOp = CompareOperation::NEVER;
+    bool depthTestEnabled{false};
+    bool writeDepthEnabled{false};
+    bool depthBoundTestEnabled{false};
+    bool stencilTestEnabled{false};
+    f32  minDepthBound{0.0f};
+    f32  maxDepthBound{1.0f};
+
+    CompareOperation      compareOp = CompareOperation::NEVER;
+    StencilOperationState front;
+    StencilOperationState back;
+
+    DepthStencilState()
+    : depthTestEnabled(false),
+      writeDepthEnabled(false),
+      stencilTestEnabled(false)
+    {
+    }
+
+    DepthStencilState& SetDepth(bool write, CompareOperation comparisont_test);
 };
 
 enum class BlendFactor

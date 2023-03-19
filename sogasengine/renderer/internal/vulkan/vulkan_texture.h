@@ -14,6 +14,8 @@ namespace Vk
 class VulkanDevice;
 class VulkanBuffer;
 
+void TransitionImageLayout(const VulkanDevice* device, VkCommandBuffer command_buffer, VkImage& image, VkImageLayout source_layout, VkImageLayout destination_layout, bool is_depth);
+
 struct VulkanTextureDescriptor
 {
     void operator=(const TextureDescriptor& other)

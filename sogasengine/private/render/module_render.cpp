@@ -3,7 +3,6 @@
 #include "buffer.h"
 #include "render/pipelines/forward_pipeline.h"
 #include "render/render_manager.h"
-#include "swapchain.h"
 
 // ! TEMP
 #include "application.h"
@@ -23,27 +22,23 @@ bool CRenderModule::Start()
     u32                      extensionsCount = 0;
     const char**             extensions      = glfwGetRequiredInstanceExtensions(&extensionsCount);
     std::vector<const char*> extensions_vector(extensions, extensions + extensionsCount);
-    renderer = Renderer::GPU_device::create(Renderer::GraphicsAPI::Vulkan, nullptr, extensions_vector, &allocator);
-    renderer->Init();
+
+    renderer = Renderer::GPU_device::create(Renderer::GraphicsAPI::Vulkan, extensions_vector);
 
     i32 width, height;
     CApplication::Get()->GetWindowSize(&width, &height);
+    Renderer::DeviceDescriptor dc;
+    dc.SetWindow(CApplication::Get()->GetWindow(), static_cast<u16>(width), static_cast<u16>(height)).SetAllocator(&allocator);
+    renderer->Init(dc);
 
-    Renderer::SwapchainDescriptor swapchain_descriptor;
-    swapchain_descriptor.format = Renderer::Format::R32G32B32A32_SFLOAT;
-    swapchain_descriptor.width  = width;
-    swapchain_descriptor.height = height;
-    swapchain                   = std::make_shared<Renderer::Swapchain>(std::move(swapchain_descriptor));
-    renderer->CreateSwapchain(swapchain, CApplication::Get()->GetWindow());
-
-    forwardPipeline = std::make_shared<Renderer::ForwardPipeline>(renderer, swapchain);
+    //forwardPipeline = std::make_shared<Renderer::ForwardPipeline>(renderer);
 
     return true;
 }
 
 void CRenderModule::Stop()
 {
-    forwardPipeline->destroy();
+    //forwardPipeline->destroy();
     swapchain->Destroy();
     renderer->shutdown();
 }
@@ -64,6 +59,6 @@ void CRenderModule::RenderInMenu() {}
 
 void CRenderModule::DoFrame()
 {
-    forwardPipeline->render(swapchain);
+    //forwardPipeline->render(swapchain);
 }
 } // namespace Sogas

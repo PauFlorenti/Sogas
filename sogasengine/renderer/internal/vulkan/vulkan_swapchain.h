@@ -7,33 +7,40 @@ namespace Sogas
 {
 namespace Renderer
 {
-  class Texture;
+class Texture;
 namespace Vk
 {
 class VulkanDevice;
+class VulkanRenderPass;
 class VulkanSwapchain : public Renderer::DeviceSwapchain
 {
   public:
-    explicit VulkanSwapchain(const VulkanDevice* InDevice = nullptr);
+    explicit VulkanSwapchain(VulkanDevice* InDevice = nullptr);
     VulkanSwapchain(const VulkanSwapchain&) = delete;
     VulkanSwapchain(VulkanSwapchain&&)      = delete;
     ~VulkanSwapchain();
 
-    static bool Create(const VulkanDevice* device, std::shared_ptr<Renderer::Swapchain> swapchain);
+    static bool Create(VulkanDevice* device, std::shared_ptr<VulkanSwapchain> swapchain);
 
     static inline VulkanSwapchain* ToInternal(const std::shared_ptr<Renderer::Swapchain> InSwapchain)
     {
         return static_cast<VulkanSwapchain*>(InSwapchain->internalState);
     }
 
-    void Destroy() override;
-    const Texture* GetTexture() const { return texture; }
+    void           Destroy() override;
+    const Texture* GetTexture() const
+    {
+        return texture;
+    }
 
     VkSwapchainKHR     swapchain = VK_NULL_HANDLE;
     VkSurfaceKHR       surface   = VK_NULL_HANDLE;
     VkSurfaceFormatKHR surfaceFormat;
     VkPresentModeKHR   presentMode;
-    VkExtent2D         extent;
+    RenderPassOutput   output;
+
+    u16 width  = 0;
+    u16 height = 0;
 
     u32                        imageIndex{0};
     std::vector<VkImage>       images;
@@ -44,8 +51,11 @@ class VulkanSwapchain : public Renderer::DeviceSwapchain
     VkSemaphore renderCompleteSemaphore  = VK_NULL_HANDLE;
 
   private:
-    Texture*             texture;
-    const VulkanDevice* device = nullptr;
+    void CreateRenderPass(VulkanRenderPass* render_pass);
+
+    Texture*      texture;
+    VkRenderPass  renderpass;
+    VulkanDevice* device = nullptr;
 };
 
 } // namespace Vk

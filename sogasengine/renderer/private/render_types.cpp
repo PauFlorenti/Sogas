@@ -102,5 +102,13 @@ VertexInputDescriptor& VertexInputDescriptor::AddVertexAttribute(const VertexAtt
     return *this;
 }
 
+DepthStencilState& DepthStencilState::SetDepth(bool write, CompareOperation comparison_test)
+{
+    writeDepthEnabled = true;
+    compareOp         = comparison_test;
+    depthTestEnabled  = true;
+    return *this;
+}
+
 } // namespace Renderer
 } // namespace Sogas

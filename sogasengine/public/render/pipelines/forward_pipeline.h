@@ -1,7 +1,7 @@
 #pragma once
 
-#include "renderer/public/render_types.h"
 #include "renderer/public/attachment.h"
+#include "renderer/public/render_types.h"
 
 namespace Sogas
 {
@@ -17,8 +17,7 @@ class Texture;
 class ForwardPipeline
 {
   public:
-    explicit ForwardPipeline(std::shared_ptr<GPU_device> InRenderer = nullptr,
-                             std::shared_ptr<Swapchain>  swapchain  = nullptr);
+    explicit ForwardPipeline(std::shared_ptr<GPU_device> InRenderer = nullptr);
     ~ForwardPipeline(){};
 
     void update_constants();

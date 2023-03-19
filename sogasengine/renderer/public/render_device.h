@@ -18,10 +18,22 @@ struct Allocator;
 }
 namespace Renderer
 {
+
+struct DeviceDescriptor
+{
+    Memory::Allocator* allocator;
+    void* window = nullptr;
+    u16 width = 0;
+    u16 height = 0;
+
+    DeviceDescriptor& SetWindow(void* InWindow, u16 InWidth, u16 InHeight);
+    DeviceDescriptor& SetAllocator(Memory::Allocator* InAllocator);
+};
+
 class GPU_device
 {
   public:
-    static std::shared_ptr<GPU_device> create(GraphicsAPI api, void* device, std::vector<const char*> extensions, Memory::Allocator* InAllocator);
+    static std::shared_ptr<GPU_device> create(GraphicsAPI api, std::vector<const char*> extensions);
 
     virtual ~GPU_device(){};
 
@@ -34,7 +46,7 @@ class GPU_device
 
     // clang-format off
 
-    virtual bool                     Init() = 0;
+    virtual bool                     Init(const DeviceDescriptor& InDescriptor) = 0;
     virtual void                     shutdown() = 0;
 
     virtual CommandBuffer            BeginCommandBuffer() = 0;
@@ -62,7 +74,7 @@ class GPU_device
     virtual void DestroyPipeline(PipelineHandle InPipInHandleeline) = 0;
     virtual void DestroyRenderPass(RenderPassHandle InHandle) = 0;
 
-    virtual void                     CreateSwapchain(std::shared_ptr<Swapchain> swapchain, GLFWwindow* window) = 0;
+    virtual void                     CreateSwapchain(GLFWwindow* window) = 0;
     virtual std::shared_ptr<Buffer>  CreateBuffer(BufferDescriptor desc, void* data) const = 0;
     virtual std::shared_ptr<Buffer>  CreateBuffer(const u32& size, const u64& element_size, BufferBindingPoint binding, BufferUsage usage, void* data) const = 0;
     virtual void                     CreateTexture(Texture *texture, void* data) const = 0;
@@ -103,6 +115,13 @@ class GPU_device
     ResourcePool descriptorSetLayouts;
     ResourcePool pipelines;
     ResourcePool renderpasses;
+
+    RenderPassHandle swapchain_renderpass;
+    SamplerHandle default_sample;
+
+    TextureHandle depth_texture;
+    
+    void* window = nullptr;
 
   protected:
     GraphicsAPI api_type;

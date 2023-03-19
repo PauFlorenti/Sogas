@@ -32,9 +32,7 @@ class VulkanDevice : public GPU_device
 
   public:
     explicit VulkanDevice(GraphicsAPI              apiType,
-                          void*                    device,
-                          std::vector<const char*> extensions,
-                          Memory::Allocator*       InAllocator);
+                          std::vector<const char*> extensions);
     VulkanDevice(const VulkanDevice&) = delete;
     VulkanDevice(VulkanDevice&&)      = delete;
     ~VulkanDevice() override;
@@ -48,11 +46,11 @@ class VulkanDevice : public GPU_device
     constexpr u32 GetFrameCount() const { return FrameCount; }
     constexpr u32 GetFrameIndex() const { return GetFrameCount() % MAX_FRAMES_IN_FLIGHT; }
 
-    bool Init() override;
+    bool Init(const DeviceDescriptor& InDescriptor) override;
     void shutdown() override;
     CommandBuffer BeginCommandBuffer() override;
     void SubmitCommandBuffers() override;
-    void BeginRenderPass(std::shared_ptr<Renderer::Swapchain> swapchain, CommandBuffer cmd) override;
+    void BeginRenderPass(std::shared_ptr<Renderer::Swapchain> swapchain, CommandBuffer cmd) override {};
     void BeginRenderPass(Renderer::RenderPass *InRenderpass, CommandBuffer cmd) override;
     void EndRenderPass(CommandBuffer cmd) override;
 
@@ -75,7 +73,7 @@ class VulkanDevice : public GPU_device
     void DestroyPipeline(PipelineHandle InPipInHandleeline) override;
     void DestroyRenderPass(RenderPassHandle InHandle) override;
 
-    void                              CreateSwapchain(std::shared_ptr<Renderer::Swapchain> swapchain, GLFWwindow *window) override;
+    void                              CreateSwapchain(GLFWwindow *window) override;
     std::shared_ptr<Renderer::Buffer> CreateBuffer(Renderer::BufferDescriptor desc, void *data) const override;
     std::shared_ptr<Renderer::Buffer> CreateBuffer(const u32& size, const u64& element_size, Renderer::BufferBindingPoint binding, Renderer::BufferUsage usage, void* data = nullptr) const override;
     void                              CreateTexture(Texture *texture, void* data = nullptr) const override;
@@ -114,6 +112,11 @@ class VulkanDevice : public GPU_device
     VulkanPipeline*            GetPipelineResource(PipelineHandle handle);
     VulkanRenderPass*          GetRenderPassResource(RenderPassHandle handle);
 
+    const VkQueue GetGraphicsQueue() const
+    {
+        return GraphicsQueue;
+    }
+
   private:
     // Device
     VkInstance                 Instance        = VK_NULL_HANDLE;
@@ -122,6 +125,8 @@ class VulkanDevice : public GPU_device
     VkDebugUtilsMessengerEXT   DebugMessenger  = VK_NULL_HANDLE;
     VkPhysicalDeviceProperties Physical_device_properties;
     std::vector<const char*>   glfwExtensions;
+
+    std::shared_ptr<VulkanSwapchain> swapchain;
 
     // Queues
     std::vector<VkQueueFamilyProperties> queueFamilyProperties;

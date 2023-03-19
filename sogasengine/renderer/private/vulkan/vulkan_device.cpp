@@ -124,15 +124,11 @@ void VulkanDevice::PickPhysicalDevice()
     // Is Device suitable ??
 }
 
-VulkanDevice::VulkanDevice(GraphicsAPI apiType,
-                           void* /*device*/,
-                           std::vector<const char*> extensions,
-                           Memory::Allocator*       InAllocator)
+VulkanDevice::VulkanDevice(GraphicsAPI              apiType,
+                           std::vector<const char*> extensions)
 : glfwExtensions(std::move(extensions))
 {
     api_type = apiType;
-
-    allocator = InAllocator;
 }
 
 VulkanDevice::~VulkanDevice()
@@ -140,21 +136,20 @@ VulkanDevice::~VulkanDevice()
     shutdown();
 }
 
-void VulkanDevice::CreateSwapchain(std::shared_ptr<Renderer::Swapchain> swapchain, GLFWwindow* window)
+void VulkanDevice::CreateSwapchain(GLFWwindow* window)
 {
     SASSERT(window);
 
-    if (swapchain->internalState == nullptr)
+    if (swapchain == nullptr)
     {
-        swapchain->internalState = new VulkanSwapchain(this);
+        swapchain = std::make_shared<VulkanSwapchain>(this);
     }
-    auto internalState = VulkanSwapchain::ToInternal(swapchain);
 
-    if (internalState->surface == VK_NULL_HANDLE)
+    if (swapchain->surface == VK_NULL_HANDLE)
     {
         // Surface creation
         STRACE("\tCreating vulkan window surface handle ...");
-        if (glfwCreateWindowSurface(Instance, window, nullptr, &internalState->surface) != VK_SUCCESS)
+        if (glfwCreateWindowSurface(Instance, window, nullptr, &swapchain->surface) != VK_SUCCESS)
         {
             SERROR("\tFailed to create VkSurface.");
             return;
@@ -166,7 +161,7 @@ void VulkanDevice::CreateSwapchain(std::shared_ptr<Renderer::Swapchain> swapchai
     for (const auto& queueFamily : queueFamilyProperties)
     {
         VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(Physical_device, i, internalState->surface, &presentSupport);
+        vkGetPhysicalDeviceSurfaceSupportKHR(Physical_device, i, swapchain->surface, &presentSupport);
         if (PresentFamily == VK_QUEUE_FAMILY_IGNORED && queueFamily.queueCount > 0 && presentSupport)
         {
             PresentFamily = i;
@@ -180,9 +175,11 @@ void VulkanDevice::CreateSwapchain(std::shared_ptr<Renderer::Swapchain> swapchai
     }
 }
 
-bool VulkanDevice::Init()
+bool VulkanDevice::Init(const DeviceDescriptor& InDescriptor)
 {
     STRACE("Initializing Vulkan renderer ... ");
+
+    allocator = InDescriptor.allocator;
 
     if (!CreateInstance())
     {
@@ -197,9 +194,18 @@ bool VulkanDevice::Init()
     }
 
     buffers.Init(allocator, 512, sizeof(VulkanBuffer));
-    textures.Init(allocator, 8, sizeof(VulkanTexture));
+    textures.Init(allocator, 512, sizeof(VulkanTexture));
+    renderpasses.Init(allocator, 256, sizeof(VulkanRenderPass));
+    pipelines.Init(allocator, 128, sizeof(VulkanPipeline));
+    shaders.Init(allocator, 128, sizeof(VulkanShaderState));
+    descriptorSets.Init(allocator, 128, sizeof(VulkanDescriptorSet));
+    descriptorSetLayouts.Init(allocator, 128, sizeof(VulkanDescriptorSetLayout));
+    //samplers.Init(allocator, 32, sizeof(VulkanSampler));
 
     CreateCommandResources();
+
+    GLFWwindow* window = reinterpret_cast<GLFWwindow*>(InDescriptor.window);
+    CreateSwapchain(window);
 
     STRACE("Finished Initializing Vulkan device.\n");
 
@@ -309,12 +315,12 @@ void VulkanDevice::SubmitCommandBuffers()
     // TODO submit frame resources commands
 
     commandBufferCounter = 0;
-    std::vector<VkCommandBuffer>         submitCommands;
-    std::vector<VkSemaphore>             signalSemaphores;
-    std::vector<VkSemaphore>             waitSemaphores;
-    std::vector<VkSemaphore>             presentWaitSemaphores;
-    std::shared_ptr<Renderer::Swapchain> swapchain;
-    std::vector<VkPipelineStageFlags>    waitStages = {};
+    std::vector<VkCommandBuffer> submitCommands;
+    std::vector<VkSemaphore>     signalSemaphores;
+    std::vector<VkSemaphore>     waitSemaphores;
+    std::vector<VkSemaphore>     presentWaitSemaphores;
+    //std::shared_ptr<Renderer::Swapchain> swapchain;
+    std::vector<VkPipelineStageFlags> waitStages = {};
 
     std::vector<VkFence> fences;
 
@@ -328,11 +334,10 @@ void VulkanDevice::SubmitCommandBuffers()
 
         if (cmd->swapchain)
         {
-            swapchain                   = cmd->swapchain;
-            auto swapchainInternalState = VulkanSwapchain::ToInternal(swapchain);
+            //swapchain                   = cmd->swapchain;
             waitStages.push_back(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
-            waitSemaphores.push_back(swapchainInternalState->presentCompleteSemaphore);
-            signalSemaphores.push_back(swapchainInternalState->renderCompleteSemaphore);
+            waitSemaphores.push_back(swapchain->presentCompleteSemaphore);
+            signalSemaphores.push_back(swapchain->renderCompleteSemaphore);
         }
 
         submitCommands.push_back(cmd->commandBuffers[GetFrameIndex()]);
@@ -379,30 +384,25 @@ void VulkanDevice::SubmitCommandBuffers()
         signalSemaphores.clear();
     }
 
-    if (swapchain)
+    VkPresentInfoKHR presentInfo   = {VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
+    presentInfo.swapchainCount     = 1;
+    presentInfo.pSwapchains        = &swapchain->swapchain;
+    presentInfo.waitSemaphoreCount = static_cast<u32>(presentWaitSemaphores.size());
+    presentInfo.pWaitSemaphores    = presentWaitSemaphores.data();
+    presentInfo.pImageIndices      = &swapchain->imageIndex;
+
+    VkResult res = vkQueuePresentKHR(GraphicsQueue, &presentInfo);
+
+    if (res != VK_SUCCESS)
     {
-        auto swapchainInternalState = VulkanSwapchain::ToInternal(swapchain);
-
-        VkPresentInfoKHR presentInfo   = {VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
-        presentInfo.swapchainCount     = 1;
-        presentInfo.pSwapchains        = &swapchainInternalState->swapchain;
-        presentInfo.waitSemaphoreCount = static_cast<u32>(presentWaitSemaphores.size());
-        presentInfo.pWaitSemaphores    = presentWaitSemaphores.data();
-        presentInfo.pImageIndices      = &swapchainInternalState->imageIndex;
-
-        VkResult res = vkQueuePresentKHR(GraphicsQueue, &presentInfo);
-
-        if (res != VK_SUCCESS)
+        if (res == VK_SUBOPTIMAL_KHR || res == VK_ERROR_OUT_OF_DATE_KHR)
         {
-            if (res == VK_SUBOPTIMAL_KHR || res == VK_ERROR_OUT_OF_DATE_KHR)
-            {
-                swapchain->resized = true;
-                SASSERT(VulkanSwapchain::Create(this, swapchain));
-            }
-            else
-            {
-                SASSERT_MSG(false, "Failed to present image.");
-            }
+            //swapchain->resized = true;
+            SASSERT(VulkanSwapchain::Create(this, swapchain));
+        }
+        else
+        {
+            SASSERT_MSG(false, "Failed to present image.");
         }
     }
 
@@ -416,76 +416,76 @@ void VulkanDevice::SubmitCommandBuffers()
     }
 }
 
-void VulkanDevice::BeginRenderPass(std::shared_ptr<Renderer::Swapchain> InSwapchain, CommandBuffer cmd)
-{
-    auto internalCommand              = VulkanCommandBuffer::ToInternal(&cmd);
-    auto internalSwapchain            = VulkanSwapchain::ToInternal(InSwapchain);
-    internalCommand->activeRenderPass = InSwapchain->GetRenderpass();
-    internalCommand->swapchain        = InSwapchain;
+// void VulkanDevice::BeginRenderPass(std::shared_ptr<Renderer::Swapchain> InSwapchain, CommandBuffer cmd)
+// {
+//     auto internalCommand              = VulkanCommandBuffer::ToInternal(&cmd);
+//     auto internalSwapchain            = VulkanSwapchain::ToInternal(InSwapchain);
+//     internalCommand->activeRenderPass = InSwapchain->GetRenderpass();
+//     internalCommand->swapchain        = InSwapchain;
 
-    VkResult res = vkAcquireNextImageKHR(Handle,
-                                         internalSwapchain->swapchain,
-                                         UINT64_MAX,
-                                         internalSwapchain->presentCompleteSemaphore,
-                                         VK_NULL_HANDLE,
-                                         &internalSwapchain->imageIndex);
-    if (res != VK_SUCCESS)
-    {
-        if (res == VK_SUBOPTIMAL_KHR || res == VK_ERROR_OUT_OF_DATE_KHR)
-        {
-            InSwapchain->resized = true;
-            if (VulkanSwapchain::Create(this, InSwapchain))
-            {
-                BeginRenderPass(InSwapchain, cmd);
-                return;
-            }
-        }
-        throw std::runtime_error("Failed to acquire next image!");
-    }
+//     VkResult res = vkAcquireNextImageKHR(Handle,
+//                                          internalSwapchain->swapchain,
+//                                          UINT64_MAX,
+//                                          internalSwapchain->presentCompleteSemaphore,
+//                                          VK_NULL_HANDLE,
+//                                          &internalSwapchain->imageIndex);
+//     if (res != VK_SUCCESS)
+//     {
+//         if (res == VK_SUBOPTIMAL_KHR || res == VK_ERROR_OUT_OF_DATE_KHR)
+//         {
+//             InSwapchain->resized = true;
+//             if (VulkanSwapchain::Create(this, InSwapchain))
+//             {
+//                 BeginRenderPass(InSwapchain, cmd);
+//                 return;
+//             }
+//         }
+//         throw std::runtime_error("Failed to acquire next image!");
+//     }
 
-    if (InSwapchain->resized)
-    {
-        return;
-        // i32 width, height;
-        // glfwGetWindowSize(window, &width, &height);
-        // //CApplication::Get()->GetWindowSize(&width, &height);
-        // InSwapchain->SetSwapchainSize(width, height);
-        // InSwapchain->resized = false;
-    }
+//     if (InSwapchain->resized)
+//     {
+//         return;
+//         // i32 width, height;
+//         // glfwGetWindowSize(window, &width, &height);
+//         // //CApplication::Get()->GetWindowSize(&width, &height);
+//         // InSwapchain->SetSwapchainSize(width, height);
+//         // InSwapchain->resized = false;
+//     }
 
-    // Begin Render Pass
-    const auto& swapchain_descriptor = InSwapchain->GetDescriptor();
-    VkViewport  viewport{};
-    viewport.x        = 0;
-    viewport.y        = (f32)swapchain_descriptor.height;
-    viewport.width    = (f32)swapchain_descriptor.width;
-    viewport.height   = -(f32)swapchain_descriptor.height;
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
+//     // Begin Render Pass
+//     const auto& swapchain_descriptor = InSwapchain->GetDescriptor();
+//     VkViewport  viewport{};
+//     viewport.x        = 0;
+//     viewport.y        = (f32)swapchain_descriptor.height;
+//     viewport.width    = (f32)swapchain_descriptor.width;
+//     viewport.height   = -(f32)swapchain_descriptor.height;
+//     viewport.minDepth = 0.0f;
+//     viewport.maxDepth = 1.0f;
 
-    vkCmdSetViewport(internalCommand->commandBuffers[GetFrameIndex()], 0, 1, &viewport);
+//     vkCmdSetViewport(internalCommand->commandBuffers[GetFrameIndex()], 0, 1, &viewport);
 
-    VkRect2D scissor{};
-    scissor.extent.width  = swapchain_descriptor.width;
-    scissor.extent.height = swapchain_descriptor.height;
-    scissor.offset        = {0, 0};
+//     VkRect2D scissor{};
+//     scissor.extent.width  = swapchain_descriptor.width;
+//     scissor.extent.height = swapchain_descriptor.height;
+//     scissor.offset        = {0, 0};
 
-    vkCmdSetScissor(internalCommand->commandBuffers[GetFrameIndex()], 0, 1, &scissor);
+//     vkCmdSetScissor(internalCommand->commandBuffers[GetFrameIndex()], 0, 1, &scissor);
 
-    VkClearValue clearValue = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+//     VkClearValue clearValue = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
 
-    VkRenderPassBeginInfo renderpassBeginInfo = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
-    renderpassBeginInfo.renderPass            = VulkanRenderPass::ToInternal(internalCommand->activeRenderPass)->renderpass;
-    renderpassBeginInfo.clearValueCount       = 1;
-    renderpassBeginInfo.pClearValues          = &clearValue;
-    renderpassBeginInfo.framebuffer           = internalSwapchain->framebuffers.at(internalSwapchain->imageIndex);
-    renderpassBeginInfo.renderArea.extent     = internalSwapchain->extent;
-    renderpassBeginInfo.renderArea.offset     = {0, 0};
+//     VkRenderPassBeginInfo renderpassBeginInfo = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
+//     renderpassBeginInfo.renderPass            = VulkanRenderPass::ToInternal(internalCommand->activeRenderPass)->renderpass;
+//     renderpassBeginInfo.clearValueCount       = 1;
+//     renderpassBeginInfo.pClearValues          = &clearValue;
+//     renderpassBeginInfo.framebuffer           = internalSwapchain->framebuffers.at(internalSwapchain->imageIndex);
+//     renderpassBeginInfo.renderArea.extent     = internalSwapchain->extent;
+//     renderpassBeginInfo.renderArea.offset     = {0, 0};
 
-    vkCmdBeginRenderPass(internalCommand->commandBuffers[GetFrameIndex()],
-                         &renderpassBeginInfo,
-                         VK_SUBPASS_CONTENTS_INLINE);
-}
+//     vkCmdBeginRenderPass(internalCommand->commandBuffers[GetFrameIndex()],
+//                          &renderpassBeginInfo,
+//                          VK_SUBPASS_CONTENTS_INLINE);
+// }
 
 void VulkanDevice::BeginRenderPass(Renderer::RenderPass* InRenderpass, CommandBuffer cmd)
 {
