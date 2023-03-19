@@ -1,6 +1,5 @@
 #pragma once
 
-#include "device_swapchain.h"
 #include "vulkan_types.h"
 
 namespace Sogas
@@ -12,7 +11,7 @@ namespace Vk
 {
 class VulkanDevice;
 class VulkanRenderPass;
-class VulkanSwapchain : public Renderer::DeviceSwapchain
+class VulkanSwapchain
 {
   public:
     explicit VulkanSwapchain(VulkanDevice* InDevice = nullptr);
@@ -22,12 +21,7 @@ class VulkanSwapchain : public Renderer::DeviceSwapchain
 
     static bool Create(VulkanDevice* device, std::shared_ptr<VulkanSwapchain> swapchain);
 
-    static inline VulkanSwapchain* ToInternal(const std::shared_ptr<Renderer::Swapchain> InSwapchain)
-    {
-        return static_cast<VulkanSwapchain*>(InSwapchain->internalState);
-    }
-
-    void           Destroy() override;
+    void           Destroy();
     const Texture* GetTexture() const
     {
         return texture;

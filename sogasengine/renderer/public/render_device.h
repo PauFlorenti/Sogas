@@ -5,7 +5,6 @@
 #include "device_resources.h"
 #include "render_types.h"
 #include "renderpass.h"
-#include "swapchain.h"
 #include "texture.h"
 
 struct GLFWwindow;
@@ -51,7 +50,7 @@ class GPU_device
 
     virtual CommandBuffer            BeginCommandBuffer() = 0;
     virtual void                     SubmitCommandBuffers() = 0;
-    virtual void                     BeginRenderPass(std::shared_ptr<Swapchain> swapchain, CommandBuffer cmd) = 0;
+    //virtual void                     BeginRenderPass(std::shared_ptr<Swapchain> swapchain, CommandBuffer cmd) = 0;
     virtual void                     BeginRenderPass(RenderPass* InRenderpass, CommandBuffer cmd) = 0;
     virtual void                     EndRenderPass(CommandBuffer cmd) = 0;
 
@@ -88,7 +87,7 @@ class GPU_device
 
     // API calls
     // This are commands that will execute when submitCommands is called.
-    virtual void SetWindowSize(std::shared_ptr<Swapchain> InSwapchain, const u32& width, const u32& height) = 0;
+    //virtual void SetWindowSize(std::shared_ptr<Swapchain> InSwapchain, const u32& width, const u32& height) = 0;
     virtual void BindVertexBuffer(const std::shared_ptr<Buffer>& buffer, CommandBuffer cmd) = 0;
     virtual void BindIndexBuffer(const std::shared_ptr<Buffer>& buffer, CommandBuffer cmd) = 0;
     virtual void BindPipeline(const Pipeline* InPipeline, CommandBuffer& cmd) = 0;
@@ -120,7 +119,7 @@ class GPU_device
     SamplerHandle default_sample;
 
     TextureHandle depth_texture;
-    
+
     void* window = nullptr;
 
   protected:

@@ -228,6 +228,8 @@ void VulkanDevice::shutdown()
     vkDestroySemaphore(Handle, beginSemaphore, nullptr);
     vkDestroySemaphore(Handle, endSemaphore, nullptr);
 
+    swapchain->Destroy();
+
     STRACE("\tDestroying Vulkan logical device ...");
     vkDestroyDevice(Handle, nullptr);
     if (validationLayersEnabled)
@@ -681,15 +683,15 @@ void VulkanDevice::CreateAttachment(AttachmentFramebuffer* InAttachment) const
     VulkanAttachment::Create(this, InAttachment);
 }
 
-void VulkanDevice::SetWindowSize(std::shared_ptr<Renderer::Swapchain> InSwapchain, const u32& width, const u32& height)
-{
-    const auto& swapchain_descriptor = InSwapchain->GetDescriptor();
-    if (InSwapchain->resized || (swapchain_descriptor.width != width, swapchain_descriptor.height != height))
-    {
-        InSwapchain->SetSwapchainSize(width, height);
-        InSwapchain->resized = false;
-    }
-}
+// void VulkanDevice::SetWindowSize(std::shared_ptr<Renderer::Swapchain> InSwapchain, const u32& width, const u32& height)
+// {
+//     const auto& swapchain_descriptor = InSwapchain->GetDescriptor();
+//     if (InSwapchain->resized || (swapchain_descriptor.width != width, swapchain_descriptor.height != height))
+//     {
+//         InSwapchain->SetSwapchainSize(width, height);
+//         InSwapchain->resized = false;
+//     }
+// }
 
 void VulkanDevice::BindVertexBuffer(const std::shared_ptr<Renderer::Buffer>& buffer, CommandBuffer cmd)
 {

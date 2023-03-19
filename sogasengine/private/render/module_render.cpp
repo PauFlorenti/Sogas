@@ -39,18 +39,17 @@ bool CRenderModule::Start()
 void CRenderModule::Stop()
 {
     //forwardPipeline->destroy();
-    swapchain->Destroy();
     renderer->shutdown();
 }
 
 void CRenderModule::Update(f32 /*dt*/)
 {
-    if (swapchain->resized)
-    {
-        i32 width, height;
-        glfwGetWindowSize(CApplication::Get()->GetWindow(), &width, &height);
-        renderer->SetWindowSize(swapchain, width, height);
-    }
+    // if (swapchain->resized)
+    // {
+    //     i32 width, height;
+    //     glfwGetWindowSize(CApplication::Get()->GetWindow(), &width, &height);
+    //     renderer->SetWindowSize(swapchain, width, height);
+    // }
 }
 
 void CRenderModule::Render() {}

@@ -26,7 +26,6 @@ class CRenderModule : public IModule
 
   private:
     std::shared_ptr<Renderer::GPU_device> renderer;
-    std::shared_ptr<Renderer::Swapchain>  swapchain;
 
     Memory::StackAllocator allocator;
 };

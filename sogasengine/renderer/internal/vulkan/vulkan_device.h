@@ -50,7 +50,7 @@ class VulkanDevice : public GPU_device
     void shutdown() override;
     CommandBuffer BeginCommandBuffer() override;
     void SubmitCommandBuffers() override;
-    void BeginRenderPass(std::shared_ptr<Renderer::Swapchain> swapchain, CommandBuffer cmd) override {};
+    //void BeginRenderPass(std::shared_ptr<Renderer::Swapchain> swapchain, CommandBuffer cmd) override {};
     void BeginRenderPass(Renderer::RenderPass *InRenderpass, CommandBuffer cmd) override;
     void EndRenderPass(CommandBuffer cmd) override;
 
@@ -86,7 +86,7 @@ class VulkanDevice : public GPU_device
     void                              CreateAttachment(AttachmentFramebuffer *InAttachment) const override;
 
     // API calls ...
-    void SetWindowSize(std::shared_ptr<Swapchain> InSwapchain, const u32 &width, const u32 &height) override;
+    //void SetWindowSize(std::shared_ptr<Swapchain> InSwapchain, const u32 &width, const u32 &height) override;
     void BindVertexBuffer(const std::shared_ptr<Buffer> &buffer, CommandBuffer cmd) override;
     void BindIndexBuffer(const std::shared_ptr<Buffer> &buffer, CommandBuffer cmd) override;
     void BindPipeline(const Pipeline *InPipeline, CommandBuffer &cmd) override;

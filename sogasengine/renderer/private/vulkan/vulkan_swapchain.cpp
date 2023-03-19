@@ -1,6 +1,5 @@
 #include "vulkan/vulkan_swapchain.h"
 #include "renderpass.h"
-#include "swapchain.h"
 #include "vulkan/vulkan_device.h"
 #include "vulkan/vulkan_renderpass.h"
 #include "vulkan/vulkan_texture.h"

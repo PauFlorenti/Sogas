@@ -8,7 +8,6 @@
 #include "renderer/public/render_device.h"
 #include "renderer/public/render_types.h"
 #include "renderer/public/renderpass.h"
-#include "renderer/public/swapchain.h"
 
 std::vector<Sogas::Renderer::VertexLayout> quad = {
   {{1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
@@ -567,7 +566,7 @@ void ForwardPipeline::render(std::shared_ptr<Swapchain> swapchain)
     auto presentCmd = renderer->BeginCommandBuffer();
     renderer->WaitCommand(presentCmd, cmd);
     renderer->BindPipeline(&presentPipeline, presentCmd);
-    renderer->BeginRenderPass(swapchain, presentCmd);
+    //renderer->BeginRenderPass(swapchain, presentCmd);
 
     // Bind textures
     renderer->BindAttachment(&colorAttachment, &presentPipeline, 0);
