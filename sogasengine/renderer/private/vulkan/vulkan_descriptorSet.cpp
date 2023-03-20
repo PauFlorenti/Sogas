@@ -8,6 +8,37 @@ namespace Renderer
 {
 namespace Vk
 {
+
+constexpr static VkDescriptorType ConvertDescriptorType(DescriptorType InType)
+{
+    switch (InType)
+    {
+        default:
+        case DescriptorType::SAMPLER:
+            return VK_DESCRIPTOR_TYPE_SAMPLER;
+        case DescriptorType::COMBINED_IMAGE_SAMPLER:
+            return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        case DescriptorType::SAMPLED_IMAGE:
+            return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        case DescriptorType::STORAGE_IMAGE:
+            return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+        case DescriptorType::UNIFORM_TEXEL_BUFFER:
+            return VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+        case DescriptorType::STORAGE_TEXEL_BUFFER:
+            return VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
+        case DescriptorType::UNIFORM_BUFFER:
+            return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        case DescriptorType::STORAGE_BUFFER:
+            return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        case DescriptorType::UNIFOR_BUFFER_DYNAMIC:
+            return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+        case DescriptorType::STORAGE_BUFFER_DYNAMIC:
+            return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
+        case DescriptorType::ATTACHMENT:
+            return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+    }
+}
+
 VulkanDescriptorSet::~VulkanDescriptorSet()
 {
     vkDestroyDescriptorPool(device->Handle, descriptorPool, nullptr);
@@ -37,6 +68,44 @@ DescriptorSetLayoutHandle VulkanDescriptorSet::Create(VulkanDevice* InDevice, co
     {
         return handle;
     }
+
+    VulkanDescriptorSetLayout* descriptor_set_layout = InDevice->GetDescriptorSetLayoutResource(handle);
+
+    descriptor_set_layout->bindings_count = static_cast<u16>(InDescriptor.bindings_count);
+    u8* memory                            = static_cast<u8*>(InDevice->allocator->allocate((sizeof(VkDescriptorSetLayoutBinding) + sizeof(DescriptorBinding)) * InDescriptor.bindings_count, 1));
+    descriptor_set_layout->bindings       = reinterpret_cast<DescriptorBinding*>(memory);
+    descriptor_set_layout->binding        = reinterpret_cast<VkDescriptorSetLayoutBinding*>(memory + sizeof(DescriptorBinding) * InDescriptor.bindings_count);
+    descriptor_set_layout->handle         = handle;
+    descriptor_set_layout->set_index      = static_cast<u16>(InDescriptor.set_index);
+
+    u32 used_bindings = 0;
+    for (u32 i = 0; i < InDescriptor.bindings_count; ++i)
+    {
+        DescriptorBinding&                            binding       = descriptor_set_layout->bindings[i];
+        const DescriptorSetLayoutDescriptor::Binding& input_binding = InDescriptor.bindings[i];
+        binding.start                                               = input_binding.start == UINT16_MAX ? static_cast<u16>(i) : input_binding.start;
+        binding.count                                               = 1;
+        binding.type                                                = ConvertDescriptorType(input_binding.type);
+        binding.name                                                = input_binding.name;
+
+        VkDescriptorSetLayoutBinding vulkan_binding = descriptor_set_layout->binding[used_bindings];
+        ++used_bindings;
+
+        vulkan_binding.binding         = binding.start;
+        vulkan_binding.descriptorType  = binding.type;
+        vulkan_binding.descriptorType  = input_binding.type == DescriptorType::UNIFORM_BUFFER ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : vulkan_binding.descriptorType;
+        vulkan_binding.descriptorCount = 1;
+
+        vulkan_binding.stageFlags         = VK_SHADER_STAGE_ALL;
+        vulkan_binding.pImmutableSamplers = nullptr;
+    }
+
+    VkDescriptorSetLayoutCreateInfo info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
+    info.bindingCount = used_bindings;
+    info.pBindings = descriptor_set_layout->binding;
+
+    vkcheck(vkCreateDescriptorSetLayout(InDevice->Handle, &info, nullptr, &descriptor_set_layout->descriptor_set_layout));
+
     return handle;
 }
 

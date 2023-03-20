@@ -29,3 +29,4 @@
 
 // application
 #include "logger/public/logger.h"
+#include "public/sgs_memory.h"

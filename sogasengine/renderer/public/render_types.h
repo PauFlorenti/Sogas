@@ -173,11 +173,45 @@ struct SamplerDescriptor
     SamplerDescriptor& SetName(const std::string& InName);
 };
 
+enum class DescriptorType
+{
+    SAMPLER = 0,
+    COMBINED_IMAGE_SAMPLER,
+    SAMPLED_IMAGE,
+    STORAGE_IMAGE,
+    UNIFORM_TEXEL_BUFFER,
+    STORAGE_TEXEL_BUFFER,
+    UNIFORM_BUFFER,
+    STORAGE_BUFFER,
+    UNIFOR_BUFFER_DYNAMIC,
+    STORAGE_BUFFER_DYNAMIC,
+    ATTACHMENT,
+    COUNT
+};
+
 struct DescriptorSetDescriptor
 {
 };
 struct DescriptorSetLayoutDescriptor
 {
+    struct Binding
+    {
+        DescriptorType type  = DescriptorType::COUNT;
+        u16            start = 0;
+        u16            count = 0;
+        std::string    name;
+    };
+
+    Binding bindings[MAX_DESCRIPTOR_PER_SET];
+    u32     bindings_count = 0;
+    u32     set_index      = 0;
+
+    std::string name;
+
+    DescriptorSetLayoutDescriptor& Reset();
+    DescriptorSetLayoutDescriptor& AddBinding(const Binding& InBinding);
+    DescriptorSetLayoutDescriptor& SetName(std::string InName);
+    DescriptorSetLayoutDescriptor& SetSetIndex(u32 InIndex);
 };
 
 enum class CompareOperation

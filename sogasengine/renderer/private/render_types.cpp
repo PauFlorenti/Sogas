@@ -145,5 +145,30 @@ SamplerDescriptor& SamplerDescriptor::SetName(const std::string& InName)
     return *this;
 }
 
+DescriptorSetLayoutDescriptor& DescriptorSetLayoutDescriptor::Reset()
+{
+    bindings_count = 0;
+    return *this;
+}
+
+DescriptorSetLayoutDescriptor& DescriptorSetLayoutDescriptor::AddBinding(const Binding& InBinding)
+{
+    bindings[bindings_count] = InBinding;
+    ++bindings_count;
+    return *this;
+}
+
+DescriptorSetLayoutDescriptor& DescriptorSetLayoutDescriptor::SetName(std::string InName)
+{
+    name = InName;
+    return *this;
+}
+
+DescriptorSetLayoutDescriptor& DescriptorSetLayoutDescriptor::SetSetIndex(u32 InIndex)
+{
+    set_index = InIndex;
+    return *this;
+}
+
 } // namespace Renderer
 } // namespace Sogas
