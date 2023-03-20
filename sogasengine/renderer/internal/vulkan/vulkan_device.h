@@ -144,6 +144,8 @@ class VulkanDevice : public GPU_device
 
     std::shared_ptr<VulkanSwapchain> swapchain;
 
+    VkDescriptorPool descriptor_pool;
+
     // Queues
     std::vector<VkQueueFamilyProperties> queueFamilyProperties;
     std::vector<u32>                     queueFamilies;
