@@ -145,6 +145,51 @@ SamplerDescriptor& SamplerDescriptor::SetName(const std::string& InName)
     return *this;
 }
 
+DescriptorSetDescriptor& DescriptorSetDescriptor::Reset()
+{
+    resources_count = 0;
+    return *this;
+}
+
+DescriptorSetDescriptor& DescriptorSetDescriptor::SetLayout(DescriptorSetLayoutHandle InLayout)
+{
+    layout = InLayout;
+    return *this;
+}
+
+DescriptorSetDescriptor& DescriptorSetDescriptor::Texture(TextureHandle InTexture, u16 InBinding)
+{
+    samplers[resources_count]  = INVALID_SAMPLER;
+    bindings[resources_count]  = InBinding;
+    resources[resources_count] = InTexture.index;
+    ++resources_count;
+    return *this;
+}
+
+DescriptorSetDescriptor& DescriptorSetDescriptor::Buffer(BufferHandle InBuffer, u16 InBinding)
+{
+    bindings[resources_count] = InBinding;
+    bindings[resources_count] = InBuffer.index;
+    ++resources_count;
+    return *this;
+}
+
+DescriptorSetDescriptor& DescriptorSetDescriptor::TextureSampler(TextureHandle InTexture, SamplerHandle InSampler, u16 InBinding)
+{
+    samplers[resources_count]  = InSampler;
+    bindings[resources_count]  = InBinding;
+    resources[resources_count] = InTexture.index;
+    ++resources_count;
+    return *this;
+    return *this;
+}
+
+DescriptorSetDescriptor& DescriptorSetDescriptor::SetName(std::string InName)
+{
+    name = InName;
+    return *this;
+}
+
 DescriptorSetLayoutDescriptor& DescriptorSetLayoutDescriptor::Reset()
 {
     bindings_count = 0;

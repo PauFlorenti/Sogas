@@ -191,6 +191,22 @@ enum class DescriptorType
 
 struct DescriptorSetDescriptor
 {
+    ResourceHandle resources[MAX_DESCRIPTOR_PER_SET];
+    SamplerHandle  samplers[MAX_DESCRIPTOR_PER_SET];
+    u16            bindings[MAX_DESCRIPTOR_PER_SET];
+
+    DescriptorSetLayoutHandle layout;
+    u32 resources_count = 0;
+
+    std::string name;
+
+    DescriptorSetDescriptor& Reset();
+    DescriptorSetDescriptor& SetLayout(DescriptorSetLayoutHandle InLayout);
+    DescriptorSetDescriptor& Texture(TextureHandle InTexture, u16 InBinding);
+    DescriptorSetDescriptor& Buffer(BufferHandle InBuffer, u16 InBinding);
+    DescriptorSetDescriptor& TextureSampler(TextureHandle InTexture, SamplerHandle InSampler, u16 InBinding);
+    DescriptorSetDescriptor& SetName(std::string InName);
+
 };
 struct DescriptorSetLayoutDescriptor
 {

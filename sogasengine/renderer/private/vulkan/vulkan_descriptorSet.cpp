@@ -57,6 +57,18 @@ DescriptorSetHandle VulkanDescriptorSet::Create(VulkanDevice* InDevice, const De
     {
         return handle;
     }
+
+    VulkanDescriptorSet*             descriptor_set        = InDevice->GetDescriptorSetResource(handle);
+    const VulkanDescriptorSetLayout* descriptor_set_layout = InDevice->GetDescriptorSetLayoutResource(InDescriptor.layout);
+
+    VkDescriptorSetAllocateInfo allocate_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
+    //allocate_info.descriptorPool              = InDevice->InDevice->descriptor_pool;
+    allocate_info.pSetLayouts                 = &descriptor_set_layout->descriptor_set_layout;
+
+    vkcheck(vkAllocateDescriptorSets(InDevice->Handle, &allocate_info, &descriptor_set->descriptorSet));
+
+    
+
     return handle;
 }
 
@@ -101,8 +113,8 @@ DescriptorSetLayoutHandle VulkanDescriptorSet::Create(VulkanDevice* InDevice, co
     }
 
     VkDescriptorSetLayoutCreateInfo info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
-    info.bindingCount = used_bindings;
-    info.pBindings = descriptor_set_layout->binding;
+    info.bindingCount                    = used_bindings;
+    info.pBindings                       = descriptor_set_layout->binding;
 
     vkcheck(vkCreateDescriptorSetLayout(InDevice->Handle, &info, nullptr, &descriptor_set_layout->descriptor_set_layout));
 
