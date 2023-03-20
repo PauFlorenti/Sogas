@@ -234,6 +234,13 @@ bool VulkanDevice::Init(const DeviceDescriptor& InDescriptor)
     pool_info.pPoolSizes                 = pool_sizes.data();
     vkcheck(vkCreateDescriptorPool(Handle, &pool_info, nullptr, &descriptor_pool));
 
+    SamplerDescriptor sampler_descriptor{};
+    sampler_descriptor
+      .SetAddressModeUVW(SamplerDescriptor::SamplerAddressMode::CLAMP_TO_EDGE, SamplerDescriptor::SamplerAddressMode::CLAMP_TO_EDGE, SamplerDescriptor::SamplerAddressMode::CLAMP_TO_EDGE)
+      .SetMinMagMip(SamplerDescriptor::SamplerFilter::LINEAR, SamplerDescriptor::SamplerFilter::LINEAR, SamplerDescriptor::SamplerMipmapMode::LINEAR)
+      .SetName("Default Sampler");
+    default_sampler = CreateSampler(sampler_descriptor);
+
     STRACE("Finished Initializing Vulkan device.\n");
 
     return true;
@@ -677,7 +684,7 @@ void VulkanDevice::CreateRenderPass(Renderer::RenderPass* renderpass) const
 
 void VulkanDevice::CreatePipeline(const PipelineDescriptor* desc,
                                   Pipeline*                 pipeline,
-                                  Renderer::RenderPass*     renderpass) const
+                                  Renderer::RenderPass*     renderpass)
 {
     VulkanPipeline::Create(this, desc, pipeline, renderpass);
 }

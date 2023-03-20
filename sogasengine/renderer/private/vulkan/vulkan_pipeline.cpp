@@ -27,7 +27,7 @@ constexpr static VkBlendOp ConvertBlendOperation(BlendOperation InOp)
         case BlendOperation::MAX:
             return VK_BLEND_OP_MAX;
     }
-    
+
     return VK_BLEND_OP_MAX;
 }
 
@@ -322,7 +322,7 @@ PipelineHandle VulkanPipeline::Create(VulkanDevice* InDevice, const PipelineDesc
     return handle;
 }
 
-void VulkanPipeline::Create(const VulkanDevice*       device,
+void VulkanPipeline::Create(VulkanDevice*             device,
                             const PipelineDescriptor* desc,
                             Pipeline*                 pipeline,
                             Renderer::RenderPass*     renderpass)

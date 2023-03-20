@@ -79,7 +79,7 @@ class GPU_device
     virtual void                     CreateTexture(Texture *texture, void* data) const = 0;
     virtual std::shared_ptr<Texture> CreateTexture(TextureDescriptor desc, void* data = nullptr) const = 0;
     virtual void                     CreateRenderPass(RenderPass* renderpass) const = 0;
-    virtual void                     CreatePipeline(const PipelineDescriptor* desc, Pipeline* pipeline, RenderPass* renderpass = nullptr) const = 0;
+    virtual void                     CreatePipeline(const PipelineDescriptor* desc, Pipeline* pipeline, RenderPass* renderpass = nullptr) = 0;
     virtual void                     CreateAttachment() const = 0;
     virtual void                     CreateShader(ShaderStageType stage, std::string filename, Shader* shader) const = 0;
     virtual void                     UpdateDescriptorSet(const Pipeline* InPipeline) const = 0;
@@ -116,7 +116,7 @@ class GPU_device
     ResourcePool renderpasses;
 
     RenderPassHandle swapchain_renderpass;
-    SamplerHandle default_sample;
+    SamplerHandle default_sampler;
 
     TextureHandle depth_texture;
 

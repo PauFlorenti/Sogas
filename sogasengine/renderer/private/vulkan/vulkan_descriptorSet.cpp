@@ -41,8 +41,6 @@ constexpr static VkDescriptorType ConvertDescriptorType(DescriptorType InType)
 
 VulkanDescriptorSet::~VulkanDescriptorSet()
 {
-    vkDestroyDescriptorPool(device->Handle, descriptorPool, nullptr);
-
     VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
     VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
     VkDescriptorSet  descriptorSet  = VK_NULL_HANDLE;
@@ -62,12 +60,26 @@ DescriptorSetHandle VulkanDescriptorSet::Create(VulkanDevice* InDevice, const De
     const VulkanDescriptorSetLayout* descriptor_set_layout = InDevice->GetDescriptorSetLayoutResource(InDescriptor.layout);
 
     VkDescriptorSetAllocateInfo allocate_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
-    //allocate_info.descriptorPool              = InDevice->InDevice->descriptor_pool;
+    allocate_info.descriptorPool              = InDevice->descriptor_pool;
     allocate_info.pSetLayouts                 = &descriptor_set_layout->descriptor_set_layout;
 
     vkcheck(vkAllocateDescriptorSets(InDevice->Handle, &allocate_info, &descriptor_set->descriptorSet));
 
-    
+    u8* memory                      = static_cast<u8*>(InDevice->allocator->allocate((sizeof(ResourceHandle) + sizeof(SamplerHandle) + sizeof(u16)) * InDescriptor.resources_count, 1));
+    descriptor_set->resources       = reinterpret_cast<ResourceHandle*>(memory);
+    descriptor_set->samplers        = reinterpret_cast<SamplerHandle*>(memory + sizeof(ResourceHandle) * InDescriptor.resources_count);
+    descriptor_set->bindings        = reinterpret_cast<u16*>(memory + (sizeof(ResourceHandle) + sizeof(SamplerHandle)) * InDescriptor.resources_count);
+    descriptor_set->resources_count = InDescriptor.resources_count;
+    descriptor_set->layout          = descriptor_set_layout;
+
+    // Update
+    VkWriteDescriptorSet   descriptor_write[8];
+    VkDescriptorBufferInfo buffer_info[8];
+    VkDescriptorImageInfo  image_info[8];
+
+    VulkanSampler* default_sampler = InDevice->GetDefaultSampler();
+
+    u32 resources_count = InDescriptor.resources_count;
 
     return handle;
 }
@@ -121,7 +133,7 @@ DescriptorSetLayoutHandle VulkanDescriptorSet::Create(VulkanDevice* InDevice, co
     return handle;
 }
 
-void VulkanDescriptorSet::Create(const VulkanDevice*                              InDevice,
+void VulkanDescriptorSet::Create(VulkanDevice*                                    InDevice,
                                  DescriptorSet*                                   InDescriptorSet,
                                  VkDescriptorSetLayout                            InDescriptorSetLayout,
                                  VkPipelineLayout                                 InPipelineLayout,
@@ -168,14 +180,14 @@ void VulkanDescriptorSet::Create(const VulkanDevice*                            
     poolInfo.pPoolSizes                 = poolSizes.data();
     poolInfo.maxSets                    = 1;
 
-    if (vkCreateDescriptorPool(InDevice->Handle, &poolInfo, nullptr, &internalState->descriptorPool) != VK_SUCCESS)
+    if (vkCreateDescriptorPool(InDevice->Handle, &poolInfo, nullptr, &InDevice->descriptor_pool) != VK_SUCCESS)
     {
         SERROR("Failed to create descriptor pool.");
         return;
     }
 
     VkDescriptorSetAllocateInfo allocInfo = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
-    allocInfo.descriptorPool              = internalState->descriptorPool;
+    allocInfo.descriptorPool              = InDevice->descriptor_pool;
     allocInfo.descriptorSetCount          = 1;
     allocInfo.pSetLayouts                 = &InDescriptorSetLayout;
 

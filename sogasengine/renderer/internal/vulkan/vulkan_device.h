@@ -94,7 +94,7 @@ class VulkanDevice : public GPU_device
     void                              CreateTexture(Texture *texture, void* data = nullptr) const override;
     std::shared_ptr<Texture>          CreateTexture(TextureDescriptor desc, void* data = nullptr) const override;
     void                              CreateRenderPass(RenderPass *renderpass) const override;
-    void                              CreatePipeline(const PipelineDescriptor *desc, Pipeline *pipeline, RenderPass *renderpass = nullptr) const override;
+    void                              CreatePipeline(const PipelineDescriptor *desc, Pipeline *pipeline, RenderPass *renderpass = nullptr) override;
     void                              CreateAttachment() const override{};
     void                              CreateShader(ShaderStageType stage, std::string filename, Shader *shader) const override;
     void                              UpdateDescriptorSet(const Pipeline *InPipeline) const override;
@@ -132,6 +132,8 @@ class VulkanDevice : public GPU_device
     {
         return GraphicsQueue;
     }
+
+    VulkanSampler* GetDefaultSampler() {return GetSamplerResource(default_sampler);};
 
   private:
     // Device

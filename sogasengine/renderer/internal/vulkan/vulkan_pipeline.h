@@ -22,7 +22,7 @@ class VulkanPipeline
 
     static PipelineHandle Create(VulkanDevice* InDevice, const PipelineDescriptor& InDescriptor);
 
-    static void Create(const VulkanDevice*       device,
+    static void Create(VulkanDevice*             device,
                        const PipelineDescriptor* descriptor,
                        Pipeline*                 pipeline,
                        Renderer::RenderPass*     renderpass = nullptr);
@@ -54,7 +54,7 @@ class VulkanPipeline
     std::vector<DescriptorSet>                descriptorSets[MAX_FRAMES_IN_FLIGHT];
 
   private:
-    const VulkanDevice* device = nullptr;
+    VulkanDevice* device = nullptr;
 };
 
 } // namespace Vk
