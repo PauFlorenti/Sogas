@@ -131,7 +131,48 @@ struct ShaderStateDescriptor
 
 struct SamplerDescriptor
 {
+    enum class SamplerFilter
+    {
+        NEAREST,
+        LINEAR,
+        CUBIC,
+        COUNT
+    };
+
+    enum class SamplerMipmapMode
+    {
+        NEAREST,
+        LINEAR,
+        COUNT
+    };
+
+    enum class SamplerAddressMode
+    {
+        REPEAT = 0,
+        MIRRORED_REPEAT,
+        CLAMP_TO_EDGE,
+        CLAMP_TO_BORDER,
+        MIRROR_CLAMP_TO_EDGE,
+        COUNT
+    };
+
+    SamplerFilter     min_filter    = SamplerFilter::NEAREST;
+    SamplerFilter     mag_filter    = SamplerFilter::NEAREST;
+    SamplerMipmapMode mipmap_filter = SamplerMipmapMode::NEAREST;
+
+    SamplerAddressMode address_mode_u = SamplerAddressMode::REPEAT;
+    SamplerAddressMode address_mode_v = SamplerAddressMode::REPEAT;
+    SamplerAddressMode address_mode_w = SamplerAddressMode::REPEAT;
+
+    std::string name;
+
+    SamplerDescriptor& SetMinMagMip(SamplerFilter InMin, SamplerFilter InMag, SamplerMipmapMode InMip);
+    SamplerDescriptor& SetAddressModeU(SamplerAddressMode InU);
+    SamplerDescriptor& SetAddressModeUV(SamplerAddressMode InU, SamplerAddressMode InV);
+    SamplerDescriptor& SetAddressModeUVW(SamplerAddressMode InU, SamplerAddressMode InV, SamplerAddressMode InW);
+    SamplerDescriptor& SetName(const std::string& InName);
 };
+
 struct DescriptorSetDescriptor
 {
 };

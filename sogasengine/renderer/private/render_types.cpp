@@ -110,5 +110,40 @@ DepthStencilState& DepthStencilState::SetDepth(bool write, CompareOperation comp
     return *this;
 }
 
+SamplerDescriptor& SamplerDescriptor::SetMinMagMip(SamplerFilter InMin, SamplerFilter InMag, SamplerMipmapMode InMip)
+{
+    min_filter    = InMin;
+    mag_filter    = InMag;
+    mipmap_filter = InMip;
+    return *this;
+}
+
+SamplerDescriptor& SamplerDescriptor::SetAddressModeU(SamplerAddressMode InU)
+{
+    address_mode_u = InU;
+    return *this;
+}
+
+SamplerDescriptor& SamplerDescriptor::SetAddressModeUV(SamplerAddressMode InU, SamplerAddressMode InV)
+{
+    address_mode_u = InU;
+    address_mode_v = InV;
+    return *this;
+}
+
+SamplerDescriptor& SamplerDescriptor::SetAddressModeUVW(SamplerAddressMode InU, SamplerAddressMode InV, SamplerAddressMode InW)
+{
+    address_mode_u = InU;
+    address_mode_v = InV;
+    address_mode_w = InW;
+    return *this;
+}
+
+SamplerDescriptor& SamplerDescriptor::SetName(const std::string& InName)
+{
+    name = InName;
+    return *this;
+}
+
 } // namespace Renderer
 } // namespace Sogas

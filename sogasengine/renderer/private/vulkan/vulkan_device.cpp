@@ -10,6 +10,7 @@
 #include "vulkan/vulkan_descriptorSet.h"
 #include "vulkan/vulkan_pipeline.h"
 #include "vulkan/vulkan_renderpass.h"
+#include "vulkan/vulkan_sampler.h"
 #include "vulkan/vulkan_shader.h"
 #include "vulkan/vulkan_swapchain.h"
 #include "vulkan/vulkan_texture.h"
@@ -200,7 +201,7 @@ bool VulkanDevice::Init(const DeviceDescriptor& InDescriptor)
     shaders.Init(allocator, 128, sizeof(VulkanShaderState));
     descriptorSets.Init(allocator, 128, sizeof(VulkanDescriptorSet));
     descriptorSetLayouts.Init(allocator, 128, sizeof(VulkanDescriptorSetLayout));
-    //samplers.Init(allocator, 32, sizeof(VulkanSampler));
+    samplers.Init(allocator, 32, sizeof(VulkanSampler));
 
     CreateCommandResources();
 
@@ -1145,6 +1146,11 @@ VulkanBuffer* VulkanDevice::GetBufferResource(BufferHandle handle)
 VulkanShaderState* VulkanDevice::GetShaderResource(ShaderStateHandle handle)
 {
     return static_cast<VulkanShaderState*>(shaders.AccessResource(handle.index));
+}
+
+VulkanSampler* VulkanDevice::GetSamplerResource(SamplerHandle handle)
+{
+    return static_cast<VulkanSampler*>(shaders.AccessResource(handle.index));
 }
 
 VulkanTexture* VulkanDevice::GetTextureResource(TextureHandle handle)

@@ -21,14 +21,15 @@ class VulkanDevice : public GPU_device
 {
     friend class VulkanAttachment;
     friend class VulkanBuffer;
+    friend class VulkanCommandBuffer;
     friend class VulkanDescriptorSet;
     friend class VulkanDescriptorSetLayout;
     friend class VulkanPipeline;
     friend class VulkanRenderPass;
+    friend class VulkanSampler;
     friend class VulkanShader;
-    friend class VulkanTexture;
     friend class VulkanSwapchain;
-    friend class VulkanCommandBuffer;
+    friend class VulkanTexture;
 
   public:
     explicit VulkanDevice(GraphicsAPI              apiType,
@@ -39,21 +40,35 @@ class VulkanDevice : public GPU_device
 
     const VulkanDevice& operator=(const VulkanDevice& other) = delete;
 
-    // clang-format off
+    // Helpers
+    GraphicsAPI getApiType() const
+    {
+        return api_type;
+    }
+    const VkPhysicalDevice& GetGPU() const
+    {
+        return Physical_device;
+    }
+    constexpr u32 GetFrameCount() const
+    {
+        return FrameCount;
+    }
+    constexpr u32 GetFrameIndex() const
+    {
+        return GetFrameCount() % MAX_FRAMES_IN_FLIGHT;
+    }
 
-    GraphicsAPI             getApiType() const { return api_type; }
-    const VkPhysicalDevice& GetGPU() const { return Physical_device; }
-    constexpr u32 GetFrameCount() const { return FrameCount; }
-    constexpr u32 GetFrameIndex() const { return GetFrameCount() % MAX_FRAMES_IN_FLIGHT; }
-
+    // Init/shutownd
     bool Init(const DeviceDescriptor& InDescriptor) override;
     void shutdown() override;
+
     CommandBuffer BeginCommandBuffer() override;
-    void SubmitCommandBuffers() override;
+    void          SubmitCommandBuffers() override;
     //void BeginRenderPass(std::shared_ptr<Renderer::Swapchain> swapchain, CommandBuffer cmd) override {};
-    void BeginRenderPass(Renderer::RenderPass *InRenderpass, CommandBuffer cmd) override;
+    void BeginRenderPass(Renderer::RenderPass* InRenderpass, CommandBuffer cmd) override;
     void EndRenderPass(CommandBuffer cmd) override;
 
+    // clang-format off
     // Create gpu resources
     BufferHandle              CreateBuffer(const BufferDescriptor& InDescriptor) override;
     TextureHandle             CreateTexture(const TextureDescriptor& InDescriptor) override;
@@ -106,6 +121,7 @@ class VulkanDevice : public GPU_device
 
     VulkanBuffer*              GetBufferResource(BufferHandle handle);
     VulkanShaderState*         GetShaderResource(ShaderStateHandle handle);
+    VulkanSampler*             GetSamplerResource(SamplerHandle handle);
     VulkanTexture*             GetTextureResource(TextureHandle handle);
     VulkanDescriptorSet*       GetDescriptorSetResource(DescriptorSetHandle handle);
     VulkanDescriptorSetLayout* GetDescriptorSetLayoutResource(DescriptorSetLayoutHandle handle);
