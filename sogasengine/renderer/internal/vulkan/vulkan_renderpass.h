@@ -27,9 +27,7 @@ class VulkanRenderPass : public Renderer::DeviceRenderpass
     }
 
     static RenderPassHandle Create(VulkanDevice* InDevice, const RenderPassDescriptor& InDescriptor);
-    static void             Create(const VulkanDevice* device, Renderer::RenderPass* renderpass);
-
-    static VkRenderPass CreateRenderPass(const VulkanDevice* InDevice, const RenderPassOutput& InOutput, std::string InName);
+    static VkRenderPass     CreateRenderPass(const VulkanDevice* InDevice, const RenderPassOutput& InOutput, std::string InName);
 
     void Destroy() override;
 

@@ -602,34 +602,6 @@ constexpr VkCompareOp ConvertCompareOperation(CompareOperation operation)
     }
 }
 
-constexpr inline VkAttachmentLoadOp ConvertLoadOperation(Attachment::LoadOp InOperation)
-{
-    switch (InOperation)
-    {
-        case Attachment::LoadOp::LOAD:
-            return VK_ATTACHMENT_LOAD_OP_LOAD;
-        case Attachment::LoadOp::CLEAR:
-            return VK_ATTACHMENT_LOAD_OP_CLEAR;
-        case Attachment::LoadOp::DONTCARE:
-            return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        default:
-            return VK_ATTACHMENT_LOAD_OP_NONE_EXT;
-    }
-}
-
-constexpr inline VkAttachmentStoreOp ConvertStoreOperation(Attachment::StoreOp InOperation)
-{
-    switch (InOperation)
-    {
-        case Attachment::StoreOp::STORE:
-            return VK_ATTACHMENT_STORE_OP_STORE;
-        case Attachment::StoreOp::DONTCARE:
-            return VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        default:
-            return VK_ATTACHMENT_STORE_OP_NONE;
-    }
-}
-
 constexpr VkShaderStageFlagBits ConvertShaderStage(ShaderStageType stage)
 {
     switch (stage)

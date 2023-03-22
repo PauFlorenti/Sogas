@@ -91,25 +91,25 @@ class VulkanDevice : public GPU_device
     void                              CreateSwapchain(GLFWwindow *window) override;
     void                              CreateTexture(Texture *texture, void* data = nullptr) const override;
     std::shared_ptr<Texture>          CreateTexture(TextureDescriptor desc, void* data = nullptr) const override;
-    void                              CreateRenderPass(RenderPass *renderpass) const override;
     void                              CreatePipeline(const PipelineDescriptor *desc, Pipeline *pipeline, RenderPass *renderpass = nullptr) override;
     void                              CreateAttachment() const override{};
     void                              CreateShader(ShaderStageType stage, std::string filename, Shader *shader) const override;
     void                              UpdateDescriptorSet(const Pipeline *InPipeline) const override;
-    void                              CreateAttachment(AttachmentFramebuffer *InAttachment) const override;
 
     // API calls ...
     //void SetWindowSize(std::shared_ptr<Swapchain> InSwapchain, const u32 &width, const u32 &height) override;
     void BindPipeline(const Pipeline *InPipeline, CommandBuffer &cmd) override;
     void BindDescriptor(CommandBuffer cmd) override;
     void BindTexture(const Texture *InTexture, const Pipeline *InPipeline, const u32 InSlot, const u32 InDescriptorSet = 0) override;
-    void BindAttachment(const AttachmentFramebuffer *InAttachment, const Pipeline *InPipeline, const u32 InSlot, const u32 InDescriptorSet = 0) override;
     void SetTopology(PrimitiveTopology topology) override;
     void Draw(const u32 count, const u32 offset, CommandBuffer cmd) override;
     void DrawIndexed(const u32 count, const u32 offset, CommandBuffer cmd) override;
     void PushConstants(const void *InData, const u32 InSize, CommandBuffer cmd) override;
     void WaitCommand(CommandBuffer &cmd, CommandBuffer &cmdToWait) override;
     // clang-format on
+
+    RenderPassHandle        GetSwapchainRenderpass() override;
+    const RenderPassOutput& GetSwapchainOutput() const override;
 
     VkRenderPass GetVulkanRenderPass(const RenderPassOutput& InOutput, std::string InName);
 
@@ -127,7 +127,10 @@ class VulkanDevice : public GPU_device
         return GraphicsQueue;
     }
 
-    VulkanSampler* GetDefaultSampler() {return GetSamplerResource(default_sampler);};
+    VulkanSampler* GetDefaultSampler()
+    {
+        return GetSamplerResource(default_sampler);
+    };
 
   private:
     // Device

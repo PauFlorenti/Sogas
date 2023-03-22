@@ -1,7 +1,7 @@
 #pragma once
 
-#include "attachment.h"
 #include "render_types.h" // TODO move attachment to own file.
+//#include "attachment.h"
 
 namespace Sogas
 {
@@ -42,8 +42,8 @@ struct RenderPassDescriptor
     RenderPassDescriptor& SetType(RenderPassType InType);
     RenderPassDescriptor& SetOperations(RenderPassOperation InColor, RenderPassOperation InDepth, RenderPassOperation InStencil);
 
-    std::vector<Attachment>
-      attachments;
+    // std::vector<Attachment>
+    //   attachments;
 };
 class RenderPass final
 {
@@ -58,10 +58,12 @@ class RenderPass final
     {
         return descriptor;
     }
-    void AddAttachment(Attachment InAttachment)
-    {
-        descriptor.attachments.emplace_back(InAttachment);
-    }
+
+    // void AddAttachment(Attachment InAttachment)
+    // {
+    //     descriptor.attachments.emplace_back(InAttachment);
+    // }
+
     DeviceRenderpass* internalState = nullptr;
 
   private:

@@ -4,7 +4,6 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#include "vulkan/vulkan_attachment.h"
 #include "vulkan/vulkan_buffer.h"
 #include "vulkan/vulkan_commandbuffer.h"
 #include "vulkan/vulkan_descriptorSet.h"
@@ -657,11 +656,6 @@ std::shared_ptr<Texture> VulkanDevice::CreateTexture(TextureDescriptor desc, voi
     return VulkanTexture::Create(this, std::move(desc), data);
 };
 
-void VulkanDevice::CreateRenderPass(Renderer::RenderPass* renderpass) const
-{
-    VulkanRenderPass::Create(this, renderpass);
-}
-
 void VulkanDevice::CreatePipeline(const PipelineDescriptor* desc,
                                   Pipeline*                 pipeline,
                                   Renderer::RenderPass*     renderpass)
@@ -690,13 +684,6 @@ void VulkanDevice::UpdateDescriptorSet(const Pipeline* InPipeline) const
             descriptorSet.dirty = false;
         }
     }
-}
-
-void VulkanDevice::CreateAttachment(AttachmentFramebuffer* InAttachment) const
-{
-    SASSERT(InAttachment);
-    // return VulkanTexture::Create(this, , nullptr);
-    VulkanAttachment::Create(this, InAttachment);
 }
 
 // void VulkanDevice::SetWindowSize(std::shared_ptr<Renderer::Swapchain> InSwapchain, const u32& width, const u32& height)
@@ -752,31 +739,6 @@ void VulkanDevice::BindTexture(const Texture*  InTexture,
     write.dstBinding           = InSlot;
     write.dstSet               = descriptorSetInternalState->GetDescriptorSet();
     write.pImageInfo           = &internalState->descriptorImageInfo;
-
-    descriptorSetInternalState->writes.push_back(write);
-    pipelineInternalState->descriptorSets[GetFrameIndex()].at(InDescriptorSet).dirty = true;
-}
-
-void VulkanDevice::BindAttachment(const AttachmentFramebuffer* InAttachment,
-                                  const Pipeline*              InPipeline,
-                                  const u32                    InSlot,
-                                  const u32                    InDescriptorSet)
-{
-    auto pipelineInternalState = VulkanPipeline::ToInternal(InPipeline);
-    auto descriptorSetInternalState =
-      VulkanDescriptorSet::ToInternal(&pipelineInternalState->descriptorSets[GetFrameIndex()].at(InDescriptorSet));
-    auto attachmentInternalState = VulkanAttachment::ToInternal(InAttachment);
-
-    attachmentInternalState->imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    attachmentInternalState->imageInfo.imageView   = attachmentInternalState->GetImageView();
-    attachmentInternalState->imageInfo.sampler     = attachmentInternalState->GetSampler();
-
-    VkWriteDescriptorSet write = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
-    write.descriptorCount      = 1;
-    write.descriptorType       = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    write.dstBinding           = InSlot;
-    write.dstSet               = descriptorSetInternalState->GetDescriptorSet();
-    write.pImageInfo           = &attachmentInternalState->imageInfo;
 
     descriptorSetInternalState->writes.push_back(write);
     pipelineInternalState->descriptorSets[GetFrameIndex()].at(InDescriptorSet).dirty = true;
@@ -1121,6 +1083,16 @@ VulkanPipeline* VulkanDevice::GetPipelineResource(PipelineHandle handle)
 VulkanRenderPass* VulkanDevice::GetRenderPassResource(RenderPassHandle handle)
 {
     return static_cast<VulkanRenderPass*>(renderpasses.AccessResource(handle.index));
+}
+
+RenderPassHandle VulkanDevice::GetSwapchainRenderpass()
+{
+    return swapchain_renderpass;
+}
+
+const RenderPassOutput& VulkanDevice::GetSwapchainOutput() const
+{
+    return swapchain->output;
 }
 
 } // namespace Vk

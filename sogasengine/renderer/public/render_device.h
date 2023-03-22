@@ -21,9 +21,9 @@ namespace Renderer
 struct DeviceDescriptor
 {
     Memory::Allocator* allocator;
-    void* window = nullptr;
-    u16 width = 0;
-    u16 height = 0;
+    void*              window = nullptr;
+    u16                width  = 0;
+    u16                height = 0;
 
     DeviceDescriptor& SetWindow(void* InWindow, u16 InWidth, u16 InHeight);
     DeviceDescriptor& SetAllocator(Memory::Allocator* InAllocator);
@@ -76,12 +76,10 @@ class GPU_device
     virtual void                     CreateSwapchain(GLFWwindow* window) = 0;
     virtual void                     CreateTexture(Texture *texture, void* data) const = 0;
     virtual std::shared_ptr<Texture> CreateTexture(TextureDescriptor desc, void* data = nullptr) const = 0;
-    virtual void                     CreateRenderPass(RenderPass* renderpass) const = 0;
     virtual void                     CreatePipeline(const PipelineDescriptor* desc, Pipeline* pipeline, RenderPass* renderpass = nullptr) = 0;
     virtual void                     CreateAttachment() const = 0;
     virtual void                     CreateShader(ShaderStageType stage, std::string filename, Shader* shader) const = 0;
     virtual void                     UpdateDescriptorSet(const Pipeline* InPipeline) const = 0;
-    virtual void                     CreateAttachment(AttachmentFramebuffer* InAttachment) const = 0;
 
     // API calls
     // This are commands that will execute when submitCommands is called.
@@ -89,7 +87,6 @@ class GPU_device
     virtual void BindPipeline(const Pipeline* InPipeline, CommandBuffer& cmd) = 0;
     virtual void BindDescriptor(CommandBuffer cmd) = 0;
     virtual void BindTexture(const Texture*  InTexture, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet = 0) = 0;
-    virtual void BindAttachment(const AttachmentFramebuffer* InAttachment, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet = 0) = 0;
     virtual void SetTopology(PrimitiveTopology topology) = 0;
     virtual void Draw(const u32 count, const u32 offset, CommandBuffer cmd) = 0;
     virtual void DrawIndexed(const u32 count, const u32 offset, CommandBuffer cmd) = 0;
@@ -97,6 +94,9 @@ class GPU_device
     virtual void WaitCommand(CommandBuffer& cmd, CommandBuffer& cmdToWait) = 0;
 
     // clang-format on
+
+    virtual RenderPassHandle        GetSwapchainRenderpass() = 0;
+    virtual const RenderPassOutput& GetSwapchainOutput() const = 0;
 
     Memory::Allocator* allocator = nullptr;
 
@@ -110,7 +110,7 @@ class GPU_device
     ResourcePool renderpasses;
 
     RenderPassHandle swapchain_renderpass;
-    SamplerHandle default_sampler;
+    SamplerHandle    default_sampler;
 
     TextureHandle depth_texture;
 
