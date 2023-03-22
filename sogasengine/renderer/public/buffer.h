@@ -51,31 +51,5 @@ struct BufferDescriptor
     BufferDescriptor& setName(const std::string& InName);
 };
 
-class Buffer final
-{
-  public:
-    Buffer() = default;
-    Buffer(BufferDescriptor desc);
-    Buffer(Buffer&& other);
-    Buffer& operator=(Buffer&& other);
-    ~Buffer();
-
-    void Release();
-    void SetData(void* InData, const u64& size, const u64& offset = 0);
-
-    const u32 Size() const;
-    const u64 ByteSize() const;
-    const u64 ElementSize() const;
-    bool      isEmpty() const;
-    bool      isValid() const;
-
-    // TODO This should not be public.
-    std::shared_ptr<DeviceBuffer> device_buffer;
-
-  private:
-    u64                       elementSize{0};
-    u32                       elementCount{0};
-    std::weak_ptr<GPU_device> device;
-};
 } // namespace Renderer
 } // namespace Sogas

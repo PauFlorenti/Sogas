@@ -26,14 +26,6 @@ class VulkanBuffer final : public Renderer::DeviceBuffer
 
     static BufferHandle Create(VulkanDevice* InDevice, const BufferDescriptor& InDescriptor);
 
-    static std::unique_ptr<Renderer::Buffer>
-    Create(const VulkanDevice* device, Renderer::BufferDescriptor desc, void* data);
-
-    static inline std::shared_ptr<VulkanBuffer> ToInternal(const std::shared_ptr<Renderer::DeviceBuffer> InBuffer)
-    {
-        return std::dynamic_pointer_cast<VulkanBuffer>(InBuffer);
-    }
-
     const VkBuffer* GetHandle() const
     {
         return &buffer;

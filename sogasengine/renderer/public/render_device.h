@@ -74,8 +74,6 @@ class GPU_device
     virtual void DestroyRenderPass(RenderPassHandle InHandle) = 0;
 
     virtual void                     CreateSwapchain(GLFWwindow* window) = 0;
-    virtual std::shared_ptr<Buffer>  CreateBuffer(BufferDescriptor desc, void* data) const = 0;
-    virtual std::shared_ptr<Buffer>  CreateBuffer(const u32& size, const u64& element_size, BufferBindingPoint binding, BufferUsage usage, void* data) const = 0;
     virtual void                     CreateTexture(Texture *texture, void* data) const = 0;
     virtual std::shared_ptr<Texture> CreateTexture(TextureDescriptor desc, void* data = nullptr) const = 0;
     virtual void                     CreateRenderPass(RenderPass* renderpass) const = 0;
@@ -88,18 +86,14 @@ class GPU_device
     // API calls
     // This are commands that will execute when submitCommands is called.
     //virtual void SetWindowSize(std::shared_ptr<Swapchain> InSwapchain, const u32& width, const u32& height) = 0;
-    virtual void BindVertexBuffer(const std::shared_ptr<Buffer>& buffer, CommandBuffer cmd) = 0;
-    virtual void BindIndexBuffer(const std::shared_ptr<Buffer>& buffer, CommandBuffer cmd) = 0;
     virtual void BindPipeline(const Pipeline* InPipeline, CommandBuffer& cmd) = 0;
     virtual void BindDescriptor(CommandBuffer cmd) = 0;
-    virtual void BindBuffer(const std::shared_ptr<Buffer>& InBuffer, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet, const u32 InOffset = 0) = 0;
     virtual void BindTexture(const Texture*  InTexture, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet = 0) = 0;
     virtual void BindAttachment(const AttachmentFramebuffer* InAttachment, const Pipeline* InPipeline, const u32 InSlot, const u32 InDescriptorSet = 0) = 0;
     virtual void SetTopology(PrimitiveTopology topology) = 0;
     virtual void Draw(const u32 count, const u32 offset, CommandBuffer cmd) = 0;
     virtual void DrawIndexed(const u32 count, const u32 offset, CommandBuffer cmd) = 0;
     virtual void PushConstants(const void* InData, const u32 Size, CommandBuffer cmd) = 0;
-    virtual void UpdateBuffer(const std::shared_ptr<Buffer>& InBuffer, const void* InData, const u32 InDataSize, const u32 InOffset, CommandBuffer cmd) = 0;
     virtual void WaitCommand(CommandBuffer& cmd, CommandBuffer& cmdToWait) = 0;
 
     // clang-format on

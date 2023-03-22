@@ -647,26 +647,6 @@ void VulkanDevice::DestroyRenderPass(RenderPassHandle InHandle)
 {
 }
 
-std::shared_ptr<Renderer::Buffer> VulkanDevice::CreateBuffer(Renderer::BufferDescriptor desc, void* data) const
-{
-    return VulkanBuffer::Create(this, desc, data);
-}
-
-std::shared_ptr<Renderer::Buffer> VulkanDevice::CreateBuffer(const u32&                   size,
-                                                             const u64&                   element_size,
-                                                             Renderer::BufferBindingPoint binding,
-                                                             Renderer::BufferUsage        usage,
-                                                             void*                        data) const
-{
-    Renderer::BufferDescriptor buffer_descriptor{};
-    buffer_descriptor.size        = size;
-    buffer_descriptor.elementSize = element_size;
-    buffer_descriptor.binding     = binding;
-    buffer_descriptor.usage       = usage;
-    buffer_descriptor.type        = Renderer::BufferType::Static;
-    return VulkanBuffer::Create(this, std::move(buffer_descriptor), data);
-}
-
 void VulkanDevice::CreateTexture(Texture* texture, void* data) const
 {
     VulkanTexture::Create(this, texture, data);
@@ -729,36 +709,6 @@ void VulkanDevice::CreateAttachment(AttachmentFramebuffer* InAttachment) const
 //     }
 // }
 
-void VulkanDevice::BindVertexBuffer(const std::shared_ptr<Renderer::Buffer>& buffer, CommandBuffer cmd)
-{
-    SASSERT(buffer);
-    SASSERT(buffer->isValid());
-
-    const auto internalBuffer = VulkanBuffer::ToInternal(buffer->device_buffer);
-    SASSERT(internalBuffer);
-
-    VkDeviceSize offset = {0};
-    vkCmdBindVertexBuffers(VulkanCommandBuffer::ToInternal(&cmd)->commandBuffers[GetFrameIndex()],
-                           0,
-                           1,
-                           internalBuffer->GetHandle(),
-                           &offset);
-}
-
-void VulkanDevice::BindIndexBuffer(const std::shared_ptr<Renderer::Buffer>& buffer, CommandBuffer cmd)
-{
-    SASSERT(buffer->isValid());
-
-    const auto internalBuffer = VulkanBuffer::ToInternal(buffer->device_buffer);
-    SASSERT(internalBuffer);
-
-    VkDeviceSize offset = {0};
-    vkCmdBindIndexBuffer(VulkanCommandBuffer::ToInternal(&cmd)->commandBuffers[GetFrameIndex()],
-                         *internalBuffer->GetHandle(),
-                         offset,
-                         VK_INDEX_TYPE_UINT32);
-}
-
 void VulkanDevice::BindPipeline(const Pipeline* InPipeline, CommandBuffer& cmd)
 {
     SASSERT(InPipeline)
@@ -780,33 +730,6 @@ void VulkanDevice::BindDescriptor(CommandBuffer cmd)
         auto descriptorSetInternalState = VulkanDescriptorSet::ToInternal(&descriptorSet);
         descriptorSetInternalState->BindDescriptor(commandBufferInternalState->commandBuffers[GetFrameIndex()]);
     }
-}
-
-void VulkanDevice::BindBuffer(const std::shared_ptr<Renderer::Buffer>& InBuffer,
-                              const Pipeline*                          InPipeline,
-                              const u32                                InSlot,
-                              const u32                                InDescriptorSet,
-                              const u32                                InOffset)
-{
-    auto bufferInternalState   = VulkanBuffer::ToInternal(InBuffer->device_buffer);
-    auto pipelineInternalState = VulkanPipeline::ToInternal(InPipeline);
-    auto descriptorSetInternalState =
-      VulkanDescriptorSet::ToInternal(&pipelineInternalState->descriptorSets[GetFrameIndex()].at(InDescriptorSet));
-
-    bufferInternalState->descriptorInfo.buffer = *bufferInternalState->GetHandle();
-    bufferInternalState->descriptorInfo.offset = InOffset;
-    bufferInternalState->descriptorInfo.range  = InBuffer->ByteSize();
-
-    VkWriteDescriptorSet write = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
-    write.descriptorCount      = 1;
-    write.dstBinding           = InSlot;
-    write.descriptorType       = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    write.dstSet               = descriptorSetInternalState->GetDescriptorSet();
-    write.pBufferInfo          = &bufferInternalState->descriptorInfo;
-
-    descriptorSetInternalState->writes.push_back(write);
-
-    pipelineInternalState->descriptorSets[GetFrameIndex()].at(InDescriptorSet).dirty = true;
 }
 
 void VulkanDevice::BindTexture(const Texture*  InTexture,
@@ -904,19 +827,6 @@ void VulkanDevice::PushConstants(const void* InData, const u32 InSize, const Com
                        0,
                        InSize,
                        InData);
-}
-
-void VulkanDevice::UpdateBuffer(const std::shared_ptr<Renderer::Buffer>& InBuffer,
-                                const void*                              InData,
-                                const u32                                InDataSize,
-                                const u32                                InOffset,
-                                CommandBuffer /*cmd*/)
-{
-    auto  bufferInternalState = VulkanBuffer::ToInternal(InBuffer->device_buffer);
-    void* data;
-    vkMapMemory(Handle, bufferInternalState->GetMemory(), InOffset, InDataSize, 0, &data);
-    std::memcpy(data, InData, InDataSize);
-    vkUnmapMemory(Handle, bufferInternalState->GetMemory());
 }
 
 void VulkanDevice::WaitCommand(CommandBuffer& cmd, CommandBuffer& cmdToWait)

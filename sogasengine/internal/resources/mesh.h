@@ -22,8 +22,8 @@ class CMesh : public IResource
     u32 indexCount   = 0;
     u32 indexOffset  = 0;
 
-    std::shared_ptr<Buffer> vertexBuffer;
-    std::shared_ptr<Buffer> indexBuffer;
+    //std::shared_ptr<Buffer> vertexBuffer;
+    //std::shared_ptr<Buffer> indexBuffer;
     PrimitiveTopology       Topology = PrimitiveTopology::UNDEFINED;
     bool                    Indexed  = false;
 

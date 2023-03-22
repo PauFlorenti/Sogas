@@ -26,24 +26,24 @@ namespace Sogas
         enabled     = j.value("enabled", enabled);
     }
 
-    bool TCompPointLight::Activate(const std::shared_ptr<Renderer::Buffer>& InBuffer, const u32 InLightNumber, Renderer::CommandBuffer cmd)
-    {
-        if (intensity == 0.0f || enabled == false)
-            return false;
+    // bool TCompPointLight::Activate(const std::shared_ptr<Renderer::Buffer>& InBuffer, const u32 InLightNumber, Renderer::CommandBuffer cmd)
+    // {
+    //     if (intensity == 0.0f || enabled == false)
+    //         return false;
 
-        TCompTransform* transform = Get<TCompTransform>();
-        SASSERT(transform);
+    //     TCompTransform* transform = Get<TCompTransform>();
+    //     SASSERT(transform);
 
-        Light l;
-        l.color     = color;
-        l.intensity = intensity;
-        l.position  = transform->GetPosition();
-        l.radius    = radius;
+    //     Light l;
+    //     l.color     = color;
+    //     l.intensity = intensity;
+    //     l.position  = transform->GetPosition();
+    //     l.radius    = radius;
 
-        CEngine::Get()->GetRenderModule()->GetGraphicsDevice()->UpdateBuffer(InBuffer, &l, sizeof(Light), sizeof(Light) * InLightNumber, cmd);
+    //     CEngine::Get()->GetRenderModule()->GetGraphicsDevice()->UpdateBuffer(InBuffer, &l, sizeof(Light), sizeof(Light) * InLightNumber, cmd);
 
-        return true;
-    }
+    //     return true;
+    // }
 
     const glm::vec3 TCompPointLight::GetPosition()
     {

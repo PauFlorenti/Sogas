@@ -89,8 +89,6 @@ class VulkanDevice : public GPU_device
     void DestroyRenderPass(RenderPassHandle InHandle) override;
 
     void                              CreateSwapchain(GLFWwindow *window) override;
-    std::shared_ptr<Renderer::Buffer> CreateBuffer(Renderer::BufferDescriptor desc, void *data) const override;
-    std::shared_ptr<Renderer::Buffer> CreateBuffer(const u32& size, const u64& element_size, Renderer::BufferBindingPoint binding, Renderer::BufferUsage usage, void* data = nullptr) const override;
     void                              CreateTexture(Texture *texture, void* data = nullptr) const override;
     std::shared_ptr<Texture>          CreateTexture(TextureDescriptor desc, void* data = nullptr) const override;
     void                              CreateRenderPass(RenderPass *renderpass) const override;
@@ -102,18 +100,14 @@ class VulkanDevice : public GPU_device
 
     // API calls ...
     //void SetWindowSize(std::shared_ptr<Swapchain> InSwapchain, const u32 &width, const u32 &height) override;
-    void BindVertexBuffer(const std::shared_ptr<Buffer> &buffer, CommandBuffer cmd) override;
-    void BindIndexBuffer(const std::shared_ptr<Buffer> &buffer, CommandBuffer cmd) override;
     void BindPipeline(const Pipeline *InPipeline, CommandBuffer &cmd) override;
     void BindDescriptor(CommandBuffer cmd) override;
-    void BindBuffer(const std::shared_ptr<Buffer> &InBuffer, const Pipeline *InPipeline, const u32 InSlot, const u32 InDescriptorSet, const u32 InOffset = 0) override;
     void BindTexture(const Texture *InTexture, const Pipeline *InPipeline, const u32 InSlot, const u32 InDescriptorSet = 0) override;
     void BindAttachment(const AttachmentFramebuffer *InAttachment, const Pipeline *InPipeline, const u32 InSlot, const u32 InDescriptorSet = 0) override;
     void SetTopology(PrimitiveTopology topology) override;
     void Draw(const u32 count, const u32 offset, CommandBuffer cmd) override;
     void DrawIndexed(const u32 count, const u32 offset, CommandBuffer cmd) override;
     void PushConstants(const void *InData, const u32 InSize, CommandBuffer cmd) override;
-    void UpdateBuffer(const std::shared_ptr<Buffer> &InBuffer, const void *InData, const u32 InDataSize, const u32 InOffset, CommandBuffer cmd) override;
     void WaitCommand(CommandBuffer &cmd, CommandBuffer &cmdToWait) override;
     // clang-format on
 

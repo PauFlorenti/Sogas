@@ -22,7 +22,7 @@ namespace Sogas
         void Load(const json& j);
         void DebutInMenu(){};
         void RenderDebug(){};
-        bool Activate(const std::shared_ptr<Renderer::Buffer>& InBuffer, const u32 InLightNumber, Renderer::CommandBuffer cmd);
+        //bool Activate(const std::shared_ptr<Renderer::Buffer>& InBuffer, const u32 InLightNumber, Renderer::CommandBuffer cmd);
         const glm::vec3 GetPosition();
     };
 } // Sogas

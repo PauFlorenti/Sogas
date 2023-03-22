@@ -70,11 +70,6 @@ ForwardPipeline::ForwardPipeline(std::shared_ptr<GPU_device> InRenderer)
     depthAttachment.usage  = BindPoint::DEPTH_STENCIL;
     renderer->CreateAttachment(&depthAttachment);
 
-    TextureDescriptor desc{};
-    desc.SetSize(640, 480, 1).SetFormatType(Format::R8G8B8A8_SRGB, TextureDescriptor::TextureType::TEXTURE_TYPE_2D);
-    auto colorAtt = renderer->CreateTexture(std::move(desc));
-    renderer->DestroyTexture(colorAtt);
-
     RenderPassDescriptor rpDesc;
     rpDesc.attachments.push_back(Attachment::RenderTarget(nullptr, &colorAttachment));
     rpDesc.attachments.push_back(Attachment::DepthStencil(nullptr, &depthAttachment));
@@ -102,35 +97,6 @@ ForwardPipeline::ForwardPipeline(std::shared_ptr<GPU_device> InRenderer)
     modelPushConstant.offset = 0;
     modelPushConstant.size   = sizeof(ConstantsMesh);
     modelPushConstant.stage  = ShaderStageType::VERTEX;
-
-    Renderer::BufferDescriptor constantBufferDesc;
-    constantBufferDesc.size        = 1;
-    constantBufferDesc.elementSize = sizeof(ConstantsCamera);
-    constantBufferDesc.binding     = Renderer::BufferBindingPoint::Uniform;
-    constantBufferDesc.usage       = Renderer::BufferUsage::TRANSFER_DST;
-    constantBuffer                 = renderer->CreateBuffer(constantBufferDesc, nullptr);
-
-    Renderer::BufferDescriptor lightBufferDesc;
-    lightBufferDesc.size        = nLights;
-    lightBufferDesc.elementSize = sizeof(Light);
-    lightBufferDesc.binding     = Renderer::BufferBindingPoint::Uniform;
-    lightBufferDesc.usage       = Renderer::BufferUsage::TRANSFER_DST;
-    lightBuffer                 = renderer->CreateBuffer(lightBufferDesc, nullptr);
-
-    Renderer::BufferDescriptor quadBufferDesc;
-    quadBufferDesc.size        = static_cast<u32>(quad.size());
-    quadBufferDesc.binding     = Renderer::BufferBindingPoint::Vertex;
-    quadBufferDesc.usage       = Renderer::BufferUsage::TRANSFER_DST;
-    quadBufferDesc.elementSize = sizeof(Sogas::Renderer::VertexLayout);
-    quadBufferDesc.type        = Renderer::BufferType::Static;
-    quadBuffer                 = renderer->CreateBuffer(std::move(quadBufferDesc), quad.data());
-
-    Renderer::BufferDescriptor quadIdxBufferDesc;
-    quadIdxBufferDesc.size        = static_cast<u32>(quadIdx.size());
-    quadIdxBufferDesc.elementSize = sizeof(u32);
-    quadIdxBufferDesc.binding     = Renderer::BufferBindingPoint::Index;
-    quadIdxBufferDesc.usage       = Renderer::BufferUsage::TRANSFER_DST;
-    quadIdxBuffer                 = renderer->CreateBuffer(std::move(quadIdxBufferDesc), quadIdx.data());
 
     BufferDescriptor test;
     test.usage       = BufferUsage::UNIFORM;
@@ -523,10 +489,6 @@ void ForwardPipeline::render(std::shared_ptr<Swapchain> swapchain)
     renderer->BindPipeline(&pipeline, cmd);
     renderer->BeginRenderPass(forwardRenderPass, cmd);
 
-    // Bind frame constants.
-    renderer->BindBuffer(constantBuffer, &pipeline, 0, 0);
-    renderer->BindBuffer(lightBuffer, &pipeline, 1, 0);
-
     // Update constants per frame data.
     CEntity* eCamera = getEntityByName("camera");
     SASSERT(eCamera);
@@ -537,7 +499,6 @@ void ForwardPipeline::render(std::shared_ptr<Swapchain> swapchain)
     cameraCtes.camera_view            = cCamera->GetView();
     cameraCtes.camera_projection      = cCamera->GetProjection();
     cameraCtes.camera_view_projection = cCamera->GetViewProjection();
-    constantBuffer->SetData(&cameraCtes, sizeof(ConstantsCamera), 0);
 
     u32 i = 0;
     GetObjectManager<TCompPointLight>()->ForEach(
@@ -549,7 +510,6 @@ void ForwardPipeline::render(std::shared_ptr<Swapchain> swapchain)
           l.intensity = light->intensity;
           l.radius    = light->radius;
 
-          lightBuffer->SetData(&l, sizeof(Light), sizeof(Light) * i);
           i++;
       });
 
@@ -572,8 +532,6 @@ void ForwardPipeline::render(std::shared_ptr<Swapchain> swapchain)
     renderer->BindAttachment(&colorAttachment, &presentPipeline, 0);
     renderer->UpdateDescriptorSet(&presentPipeline);
     renderer->BindDescriptor(presentCmd);
-    renderer->BindVertexBuffer(quadBuffer, presentCmd);
-    renderer->BindIndexBuffer(quadIdxBuffer, presentCmd);
     renderer->DrawIndexed(6, 0, presentCmd);
     renderer->EndRenderPass(presentCmd);
 
@@ -582,11 +540,6 @@ void ForwardPipeline::render(std::shared_ptr<Swapchain> swapchain)
 
 void ForwardPipeline::destroy()
 {
-    constantBuffer->Release();
-    lightBuffer->Release();
-    quadIdxBuffer->Release();
-    quadBuffer->Release();
-
     pipeline.Destroy();
     presentPipeline.Destroy();
     delete forwardRenderPass;

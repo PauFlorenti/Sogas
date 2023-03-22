@@ -35,11 +35,6 @@ class ForwardPipeline
     AttachmentFramebuffer colorAttachment;
     AttachmentFramebuffer depthAttachment;
 
-    std::shared_ptr<Buffer> constantBuffer;
-    std::shared_ptr<Buffer> lightBuffer;
-    std::shared_ptr<Buffer> quadIdxBuffer;
-    std::shared_ptr<Buffer> quadBuffer;
-
     std::shared_ptr<Texture> colorBuffer;
 
     const u32 nLights = 10;
