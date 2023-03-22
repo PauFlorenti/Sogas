@@ -34,11 +34,20 @@ class VulkanBuffer final : public Renderer::DeviceBuffer
         return std::dynamic_pointer_cast<VulkanBuffer>(InBuffer);
     }
 
-    const VkBuffer*      GetHandle() const { return &buffer; }
-    const VkDeviceMemory GetMemory() const { return memory; }
-    void                 SetData(void* data, const u64& size, const u64& offset = 0) override;
+    const VkBuffer* GetHandle() const
+    {
+        return &buffer;
+    }
+    const VkDeviceMemory GetMemory() const
+    {
+        return memory;
+    }
+    void SetData(void* data, const u64& size, const u64& offset = 0) override;
 
-    const VkDescriptorBufferInfo GetDescriptor() const { return descriptorInfo; }
+    const VkDescriptorBufferInfo GetDescriptor() const
+    {
+        return descriptorInfo;
+    }
 
     VkDescriptorBufferInfo descriptorInfo;
 
@@ -46,8 +55,9 @@ class VulkanBuffer final : public Renderer::DeviceBuffer
     u32                size          = 0;
     u32                global_offset = 0; // Offset into global constant, if dynamic.
 
-    BufferHandle      handle;
-    std::string name;
+    VkBuffer     buffer = VK_NULL_HANDLE;
+    BufferHandle handle;
+    std::string  name;
 
   private:
     void Upload_data_to_buffer(const u64& size, void* data);
@@ -55,7 +65,6 @@ class VulkanBuffer final : public Renderer::DeviceBuffer
 
     void*               mapdata = nullptr;
     const VulkanDevice* device  = nullptr;
-    VkBuffer            buffer  = VK_NULL_HANDLE;
     VkDeviceMemory      memory  = VK_NULL_HANDLE;
     VkDeviceSize        device_size;
 };

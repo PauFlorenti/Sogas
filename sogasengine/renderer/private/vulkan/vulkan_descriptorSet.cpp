@@ -1,6 +1,9 @@
 #include "vulkan/vulkan_descriptorSet.h"
+#include "vulkan/vulkan_buffer.h"
 #include "vulkan/vulkan_device.h"
 #include "vulkan/vulkan_pipeline.h"
+#include "vulkan/vulkan_sampler.h"
+#include "vulkan/vulkan_texture.h"
 
 namespace Sogas
 {
@@ -37,6 +40,121 @@ constexpr static VkDescriptorType ConvertDescriptorType(DescriptorType InType)
         case DescriptorType::ATTACHMENT:
             return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
     }
+}
+
+static void FillWriteDescriptorSets(
+  VulkanDevice*                    InDevice,
+  const VulkanDescriptorSetLayout* InDescriptorSetLayout,
+  VkDescriptorSet                  InDescriptorSet,
+  VkWriteDescriptorSet*            InWriteDescriptorSet,
+  VkDescriptorBufferInfo*          InBufferInfo,
+  VkDescriptorImageInfo*           InImageInfo,
+  u32&                             OutResourcesCount,
+  const ResourceHandle*            InResources,
+  const SamplerHandle*             InSamplers,
+  const u16*                       InBindings)
+{
+    auto default_sampler = InDevice->GetDefaultSampler();
+
+    u32 resources_used = 0;
+    for (u32 i = 0; i < OutResourcesCount; ++i)
+    {
+        u32 layout_binding_index = InBindings[i];
+
+        const DescriptorBinding& binding = InDescriptorSetLayout->bindings[layout_binding_index];
+
+        InWriteDescriptorSet[resources_used]                 = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+        InWriteDescriptorSet[resources_used].dstSet          = InDescriptorSet;
+        InWriteDescriptorSet[resources_used].dstBinding      = binding.start;
+        InWriteDescriptorSet[resources_used].dstArrayElement = 0;
+        InWriteDescriptorSet[resources_used].descriptorCount = 1;
+
+        switch (binding.type)
+        {
+            case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+            {
+                InWriteDescriptorSet[resources_used].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+
+                TextureHandle  texture_handle = {InResources[i]};
+                VulkanTexture* texture        = InDevice->GetTextureResource(texture_handle);
+
+                InImageInfo[resources_used].sampler = default_sampler->sampler;
+
+                if (texture->sampler)
+                {
+                    InImageInfo[resources_used].sampler = texture->sampler;
+                }
+
+                if (InSamplers[i].index != INVALID_ID)
+                {
+                    VulkanSampler* sampler              = InDevice->GetSamplerResource(InSamplers[i]);
+                    InImageInfo[resources_used].sampler = sampler->sampler;
+                }
+
+                InWriteDescriptorSet[resources_used].pImageInfo = &InImageInfo[resources_used];
+
+                break;
+            }
+            case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+            {
+                InWriteDescriptorSet[resources_used].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+
+                TextureHandle  texture_handle = {InResources[i]};
+                VulkanTexture* texture        = InDevice->GetTextureResource(texture_handle);
+
+                InImageInfo[resources_used].sampler     = nullptr;
+                InImageInfo[resources_used].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+                InImageInfo[resources_used].imageView   = texture->image_view;
+
+                InWriteDescriptorSet[resources_used].pImageInfo = &InImageInfo[resources_used];
+
+                break;
+            }
+            case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+            {
+                InWriteDescriptorSet[resources_used].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+
+                BufferHandle  buffer_handle = {InResources[i]};
+                VulkanBuffer* buffer        = InDevice->GetBufferResource(buffer_handle);
+
+                //InWriteDescriptorSet[resources_used].descriptorType = buffer->
+
+                InBufferInfo[resources_used].buffer = buffer->buffer;
+                InBufferInfo[resources_used].offset = 0;
+                InBufferInfo[resources_used].range  = buffer->size;
+
+                InWriteDescriptorSet[resources_used].pBufferInfo = &InBufferInfo[resources_used];
+
+                break;
+            }
+            case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+            {
+                InWriteDescriptorSet[resources_used].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+
+                BufferHandle  buffer_handle = {InResources[i]};
+                VulkanBuffer* buffer        = InDevice->GetBufferResource(buffer_handle);
+
+                //InWriteDescriptorSet[resources_used].descriptorType = buffer->
+
+                InBufferInfo[resources_used].buffer = buffer->buffer;
+                InBufferInfo[resources_used].offset = 0;
+                InBufferInfo[resources_used].range  = buffer->size;
+
+                InWriteDescriptorSet[resources_used].pBufferInfo = &InBufferInfo[resources_used];
+
+                break;
+            }
+            default:
+            {
+                SASSERT_MSG(false, "Resource type not supported.");
+                break;
+            }
+        }
+
+        ++resources_used;
+    }
+
+    OutResourcesCount = resources_used;
 }
 
 VulkanDescriptorSet::~VulkanDescriptorSet()
@@ -80,6 +198,26 @@ DescriptorSetHandle VulkanDescriptorSet::Create(VulkanDevice* InDevice, const De
     VulkanSampler* default_sampler = InDevice->GetDefaultSampler();
 
     u32 resources_count = InDescriptor.resources_count;
+    FillWriteDescriptorSets(
+      InDevice,
+      descriptor_set_layout,
+      descriptor_set->descriptorSet,
+      descriptor_write,
+      buffer_info,
+      image_info,
+      resources_count,
+      InDescriptor.resources,
+      InDescriptor.samplers,
+      InDescriptor.bindings);
+
+    for (u32 i = 0; i < InDescriptor.resources_count; ++i)
+    {
+        descriptor_set->resources[i] = InDescriptor.resources[i];
+        descriptor_set->samplers[i]  = InDescriptor.samplers[i];
+        descriptor_set->bindings[i]  = InDescriptor.bindings[i];
+    }
+
+    vkUpdateDescriptorSets(InDevice->Handle, resources_count, descriptor_write, 0, nullptr);
 
     return handle;
 }

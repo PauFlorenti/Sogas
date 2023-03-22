@@ -85,6 +85,7 @@ class VulkanTexture : public DeviceTexture
     VkImage                 texture    = VK_NULL_HANDLE;
     VkImageView             image_view = VK_NULL_HANDLE;
     VkDeviceMemory          memory     = VK_NULL_HANDLE;
+    VkSampler               sampler    = VK_NULL_HANDLE;
     VkImageLayout           image_layout;
 
     void Allocate_and_bind_texture_memory(VkMemoryPropertyFlags memory_properties);
@@ -95,7 +96,6 @@ class VulkanTexture : public DeviceTexture
 
     void*               mapdata = nullptr;
     const VulkanDevice* device  = nullptr;
-    VkSampler           sampler = VK_NULL_HANDLE;
 };
 } // namespace Vk
 } // namespace Renderer
