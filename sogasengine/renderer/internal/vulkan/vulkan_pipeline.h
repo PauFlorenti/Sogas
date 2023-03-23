@@ -22,17 +22,6 @@ class VulkanPipeline
 
     static PipelineHandle Create(VulkanDevice* InDevice, const PipelineDescriptor& InDescriptor);
 
-    static void Create(VulkanDevice*             device,
-                       const PipelineDescriptor* descriptor,
-                       Pipeline*                 pipeline,
-                       Renderer::RenderPass*     renderpass = nullptr);
-
-    static inline std::shared_ptr<VulkanPipeline> ToInternal(const Pipeline* InPipeline)
-    {
-        return std::static_pointer_cast<VulkanPipeline>(InPipeline->internalState);
-    }
-
-    void CreateDescriptorSets();
     void Destroy();
 
     // TODO rethink this, probably make them private ...
@@ -48,10 +37,6 @@ class VulkanPipeline
 
     PipelineHandle handle;
     bool           graphics_pipeline = true;
-
-    std::vector<VkDescriptorSetLayout>        descriptorSetLayouts;
-    std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindingsPerSet[8];
-    std::vector<DescriptorSet>                descriptorSets[MAX_FRAMES_IN_FLIGHT];
 
   private:
     VulkanDevice* device = nullptr;

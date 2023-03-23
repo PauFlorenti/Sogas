@@ -43,18 +43,6 @@ class VulkanDescriptorSet
     static DescriptorSetHandle       Create(VulkanDevice* InDevice, const DescriptorSetDescriptor& InDescriptor);
     static DescriptorSetLayoutHandle Create(VulkanDevice* InDevice, const DescriptorSetLayoutDescriptor& InDescriptor);
 
-    static void Create(VulkanDevice*                                    InDevice,
-                       DescriptorSet*                                   InDescriptorSet,
-                       VkDescriptorSetLayout                            InDescriptorSetLayout,
-                       VkPipelineLayout                                 InPipelineLayout,
-                       const std::vector<VkDescriptorSetLayoutBinding>& InBinding,
-                       const u32                                        InSetNumber);
-
-    static inline std::shared_ptr<VulkanDescriptorSet> ToInternal(const DescriptorSet* InDescriptorSet)
-    {
-        return std::static_pointer_cast<VulkanDescriptorSet>(InDescriptorSet->internalState);
-    }
-
     void BindDescriptor(VkCommandBuffer cmd) const;
 
     const VkDescriptorSet& GetDescriptorSet() const

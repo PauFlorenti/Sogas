@@ -77,7 +77,7 @@ namespace Sogas
                 cte.model = transform->AsMatrix();
                 cte.color = color;
                 
-                renderer->PushConstants(&cte, sizeof(ConstantsMesh), cmd);
+                //renderer->PushConstants(&cte, sizeof(ConstantsMesh), cmd);
             }
 
             // Activate material
@@ -91,7 +91,7 @@ namespace Sogas
                 key->Mesh->Activate(cmd);
             }
 
-            renderer->UpdateDescriptorSet(cmd.activePipeline);
+            //renderer->UpdateDescriptorSet(cmd.activePipeline);
 
             key->Mesh->Render(cmd);
             

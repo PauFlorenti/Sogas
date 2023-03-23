@@ -121,6 +121,16 @@ ForwardPipeline::ForwardPipeline(std::shared_ptr<GPU_device> InRenderer)
     // Depth
     pipeline_creation.depthStencilState.SetDepth(true, CompareOperation::LESS_OR_EQUAL);
 
+        // renderer->CreateShader(ShaderStageType::VERTEX, std::move(CEngine::FindFile("forward.vert.spv")), &forwardShaders[0]);
+    // renderer->CreateShader(ShaderStageType::FRAGMENT, std::move(CEngine::FindFile("forward.frag.spv")), &forwardShaders[1]);
+    // renderer->CreateShader(ShaderStageType::VERTEX, std::move(CEngine::FindFile("quad.vert.spv")), &presentShaders[0]);
+    // renderer->CreateShader(ShaderStageType::FRAGMENT, std::move(CEngine::FindFile("quad.frag.spv")), &presentShaders[1]);
+
+    // const auto forward_vs = VulkanShader::ReadShaderFile(std::move(CEngine::FindFile("forward.vert.spv")));
+    // const auto forward_vs = VulkanShader::ReadShaderFile(std::move(CEngine::FindFile("forward.frag.spv")));
+
+    //pipeline_creation.shaders.SetName("Forward").AddStage().AddStage();
+
     //         // Shader state
     //         const char* vs_code = R"FOO(#version 450
     // layout(std140, binding = 0) uniform LocalConstants {
@@ -480,8 +490,6 @@ void ForwardPipeline::render(std::shared_ptr<Swapchain> swapchain)
 {
     // Start drawing.
     CommandBuffer cmd = renderer->BeginCommandBuffer();
-    renderer->BindPipeline(&pipeline, cmd);
-    renderer->BeginRenderPass(forwardRenderPass, cmd);
 
     // Update constants per frame data.
     CEntity* eCamera = getEntityByName("camera");
@@ -508,42 +516,21 @@ void ForwardPipeline::render(std::shared_ptr<Swapchain> swapchain)
       });
 
     // Bind constants per frame.
-    renderer->BindDescriptor(cmd);
-
     // Draw mesh instances.
     RenderManager.RenderAll(CHandle(), DrawChannel::SOLID, cmd);
 
     // End drawing.
-    renderer->EndRenderPass(cmd);
-
     // Present
     auto presentCmd = renderer->BeginCommandBuffer();
     renderer->WaitCommand(presentCmd, cmd);
-    renderer->BindPipeline(&presentPipeline, presentCmd);
-
     // Bind textures
-    renderer->UpdateDescriptorSet(&presentPipeline);
-    renderer->BindDescriptor(presentCmd);
     renderer->DrawIndexed(6, 0, presentCmd);
-    renderer->EndRenderPass(presentCmd);
 
     renderer->SubmitCommandBuffers();
 }
 
 void ForwardPipeline::destroy()
 {
-    pipeline.Destroy();
-    presentPipeline.Destroy();
-    delete forwardRenderPass;
-    forwardRenderPass = nullptr;
-
-    colorAttachment.Destroy();
-    depthAttachment.Destroy();
-
-    forwardShaders[0].Destroy();
-    forwardShaders[1].Destroy();
-    presentShaders[0].Destroy();
-    presentShaders[1].Destroy();
 }
 } // namespace Renderer
 } // namespace Sogas

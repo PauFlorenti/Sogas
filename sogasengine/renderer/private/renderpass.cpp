@@ -54,21 +54,5 @@ RenderPassDescriptor& RenderPassDescriptor::SetOperations(RenderPassOperation In
     return *this;
 }
 
-RenderPass::RenderPass(RenderPassDescriptor InDescriptor)
-: descriptor(InDescriptor)
-{
-}
-
-RenderPass::~RenderPass()
-{
-    Destroy();
-}
-
-void RenderPass::Destroy()
-{
-    delete internalState;
-    internalState = nullptr;
-    descriptor    = {};
-}
 } // namespace Renderer
 } // namespace Sogas

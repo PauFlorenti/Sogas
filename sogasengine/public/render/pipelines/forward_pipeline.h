@@ -26,15 +26,6 @@ class ForwardPipeline
 
   private:
     std::shared_ptr<GPU_device> renderer;
-    Pipeline                    pipeline;
-    Renderer::RenderPass*       forwardRenderPass;
-    Shader                      forwardShaders[2]; // 0 vs, 1 ps
-    Pipeline                    presentPipeline;
-    Shader                      presentShaders[2];
-
-    AttachmentFramebuffer colorAttachment;
-    AttachmentFramebuffer depthAttachment;
-
     std::shared_ptr<Texture> colorBuffer;
 
     const u32 nLights = 10;

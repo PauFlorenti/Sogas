@@ -416,13 +416,8 @@ struct VertexInputDescriptor
     VertexInputDescriptor& AddVertexAttribute(const VertexAttribute& InVertexAttribute);
 };
 
-struct Shader;
 struct PipelineDescriptor
 {
-    const Shader* vs                = nullptr;
-    const Shader* ps                = nullptr;
-    std::string   vertexDeclaration = "";
-
     RasterizationState    rasterizationState;
     DepthStencilState     depthStencilState;
     VertexInputDescriptor vertexInputState;
@@ -476,36 +471,10 @@ struct GPUResource : public GPUBase
 };
 
 // Objects
-
-struct Pipeline : public GPUBase
-{
-    PipelineDescriptor descriptor;
-};
-
-struct Shader : public GPUBase
-{
-    ~Shader()
-    {
-        Destroy();
-    }
-
-    void Destroy() override
-    {
-        internalState.reset();
-    }
-
-    ShaderStageType stage = ShaderStageType::COUNT;
-};
-
-struct DescriptorSet : public GPUBase
-{
-    bool dirty{false};
-};
-
 struct CommandBuffer
 {
     void*           internalState;
-    const Pipeline* activePipeline = nullptr;
+    //const Pipeline* activePipeline = nullptr;
 };
 
 struct VertexLayout

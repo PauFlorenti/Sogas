@@ -453,115 +453,6 @@ void VulkanDevice::SubmitCommandBuffers()
     }
 }
 
-// void VulkanDevice::BeginRenderPass(std::shared_ptr<Renderer::Swapchain> InSwapchain, CommandBuffer cmd)
-// {
-//     auto internalCommand              = VulkanCommandBuffer::ToInternal(&cmd);
-//     auto internalSwapchain            = VulkanSwapchain::ToInternal(InSwapchain);
-//     internalCommand->activeRenderPass = InSwapchain->GetRenderpass();
-//     internalCommand->swapchain        = InSwapchain;
-
-//     VkResult res = vkAcquireNextImageKHR(Handle,
-//                                          internalSwapchain->swapchain,
-//                                          UINT64_MAX,
-//                                          internalSwapchain->presentCompleteSemaphore,
-//                                          VK_NULL_HANDLE,
-//                                          &internalSwapchain->imageIndex);
-//     if (res != VK_SUCCESS)
-//     {
-//         if (res == VK_SUBOPTIMAL_KHR || res == VK_ERROR_OUT_OF_DATE_KHR)
-//         {
-//             InSwapchain->resized = true;
-//             if (VulkanSwapchain::Create(this, InSwapchain))
-//             {
-//                 BeginRenderPass(InSwapchain, cmd);
-//                 return;
-//             }
-//         }
-//         throw std::runtime_error("Failed to acquire next image!");
-//     }
-
-//     if (InSwapchain->resized)
-//     {
-//         return;
-//         // i32 width, height;
-//         // glfwGetWindowSize(window, &width, &height);
-//         // //CApplication::Get()->GetWindowSize(&width, &height);
-//         // InSwapchain->SetSwapchainSize(width, height);
-//         // InSwapchain->resized = false;
-//     }
-
-//     // Begin Render Pass
-//     const auto& swapchain_descriptor = InSwapchain->GetDescriptor();
-//     VkViewport  viewport{};
-//     viewport.x        = 0;
-//     viewport.y        = (f32)swapchain_descriptor.height;
-//     viewport.width    = (f32)swapchain_descriptor.width;
-//     viewport.height   = -(f32)swapchain_descriptor.height;
-//     viewport.minDepth = 0.0f;
-//     viewport.maxDepth = 1.0f;
-
-//     vkCmdSetViewport(internalCommand->commandBuffers[GetFrameIndex()], 0, 1, &viewport);
-
-//     VkRect2D scissor{};
-//     scissor.extent.width  = swapchain_descriptor.width;
-//     scissor.extent.height = swapchain_descriptor.height;
-//     scissor.offset        = {0, 0};
-
-//     vkCmdSetScissor(internalCommand->commandBuffers[GetFrameIndex()], 0, 1, &scissor);
-
-//     VkClearValue clearValue = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-
-//     VkRenderPassBeginInfo renderpassBeginInfo = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
-//     renderpassBeginInfo.renderPass            = VulkanRenderPass::ToInternal(internalCommand->activeRenderPass)->renderpass;
-//     renderpassBeginInfo.clearValueCount       = 1;
-//     renderpassBeginInfo.pClearValues          = &clearValue;
-//     renderpassBeginInfo.framebuffer           = internalSwapchain->framebuffers.at(internalSwapchain->imageIndex);
-//     renderpassBeginInfo.renderArea.extent     = internalSwapchain->extent;
-//     renderpassBeginInfo.renderArea.offset     = {0, 0};
-
-//     vkCmdBeginRenderPass(internalCommand->commandBuffers[GetFrameIndex()],
-//                          &renderpassBeginInfo,
-//                          VK_SUBPASS_CONTENTS_INLINE);
-// }
-
-void VulkanDevice::BeginRenderPass(Renderer::RenderPass* InRenderpass, CommandBuffer cmd)
-{
-    SASSERT(InRenderpass);
-
-    auto commandBufferInternalState              = VulkanCommandBuffer::ToInternal(&cmd);
-    auto renderpassInternalState                 = VulkanRenderPass::ToInternal(InRenderpass);
-    commandBufferInternalState->activeRenderPass = InRenderpass;
-
-    VkViewport viewport{};
-    viewport.x        = 0;
-    viewport.y        = (f32)480;
-    viewport.width    = (f32)640;
-    viewport.height   = -(f32)480;
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-
-    vkCmdSetViewport(commandBufferInternalState->commandBuffers[GetFrameIndex()], 0, 1, &viewport);
-
-    VkRect2D scissor{};
-    scissor.extent.width  = 640;
-    scissor.extent.height = 480;
-    scissor.offset        = {0, 0};
-
-    vkCmdSetScissor(commandBufferInternalState->commandBuffers[GetFrameIndex()], 0, 1, &scissor);
-
-    vkCmdBeginRenderPass(commandBufferInternalState->commandBuffers[GetFrameIndex()],
-                         &renderpassInternalState->beginInfo,
-                         VK_SUBPASS_CONTENTS_INLINE);
-}
-
-void VulkanDevice::EndRenderPass(CommandBuffer cmd)
-{
-    auto internalCmd = VulkanCommandBuffer::ToInternal(&cmd);
-    SASSERT(internalCmd);
-
-    vkCmdEndRenderPass(internalCmd->commandBuffers[GetFrameIndex()]);
-}
-
 BufferHandle VulkanDevice::CreateBuffer(const BufferDescriptor& InDescriptor)
 {
     return VulkanBuffer::Create(this, InDescriptor);
@@ -656,36 +547,6 @@ std::shared_ptr<Texture> VulkanDevice::CreateTexture(TextureDescriptor desc, voi
     return VulkanTexture::Create(this, std::move(desc), data);
 };
 
-void VulkanDevice::CreatePipeline(const PipelineDescriptor* desc,
-                                  Pipeline*                 pipeline,
-                                  Renderer::RenderPass*     renderpass)
-{
-    VulkanPipeline::Create(this, desc, pipeline, renderpass);
-}
-
-void VulkanDevice::CreateShader(ShaderStageType InStageType, std::string filename, Shader* shader) const
-{
-    VulkanShader::Create(this, InStageType, std::move(filename), shader);
-}
-
-void VulkanDevice::UpdateDescriptorSet(const Pipeline* InPipeline) const
-{
-    auto pipelineInternalState = VulkanPipeline::ToInternal(InPipeline);
-    for (auto& descriptorSet : pipelineInternalState->descriptorSets[GetFrameIndex()])
-    {
-        auto descriptorSetInternalState = VulkanDescriptorSet::ToInternal(&descriptorSet);
-        if (descriptorSet.dirty)
-        {
-            vkUpdateDescriptorSets(Handle,
-                                   static_cast<u32>(descriptorSetInternalState->writes.size()),
-                                   descriptorSetInternalState->writes.data(),
-                                   0,
-                                   nullptr);
-            descriptorSet.dirty = false;
-        }
-    }
-}
-
 // void VulkanDevice::SetWindowSize(std::shared_ptr<Renderer::Swapchain> InSwapchain, const u32& width, const u32& height)
 // {
 //     const auto& swapchain_descriptor = InSwapchain->GetDescriptor();
@@ -695,54 +556,6 @@ void VulkanDevice::UpdateDescriptorSet(const Pipeline* InPipeline) const
 //         InSwapchain->resized = false;
 //     }
 // }
-
-void VulkanDevice::BindPipeline(const Pipeline* InPipeline, CommandBuffer& cmd)
-{
-    SASSERT(InPipeline)
-    auto pipelineInternalState = VulkanPipeline::ToInternal(InPipeline);
-    cmd.activePipeline         = InPipeline;
-
-    vkCmdBindPipeline(VulkanCommandBuffer::ToInternal(&cmd)->commandBuffers[GetFrameIndex()],
-                      VK_PIPELINE_BIND_POINT_GRAPHICS,
-                      pipelineInternalState->pipeline);
-}
-
-void VulkanDevice::BindDescriptor(CommandBuffer cmd)
-{
-    auto commandBufferInternalState = VulkanCommandBuffer::ToInternal(&cmd);
-    auto pipelineInternalState      = VulkanPipeline::ToInternal(cmd.activePipeline);
-
-    for (auto& descriptorSet : pipelineInternalState->descriptorSets[GetFrameIndex()])
-    {
-        auto descriptorSetInternalState = VulkanDescriptorSet::ToInternal(&descriptorSet);
-        descriptorSetInternalState->BindDescriptor(commandBufferInternalState->commandBuffers[GetFrameIndex()]);
-    }
-}
-
-void VulkanDevice::BindTexture(const Texture*  InTexture,
-                               const Pipeline* InPipeline,
-                               const u32       InSlot,
-                               const u32       InDescriptorSet)
-{
-    auto internalState         = VulkanTexture::ToInternal(InTexture);
-    auto pipelineInternalState = VulkanPipeline::ToInternal(InPipeline);
-    auto descriptorSetInternalState =
-      VulkanDescriptorSet::ToInternal(&pipelineInternalState->descriptorSets[GetFrameIndex()].at(InDescriptorSet));
-
-    internalState->descriptorImageInfo.imageView   = internalState->GetImageView();
-    internalState->descriptorImageInfo.sampler     = internalState->GetSampler();
-    internalState->descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-    VkWriteDescriptorSet write = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
-    write.descriptorCount      = 1;
-    write.descriptorType       = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    write.dstBinding           = InSlot;
-    write.dstSet               = descriptorSetInternalState->GetDescriptorSet();
-    write.pImageInfo           = &internalState->descriptorImageInfo;
-
-    descriptorSetInternalState->writes.push_back(write);
-    pipelineInternalState->descriptorSets[GetFrameIndex()].at(InDescriptorSet).dirty = true;
-}
 
 void VulkanDevice::SetTopology(PrimitiveTopology topology)
 {
@@ -778,17 +591,6 @@ void VulkanDevice::DrawIndexed(const u32 count, const u32 offset, CommandBuffer 
     SASSERT(offset >= 0);
 
     vkCmdDrawIndexed(VulkanCommandBuffer::ToInternal(&cmd)->commandBuffers[GetFrameIndex()], count, 1, offset, 0, 0);
-}
-
-void VulkanDevice::PushConstants(const void* InData, const u32 InSize, const CommandBuffer cmd)
-{
-    auto vkcmd = VulkanCommandBuffer::ToInternal(&cmd);
-    vkCmdPushConstants(vkcmd->commandBuffers[GetFrameIndex()],
-                       VulkanPipeline::ToInternal(cmd.activePipeline)->pipelineLayout,
-                       VK_SHADER_STAGE_VERTEX_BIT,
-                       0,
-                       InSize,
-                       InData);
 }
 
 void VulkanDevice::WaitCommand(CommandBuffer& cmd, CommandBuffer& cmdToWait)

@@ -7,7 +7,6 @@ namespace Sogas
 {
 namespace Renderer
 {
-class RenderPass;
 struct RenderPassDescriptor;
 namespace Vk
 {
@@ -20,11 +19,6 @@ class VulkanRenderPass : public Renderer::DeviceRenderpass
     VulkanRenderPass(VulkanRenderPass&&)                             = delete;
     const VulkanRenderPass& operator=(const VulkanRenderPass& other) = delete;
     ~VulkanRenderPass();
-
-    static inline VulkanRenderPass* ToInternal(const Renderer::RenderPass* InRenderpass)
-    {
-        return static_cast<VulkanRenderPass*>(InRenderpass->internalState);
-    }
 
     static RenderPassHandle Create(VulkanDevice* InDevice, const RenderPassDescriptor& InDescriptor);
     static VkRenderPass     CreateRenderPass(const VulkanDevice* InDevice, const RenderPassOutput& InOutput, std::string InName);
