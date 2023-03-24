@@ -36,7 +36,7 @@ class TextureResource : public IResourceType
             desc.height    = static_cast<i16>(height);
             desc.format    = Format::R8G8B8A8_SRGB;
             Texture* texture = new Texture(std::move(desc));
-            render->CreateTexture(texture, pixels);
+            //render->CreateTexture(texture, pixels);
             return texture;
         }
         else if (extension == extensions[1])
@@ -49,12 +49,12 @@ class TextureResource : public IResourceType
 
             if (InName == "white.text")
             {
-                u32 data = 0xFFFFFFFF;
-                render->CreateTexture(texture, static_cast<void*>(&data));
+                //u32 data = 0xFFFFFFFF;
+                //render->CreateTexture(texture, static_cast<void*>(&data));
             }
             else if (InName == "black.text")
             {
-                render->CreateTexture(texture, 0x00000000);
+                //render->CreateTexture(texture, 0x00000000);
             }
             return texture;
         }
