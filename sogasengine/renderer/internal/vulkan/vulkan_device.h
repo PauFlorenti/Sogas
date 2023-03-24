@@ -85,6 +85,7 @@ class VulkanDevice : public GPU_device
 
     std::vector<i8> ReadShaderBinary(std::string InFilename) override;
     CommandBuffer* GetCommandBuffer(bool begin) override;
+    void QueueCommandBuffer(CommandBuffer* cmd) override;
 
     void Present() override;
 
@@ -138,6 +139,8 @@ class VulkanDevice : public GPU_device
     std::shared_ptr<VulkanSwapchain> swapchain;
 
     VkDescriptorPool descriptor_pool;
+
+    bool resized = false;
 
     // Queues
     std::vector<VkQueueFamilyProperties> queueFamilyProperties;

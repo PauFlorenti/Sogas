@@ -21,6 +21,7 @@ class VulkanSwapchain
 
     static bool Create(VulkanDevice* device, std::shared_ptr<VulkanSwapchain> swapchain);
 
+    void           CreateRenderPass(VulkanRenderPass* render_pass);
     void           Destroy();
     const Texture* GetTexture() const
     {
@@ -45,10 +46,8 @@ class VulkanSwapchain
     VkSemaphore renderCompleteSemaphore  = VK_NULL_HANDLE;
 
   private:
-    void CreateRenderPass(VulkanRenderPass* render_pass);
-
     Texture*      texture;
-    VkRenderPass  renderpass;
+    //VkRenderPass  renderpass;
     VulkanDevice* device = nullptr;
 };
 

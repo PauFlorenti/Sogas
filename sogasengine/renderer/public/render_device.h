@@ -70,6 +70,7 @@ class GPU_device
 
     virtual std::vector<i8> ReadShaderBinary(std::string InFilename) = 0;
     virtual CommandBuffer* GetCommandBuffer(bool begin) = 0;
+    virtual void QueueCommandBuffer(CommandBuffer* cmd) = 0;
 
     virtual void Present() = 0;
 
@@ -100,6 +101,8 @@ class GPU_device
 
     RenderPassHandle swapchain_renderpass;
     SamplerHandle    default_sampler;
+
+    std::vector<CommandBuffer*> queued_command_buffers;
 
     TextureHandle depth_texture;
 

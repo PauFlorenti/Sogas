@@ -726,9 +726,69 @@ CommandBuffer* VulkanDevice::GetCommandBuffer(bool begin)
     return commandbuffer_resources.get_command_buffer(GetFrameIndex(), begin);
 }
 
+void VulkanDevice::QueueCommandBuffer(CommandBuffer* cmd)
+{
+    queued_command_buffers.push_back(cmd);
+}
+
 void VulkanDevice::Present()
 {
+    VkResult ok = vkAcquireNextImageKHR(Handle, swapchain->swapchain, UINT64_MAX, swapchain->presentCompleteSemaphore, VK_NULL_HANDLE, &swapchain->imageIndex);
+
+    if (ok == VK_ERROR_OUT_OF_DATE_KHR)
+    {
+        // TODO resize
+        return;
+    }
+
+    std::vector<VkCommandBuffer> enqueued_command_buffers;
+    enqueued_command_buffers.reserve(4);
+    for (auto cmd : queued_command_buffers)
+    {
+        VulkanCommandBuffer* vulkan_cmd = static_cast<VulkanCommandBuffer*>(cmd);
+        enqueued_command_buffers.push_back(vulkan_cmd->command_buffer);
+
+        if (vulkan_cmd->is_recording && vulkan_cmd->current_renderpass && (vulkan_cmd->current_renderpass->type != RenderPassType::COMPUTE))
+        {
+            vkCmdEndRenderPass(vulkan_cmd->command_buffer);
+        }
+
+        vkEndCommandBuffer(vulkan_cmd->command_buffer);
+    }
+
+    VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+
+    VkSubmitInfo submit         = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
+    submit.waitSemaphoreCount   = 1;
+    submit.pWaitSemaphores      = &swapchain->presentCompleteSemaphore;
+    submit.signalSemaphoreCount = 1;
+    submit.pSignalSemaphores    = &swapchain->renderCompleteSemaphore;
+    submit.commandBufferCount   = static_cast<u32>(enqueued_command_buffers.size());
+    submit.pCommandBuffers      = enqueued_command_buffers.data();
+    submit.pWaitDstStageMask    = wait_stages;
+
+    vkQueueSubmit(GraphicsQueue, 1, &submit, fence[GetFrameIndex()]);
+
+    VkPresentInfoKHR present_info   = {VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
+    present_info.swapchainCount     = 1;
+    present_info.pSwapchains        = &swapchain->swapchain;
+    present_info.waitSemaphoreCount = 1;
+    present_info.pWaitSemaphores    = &swapchain->renderCompleteSemaphore;
+    present_info.pImageIndices      = &swapchain->imageIndex;
     
+    ok = vkQueuePresentKHR(GraphicsQueue, &present_info);
+
+    queued_command_buffers.clear();
+
+    if (ok == VK_ERROR_OUT_OF_DATE_KHR || ok == VK_SUBOPTIMAL_KHR || resized)
+    {
+        resized = false;
+
+        // TODO resized swapchain.
+        return;
+    }
+
+    // Resource deletion here ...
 }
 
 } // namespace Vk

@@ -1,6 +1,7 @@
 #include "vulkan/vulkan_renderpass.h"
 #include "vulkan/vulkan_device.h"
 #include "vulkan/vulkan_texture.h"
+#include "vulkan/vulkan_swapchain.h"
 
 namespace Sogas
 {
@@ -80,7 +81,8 @@ RenderPassHandle VulkanRenderPass::Create(VulkanDevice* InDevice, const RenderPa
     {
         case RenderPassType::SWAPCHAIN:
         {
-            // TODO create swapchain pass
+            InDevice->swapchain->CreateRenderPass(render_pass);
+            break;
         }
         case RenderPassType::COMPUTE:
         {

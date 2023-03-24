@@ -519,6 +519,10 @@ void ForwardPipeline::render()
 
     CommandBuffer* cmd = renderer->GetCommandBuffer(true);
 
+    // TODO we may want to send custom viewport and scissors.
+    cmd->set_viewport();
+    cmd->set_scissors();
+
     cmd->bind_pass(renderer->GetSwapchainRenderpass());
     cmd->bind_pipeline(pipeline);
     cmd->draw(0, 3, 0, 1);

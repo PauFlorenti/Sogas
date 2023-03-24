@@ -29,6 +29,9 @@ class VulkanCommandBuffer : public CommandBuffer
     void bind_pass(RenderPassHandle handle) override;
     void bind_pipeline(PipelineHandle handle) override;
 
+    void set_viewport() override;
+    void set_scissors() override;
+
     void draw(u32 first_vertex, u32 vertex_count, u32 first_instance, u32 instance_count) override;
 
     void reset() override;

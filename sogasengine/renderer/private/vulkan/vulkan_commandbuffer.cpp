@@ -127,6 +127,25 @@ void VulkanCommandBuffer::bind_pipeline(PipelineHandle handle)
     current_pipeline = pipeline;
 }
 
+void VulkanCommandBuffer::set_viewport()
+{
+    VkViewport viewport;
+    viewport.x      = 0;
+    viewport.y      = 0;
+    viewport.width  = device->swapchain->width;
+    viewport.height = device->swapchain->height;
+
+    vkCmdSetViewport(command_buffer, 0, 1, &viewport);
+}
+
+void VulkanCommandBuffer::set_scissors()
+{
+    VkRect2D scissors;
+    scissors.offset = {0, 0};
+    scissors.extent = {device->swapchain->width, device->swapchain->height};
+    vkCmdSetScissor(command_buffer, 0, 1, &scissors);
+}
+
 void VulkanCommandBuffer::draw(u32 first_vertex, u32 vertex_count, u32 first_instance, u32 instance_count)
 {
     vkCmdDraw(command_buffer, vertex_count, instance_count, first_vertex, first_instance);

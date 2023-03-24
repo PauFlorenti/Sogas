@@ -18,6 +18,9 @@ class CommandBuffer
     virtual void bind_pass(RenderPassHandle handle)   = 0;
     virtual void bind_pipeline(PipelineHandle handle) = 0;
 
+    virtual void set_viewport() = 0;
+    virtual void set_scissors() = 0;
+
     virtual void draw(u32 first_vertex, u32 vertex_count, u32 first_instance, u32 instance_count) = 0;
 
     virtual void reset() = 0;

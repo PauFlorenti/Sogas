@@ -105,7 +105,7 @@ void VulkanSwapchain::CreateRenderPass(VulkanRenderPass* render_pass)
     depthAttachment.finalLayout             = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     VkAttachmentReference depthAttachmentReference = {};
-    depthAttachmentReference.attachment            = 0;
+    depthAttachmentReference.attachment            = 1;
     depthAttachmentReference.layout                = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     VkSubpassDescription subpass    = {};
@@ -130,7 +130,7 @@ void VulkanSwapchain::CreateRenderPass(VulkanRenderPass* render_pass)
     renderPassInfo.subpassCount           = 1;
     renderPassInfo.pSubpasses             = &subpass;
 
-    vkcheck(vkCreateRenderPass(device->Handle, &renderPassInfo, nullptr, &renderpass));
+    vkcheck(vkCreateRenderPass(device->Handle, &renderPassInfo, nullptr, &render_pass->renderpass));
 
     // TODO Set render pass name
 
@@ -145,6 +145,7 @@ void VulkanSwapchain::CreateRenderPass(VulkanRenderPass* render_pass)
     u32 swapchainImageCount = 0;
     vkGetSwapchainImagesKHR(device->Handle, swapchain, &swapchainImageCount, nullptr);
     images.resize(swapchainImageCount);
+    framebuffers.resize(swapchainImageCount);
     vkGetSwapchainImagesKHR(device->Handle,
                             swapchain,
                             &swapchainImageCount,
