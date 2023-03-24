@@ -104,32 +104,37 @@ ForwardPipeline::ForwardPipeline(std::shared_ptr<GPU_device> InRenderer)
 
     // Vertex input
     // TODO(marco): component format should be based on buffer view type
-    pipeline_creation.vertexInputState.AddVertexAttribute({0, 0, 0, VertexFormat::FLOAT3}); // position
-    pipeline_creation.vertexInputState.AddVertexStream({0, 12, VertexInputRate::PER_VERTEX});
+    // pipeline_creation.vertexInputState.AddVertexAttribute({0, 0, 0, VertexFormat::FLOAT3}); // position
+    // pipeline_creation.vertexInputState.AddVertexStream({0, 12, VertexInputRate::PER_VERTEX});
 
-    pipeline_creation.vertexInputState.AddVertexAttribute({1, 1, 0, VertexFormat::FLOAT4}); // tangent
-    pipeline_creation.vertexInputState.AddVertexStream({1, 16, VertexInputRate::PER_VERTEX});
+    // pipeline_creation.vertexInputState.AddVertexAttribute({1, 1, 0, VertexFormat::FLOAT3}); // normal
+    // pipeline_creation.vertexInputState.AddVertexStream({1, 12, VertexInputRate::PER_VERTEX});
 
-    pipeline_creation.vertexInputState.AddVertexAttribute({2, 2, 0, VertexFormat::FLOAT3}); // normal
-    pipeline_creation.vertexInputState.AddVertexStream({2, 12, VertexInputRate::PER_VERTEX});
+    // pipeline_creation.vertexInputState.AddVertexAttribute({2, 2, 0, VertexFormat::FLOAT2}); // uvs
+    // pipeline_creation.vertexInputState.AddVertexStream({2, 8, VertexInputRate::PER_VERTEX});
 
-    pipeline_creation.vertexInputState.AddVertexAttribute({3, 3, 0, VertexFormat::FLOAT2}); // texcoord
-    pipeline_creation.vertexInputState.AddVertexStream({3, 8, VertexInputRate::PER_VERTEX});
+    // pipeline_creation.vertexInputState.AddVertexAttribute({3, 3, 0, VertexFormat::FLOAT4}); // color
+    // pipeline_creation.vertexInputState.AddVertexStream({3, 16, VertexInputRate::PER_VERTEX});
 
     // Render pass
     pipeline_creation.render_pass = renderer->GetSwapchainOutput();
     // Depth
     pipeline_creation.depthStencilState.SetDepth(true, CompareOperation::LESS_OR_EQUAL);
 
-        // renderer->CreateShader(ShaderStageType::VERTEX, std::move(CEngine::FindFile("forward.vert.spv")), &forwardShaders[0]);
-    // renderer->CreateShader(ShaderStageType::FRAGMENT, std::move(CEngine::FindFile("forward.frag.spv")), &forwardShaders[1]);
-    // renderer->CreateShader(ShaderStageType::VERTEX, std::move(CEngine::FindFile("quad.vert.spv")), &presentShaders[0]);
-    // renderer->CreateShader(ShaderStageType::FRAGMENT, std::move(CEngine::FindFile("quad.frag.spv")), &presentShaders[1]);
+    auto forward_ps = renderer->ReadShaderBinary(std::move(CEngine::FindFile("triangle.frag.spv")));
+    auto forward_vs = renderer->ReadShaderBinary(std::move(CEngine::FindFile("triangle.vert.spv")));
 
-    // const auto forward_vs = VulkanShader::ReadShaderFile(std::move(CEngine::FindFile("forward.vert.spv")));
-    // const auto forward_vs = VulkanShader::ReadShaderFile(std::move(CEngine::FindFile("forward.frag.spv")));
+    pipeline_creation.shaders
+        .SetName("Triangle")
+        .AddStage(reinterpret_cast<char*>(forward_vs.data()), static_cast<u32>(forward_vs.size()), ShaderStageType::VERTEX)
+        .AddStage(reinterpret_cast<char*>(forward_ps.data()), static_cast<u32>(forward_ps.size()), ShaderStageType::FRAGMENT)
+        .SetSpvInput(true);
 
-    //pipeline_creation.shaders.SetName("Forward").AddStage().AddStage();
+    //DescriptorSetLayoutDescriptor descLayoutDescriptor {};
+    //descLayoutDescriptor.AddBinding({DescriptorType::UNIFORM_BUFFER, 0, 1, "LocalConstants"});
+    //descLayoutDescriptor.AddBinding({DescriptorType::UNIFORM_BUFFER, 1, 2, "Lights"});
+
+    pipeline = renderer->CreatePipeline(pipeline_creation);
 
     //         // Shader state
     //         const char* vs_code = R"FOO(#version 450
@@ -486,7 +491,7 @@ void ForwardPipeline::update_constants()
 {
 }
 
-void ForwardPipeline::render(std::shared_ptr<Swapchain> swapchain)
+void ForwardPipeline::render()
 {
     // Start drawing.
     CommandBuffer cmd = renderer->BeginCommandBuffer();

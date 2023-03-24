@@ -62,9 +62,6 @@ class VulkanDevice : public GPU_device
     bool Init(const DeviceDescriptor& InDescriptor) override;
     void shutdown() override;
 
-    CommandBuffer BeginCommandBuffer() override;
-    void          SubmitCommandBuffers() override;
-
     // clang-format off
     // Create gpu resources
     BufferHandle              CreateBuffer(const BufferDescriptor& InDescriptor) override;
@@ -84,6 +81,11 @@ class VulkanDevice : public GPU_device
     void DestroyDescriptorSetLayout(DescriptorSetLayoutHandle InHandle) override;
     void DestroyPipeline(PipelineHandle InPipInHandleeline) override;
     void DestroyRenderPass(RenderPassHandle InHandle) override;
+
+    std::vector<i8> ReadShaderBinary(std::string InFilename) override;
+
+    CommandBuffer BeginCommandBuffer() override;
+    void          SubmitCommandBuffers() override;
 
     void                              CreateSwapchain(GLFWwindow *window) override;
     void                              CreateTexture(Texture *texture, void* data = nullptr) const override;

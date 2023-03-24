@@ -9,10 +9,7 @@ struct Swapchain;
 namespace Renderer
 {
 class GPU_device;
-class Buffer;
 class Swapchain;
-class RenderPass;
-class Texture;
 
 class ForwardPipeline
 {
@@ -21,12 +18,14 @@ class ForwardPipeline
     ~ForwardPipeline(){};
 
     void update_constants();
-    void render(std::shared_ptr<Swapchain> swapchain);
+    void render();
     void destroy();
 
   private:
+    PipelineHandle pipeline;
+
     std::shared_ptr<GPU_device> renderer;
-    std::shared_ptr<Texture> colorBuffer;
+    std::shared_ptr<Texture>    colorBuffer;
 
     const u32 nLights = 10;
 };

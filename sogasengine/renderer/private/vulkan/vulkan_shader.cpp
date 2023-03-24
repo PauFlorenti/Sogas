@@ -9,17 +9,18 @@ namespace Renderer
 namespace Vk
 {
 
-std::vector<u32> VulkanShader::ReadShaderFile(const std::string& InFilename)
+std::vector<i8> VulkanShader::ReadShaderFile(const std::string& InFilename)
 {
     FILE* file;
     fopen_s(&file, InFilename.c_str(), "rb");
     SASSERT_MSG(file, "No file provided with name '%s'", InFilename.c_str());
 
     fseek(file, 0, SEEK_END);
-    size_t fileSize = ftell(file) / sizeof(u32);
+    size_t fileSize = ftell(file);
     rewind(file);
-    std::vector<u32> buffer(fileSize);
-    if (fread(buffer.data(), sizeof(u32), fileSize, file) != fileSize)
+
+    std::vector<i8> buffer(fileSize);
+    if (fread(buffer.data(), sizeof(i8), fileSize, file) != fileSize)
     {
         buffer.clear();
     }
@@ -78,16 +79,21 @@ ShaderStateHandle VulkanShader::Create(VulkanDevice* InDevice, const ShaderState
             //ShaderModuleInfo = CompileShader(stage.code, stage.code_size, stage.type, InDescriptor.name);
         }
 
-        VkPipelineShaderStageCreateInfo ShaderStageInfo = ShaderState->ShaderStageInfo[CompiledShaders];
+        VkPipelineShaderStageCreateInfo& ShaderStageInfo = ShaderState->ShaderStageInfo[CompiledShaders];
         memset(&ShaderStageInfo, 0, sizeof(VkPipelineShaderStageCreateInfo));
         ShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         ShaderStageInfo.pName = "main";
         ShaderStageInfo.stage = ConvertShaderStage(stage.type);
 
-        if (vkCreateShaderModule(InDevice->Handle, &ShaderModuleInfo, nullptr, &ShaderState->ShaderStageInfo[CompiledShaders].module) != VK_SUCCESS)
+        VkShaderModule module;
+        auto ok = vkCreateShaderModule(InDevice->Handle, &ShaderModuleInfo, nullptr, &module);
+
+        ShaderState->ShaderStageInfo[CompiledShaders].module = module;
+
+        /*if (vkCreateShaderModule(InDevice->Handle, &ShaderModuleInfo, nullptr, &ShaderState->ShaderStageInfo[CompiledShaders].module) != VK_SUCCESS)
         {
             break;
-        }
+        }*/
 
         // TODO Set resource name.
     }

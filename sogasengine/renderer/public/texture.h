@@ -134,12 +134,12 @@ enum class Format
 
 inline bool IsDepthStencil(Format InFormat)
 {
-    return InFormat >= Format::D16_UNORM_S8_UINT || InFormat == Format::D24_UNORM_S8_UINT || InFormat == Format::D32_SFLOAT;
+    return InFormat >= Format::D16_UNORM_S8_UINT || InFormat == Format::D24_UNORM_S8_UINT || InFormat == Format::D32_UNORM_S8_UINT;
 }
 
 inline bool IsDepthOnly(Format InFormat)
 {
-    return InFormat == Format::D32_SFLOAT;
+    return InFormat == Format::D32_SFLOAT || InFormat == Format::D16_UNORM;
 }
 
 inline bool IsStencilOnly(Format InFormat)
@@ -149,12 +149,12 @@ inline bool IsStencilOnly(Format InFormat)
 
 inline bool HasDepth(Format InFormat)
 {
-    return InFormat >= Format::D16_UNORM_S8_UINT || InFormat == Format::D32_SFLOAT;
+    return InFormat >= Format::D16_UNORM_S8_UINT || InFormat == Format::D32_SFLOAT || InFormat == Format::D16_UNORM;
 }
 
 inline bool HasDepthOrStencil(Format InFormat)
 {
-    return InFormat >= Format::D16_UNORM_S8_UINT && InFormat <= Format::D32_SFLOAT;
+    return InFormat >= Format::D16_UNORM && InFormat <= Format::D32_UNORM_S8_UINT;
 }
 
 enum class Usage
@@ -200,19 +200,17 @@ struct TextureDescriptor
         TEXTURE_TYPE_3D
     };
 
+    void*       data = nullptr;
+
     u16 width   = 1;
     u16 height  = 1;
     u16 depth   = 1;
     u8  mipmaps = 1;
     u8  flags   = 0;
 
-    void*       data = nullptr;
-    std::string name;
-
-    TextureType type      = TextureType::TEXTURE_TYPE_2D;
     Format      format    = Format::UNDEFINED;
-    Usage       usage     = Usage::DEFAULT;
-    BindPoint   bindPoint = BindPoint::NONE;
+    TextureType type      = TextureType::TEXTURE_TYPE_2D;
+    std::string name;
 
     TextureDescriptor& SetSize(u16 InWidth, u16 InHeight, u16 InDepth);
     TextureDescriptor& SetFlags(u8 InMipmaps, u8 InFlags);

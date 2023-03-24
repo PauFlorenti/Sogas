@@ -158,9 +158,11 @@ PipelineHandle VulkanPipeline::Create(VulkanDevice* InDevice, const PipelineDesc
 
         pipeline_info.pVertexInputState = &vertex_input_info;
 
-        VkPipelineInputAssemblyStateCreateInfo inpute_assembly_info{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
-        inpute_assembly_info.topology               = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        inpute_assembly_info.primitiveRestartEnable = VK_FALSE;
+        VkPipelineInputAssemblyStateCreateInfo input_assembly_info{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
+        input_assembly_info.topology               = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        input_assembly_info.primitiveRestartEnable = VK_FALSE;
+
+        pipeline_info.pInputAssemblyState = &input_assembly_info;
 
         VkPipelineColorBlendAttachmentState color_blend_attachments[8];
         if (InDescriptor.blendState.ActiveStates)
@@ -199,7 +201,7 @@ PipelineHandle VulkanPipeline::Create(VulkanDevice* InDevice, const PipelineDesc
         VkPipelineColorBlendStateCreateInfo blend_state_info{VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO};
         blend_state_info.logicOpEnable     = VK_TRUE;
         blend_state_info.logicOp           = VK_LOGIC_OP_COPY;
-        blend_state_info.attachmentCount   = InDescriptor.blendState.ActiveStates;
+        blend_state_info.attachmentCount   = InDescriptor.blendState.ActiveStates ? InDescriptor.blendState.ActiveStates : 1;
         blend_state_info.pAttachments      = color_blend_attachments;
         blend_state_info.blendConstants[0] = 0.0f;
         blend_state_info.blendConstants[1] = 0.0f;

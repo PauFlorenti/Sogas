@@ -152,7 +152,7 @@ VkRenderPass VulkanRenderPass::CreateRenderPass(const VulkanDevice* InDevice, co
     u32 i = 0;
     for (; i < InOutput.ColorFormatCounts; ++i)
     {
-        VkAttachmentDescription color_attachment = color_attachments[i];
+        VkAttachmentDescription& color_attachment = color_attachments[i];
         color_attachment.format                  = ConvertFormat(InOutput.ColorFormats[i]);
         color_attachment.samples                 = VK_SAMPLE_COUNT_1_BIT;
         color_attachment.loadOp                  = color_op;
@@ -164,7 +164,7 @@ VkRenderPass VulkanRenderPass::CreateRenderPass(const VulkanDevice* InDevice, co
 
         VkAttachmentReference& color_attachment_reference = color_attachment_refs[i];
         color_attachment_reference.attachment             = i;
-        color_attachment_reference.layout                 = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+        color_attachment_reference.layout                 = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     }
 
     VkAttachmentDescription depth_attachment{};

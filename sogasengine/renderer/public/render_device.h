@@ -48,9 +48,6 @@ class GPU_device
     virtual bool                     Init(const DeviceDescriptor& InDescriptor) = 0;
     virtual void                     shutdown() = 0;
 
-    virtual CommandBuffer            BeginCommandBuffer() = 0;
-    virtual void                     SubmitCommandBuffers() = 0;
-
     // Create gpu resources
     virtual BufferHandle              CreateBuffer(const BufferDescriptor& InDescriptor) = 0;
     virtual TextureHandle             CreateTexture(const TextureDescriptor& InDescriptor) = 0;
@@ -69,6 +66,11 @@ class GPU_device
     virtual void DestroyDescriptorSetLayout(DescriptorSetLayoutHandle InHandle) = 0;
     virtual void DestroyPipeline(PipelineHandle InPipInHandleeline) = 0;
     virtual void DestroyRenderPass(RenderPassHandle InHandle) = 0;
+
+    virtual std::vector<i8> ReadShaderBinary(std::string InFilename) = 0;
+
+    virtual CommandBuffer            BeginCommandBuffer() = 0;
+    virtual void                     SubmitCommandBuffers() = 0;
 
     virtual void                     CreateSwapchain(GLFWwindow* window) = 0;
     virtual void                     CreateTexture(Texture *texture, void* data) const = 0;

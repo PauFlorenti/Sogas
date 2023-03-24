@@ -31,7 +31,7 @@ bool CRenderModule::Start()
     dc.SetWindow(CApplication::Get()->GetWindow(), static_cast<u16>(width), static_cast<u16>(height)).SetAllocator(&allocator);
     renderer->Init(dc);
 
-    //forwardPipeline = std::make_shared<Renderer::ForwardPipeline>(renderer);
+    forwardPipeline = std::make_shared<Renderer::ForwardPipeline>(renderer);
 
     return true;
 }
@@ -58,6 +58,6 @@ void CRenderModule::RenderInMenu() {}
 
 void CRenderModule::DoFrame()
 {
-    //forwardPipeline->render(swapchain);
+    forwardPipeline->render();
 }
 } // namespace Sogas

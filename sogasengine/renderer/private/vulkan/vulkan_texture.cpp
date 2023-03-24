@@ -251,28 +251,28 @@ void VulkanTexture::Create(const VulkanDevice* device, Texture* texture, void* d
         imageInfo.initialLayout         = VK_IMAGE_LAYOUT_UNDEFINED;
         imageInfo.imageType             = ConverTextureType(desc.type);
 
-        if (desc.usage == Usage::UPLOAD)
-        {
-            imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-        }
-        if (desc.usage == Usage::READBACK)
-        {
-            imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-        }
+        // if (desc.usage == Usage::UPLOAD)
+        // {
+        //     imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        // }
+        // if (desc.usage == Usage::READBACK)
+        // {
+        //     imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+        // }
 
-        if (desc.bindPoint == BindPoint::SHADER_SAMPLE)
-        {
-            imageInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-        }
-        if (desc.bindPoint == BindPoint::DEPTH_STENCIL)
-        {
-            imageInfo.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        }
-        if (desc.bindPoint == BindPoint::RENDER_TARGET)
-        {
-            imageInfo.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-            imageInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-        }
+        // if (desc.bindPoint == BindPoint::SHADER_SAMPLE)
+        // {
+        //     imageInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+        // }
+        // if (desc.bindPoint == BindPoint::DEPTH_STENCIL)
+        // {
+        //     imageInfo.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        // }
+        // if (desc.bindPoint == BindPoint::RENDER_TARGET)
+        // {
+        //     imageInfo.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        //     imageInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+        // }
 
         VkDeviceSize imageSize = imageInfo.extent.width * imageInfo.extent.height * imageInfo.extent.depth *
                                  imageInfo.arrayLayers * GetFormatStride(desc.format);
@@ -292,18 +292,18 @@ void VulkanTexture::Create(const VulkanDevice* device, Texture* texture, void* d
     }
     else
     {
-        if (desc.bindPoint == BindPoint::DEPTH_STENCIL)
-        {
-            internalState->TransitionLayout(imageInfo.initialLayout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-        }
-        if (desc.bindPoint == BindPoint::SHADER_SAMPLE)
-        {
-            internalState->TransitionLayout(imageInfo.initialLayout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-        }
-        else if (desc.bindPoint == BindPoint::RENDER_TARGET)
-        {
-            internalState->TransitionLayout(imageInfo.initialLayout, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-        }
+        // if (desc.bindPoint == BindPoint::DEPTH_STENCIL)
+        // {
+        //     internalState->TransitionLayout(imageInfo.initialLayout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+        // }
+        // if (desc.bindPoint == BindPoint::SHADER_SAMPLE)
+        // {
+        //     internalState->TransitionLayout(imageInfo.initialLayout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        // }
+        // else if (desc.bindPoint == BindPoint::RENDER_TARGET)
+        // {
+        //     internalState->TransitionLayout(imageInfo.initialLayout, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        // }
     }
 
     // Create image view
@@ -312,7 +312,7 @@ void VulkanTexture::Create(const VulkanDevice* device, Texture* texture, void* d
         imageViewInfo.image                           = internalState->texture;
         imageViewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
         imageViewInfo.format                          = imageInfo.format;
-        imageViewInfo.subresourceRange.aspectMask     = desc.bindPoint == BindPoint::DEPTH_STENCIL ? (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) : VK_IMAGE_ASPECT_COLOR_BIT;
+        //imageViewInfo.subresourceRange.aspectMask     = desc.bindPoint == BindPoint::DEPTH_STENCIL ? (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) : VK_IMAGE_ASPECT_COLOR_BIT;
         imageViewInfo.subresourceRange.layerCount     = 1;
         imageViewInfo.subresourceRange.baseArrayLayer = 0;
         imageViewInfo.subresourceRange.levelCount     = 1;
@@ -350,27 +350,27 @@ std::shared_ptr<Texture> VulkanTexture::Create(const VulkanDevice* device, Textu
         imageInfo.initialLayout         = VK_IMAGE_LAYOUT_UNDEFINED;
         imageInfo.imageType             = ConverTextureType(texture->GetDescriptor().type);
 
-        if (texture->GetDescriptor().usage == Usage::UPLOAD)
-        {
-            imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-        }
-        if (texture->GetDescriptor().usage == Usage::READBACK)
-        {
-            imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-        }
-        if (texture->GetDescriptor().bindPoint == BindPoint::SHADER_SAMPLE)
-        {
-            imageInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-        }
-        if (texture->GetDescriptor().bindPoint == BindPoint::DEPTH_STENCIL)
-        {
-            imageInfo.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        }
-        if (texture->GetDescriptor().bindPoint == BindPoint::RENDER_TARGET)
-        {
-            imageInfo.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-            imageInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-        }
+        // if (texture->GetDescriptor().usage == Usage::UPLOAD)
+        // {
+        //     imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        // }
+        // if (texture->GetDescriptor().usage == Usage::READBACK)
+        // {
+        //     imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+        // }
+        // if (texture->GetDescriptor().bindPoint == BindPoint::SHADER_SAMPLE)
+        // {
+        //     imageInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+        // }
+        // if (texture->GetDescriptor().bindPoint == BindPoint::DEPTH_STENCIL)
+        // {
+        //     imageInfo.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        // }
+        // if (texture->GetDescriptor().bindPoint == BindPoint::RENDER_TARGET)
+        // {
+        //     imageInfo.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        //     imageInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+        // }
 
         VkDeviceSize imageSize = imageInfo.extent.width * imageInfo.extent.height * imageInfo.extent.depth *
                                  imageInfo.arrayLayers * GetFormatStride(texture->GetDescriptor().format);
@@ -390,18 +390,18 @@ std::shared_ptr<Texture> VulkanTexture::Create(const VulkanDevice* device, Textu
     }
     else
     {
-        if (texture->GetDescriptor().bindPoint == BindPoint::DEPTH_STENCIL)
-        {
-            internalState->TransitionLayout(imageInfo.initialLayout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-        }
-        if (texture->GetDescriptor().bindPoint == BindPoint::SHADER_SAMPLE)
-        {
-            internalState->TransitionLayout(imageInfo.initialLayout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-        }
-        else if (texture->GetDescriptor().bindPoint == BindPoint::RENDER_TARGET)
-        {
-            internalState->TransitionLayout(imageInfo.initialLayout, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-        }
+        // if (texture->GetDescriptor().bindPoint == BindPoint::DEPTH_STENCIL)
+        // {
+        //     internalState->TransitionLayout(imageInfo.initialLayout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+        // }
+        // if (texture->GetDescriptor().bindPoint == BindPoint::SHADER_SAMPLE)
+        // {
+        //     internalState->TransitionLayout(imageInfo.initialLayout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        // }
+        // else if (texture->GetDescriptor().bindPoint == BindPoint::RENDER_TARGET)
+        // {
+        //     internalState->TransitionLayout(imageInfo.initialLayout, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        // }
     }
 
     // Create image view

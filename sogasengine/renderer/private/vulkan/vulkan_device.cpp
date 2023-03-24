@@ -240,6 +240,19 @@ bool VulkanDevice::Init(const DeviceDescriptor& InDescriptor)
       .SetName("Default Sampler");
     default_sampler = CreateSampler(sampler_descriptor);
 
+    TextureDescriptor depth_texture_descriptor = {nullptr, swapchain->width, swapchain->height, 1, 1, 0, Format::D32_SFLOAT, TextureDescriptor::TextureType::TEXTURE_TYPE_2D, "DepthTexture"};
+    depth_texture = CreateTexture(depth_texture_descriptor);
+
+    swapchain->output.SetDepth(Format::D32_SFLOAT);
+
+    RenderPassDescriptor swapchain_renderpass_descriptor;
+    swapchain_renderpass_descriptor
+        .SetType(RenderPassType::SWAPCHAIN)
+        .SetName("Swapchain")
+        .SetOperations(RenderPassOperation::CLEAR, RenderPassOperation::CLEAR, RenderPassOperation::CLEAR);
+    
+    swapchain_renderpass = CreateRenderPass(swapchain_renderpass_descriptor);
+
     STRACE("Finished Initializing Vulkan device.\n");
 
     return true;
@@ -535,6 +548,11 @@ void VulkanDevice::DestroyPipeline(PipelineHandle InPipInHandleeline)
 }
 void VulkanDevice::DestroyRenderPass(RenderPassHandle InHandle)
 {
+}
+
+std::vector<i8> VulkanDevice::ReadShaderBinary(std::string InFilename)
+{
+    return VulkanShader::ReadShaderFile(InFilename);
 }
 
 void VulkanDevice::CreateTexture(Texture* texture, void* data) const
@@ -835,7 +853,7 @@ void VulkanDevice::CreateCommandResources()
 VkRenderPass VulkanDevice::GetVulkanRenderPass(const RenderPassOutput& InOutput, std::string InName)
 {
     u64          hashed      = wyhash((void*)&InOutput, sizeof(RenderPassOutput), 0, _wyp);
-    VkRenderPass render_pass = render_pass_cache.at(hashed);
+    VkRenderPass render_pass = render_pass_cache.find(hashed) != render_pass_cache.end() ? render_pass_cache.at(hashed) : nullptr;
     if (render_pass)
     {
         return render_pass;

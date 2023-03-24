@@ -35,8 +35,6 @@ class TextureResource : public IResourceType
             desc.width     = static_cast<i16>(width);
             desc.height    = static_cast<i16>(height);
             desc.format    = Format::R8G8B8A8_SRGB;
-            desc.usage     = Usage::UPLOAD;
-            desc.bindPoint = BindPoint::SHADER_SAMPLE;
             Texture* texture = new Texture(std::move(desc));
             render->CreateTexture(texture, pixels);
             return texture;
@@ -47,8 +45,6 @@ class TextureResource : public IResourceType
             desc.width       = 1;
             desc.height      = 1;
             desc.format      = Format::R8G8B8A8_SRGB;
-            desc.usage       = Usage::UPLOAD;
-            desc.bindPoint   = BindPoint::SHADER_SAMPLE;
             Texture* texture = new Texture(std::move(desc));
 
             if (InName == "white.text")
