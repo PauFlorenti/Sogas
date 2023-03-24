@@ -9,6 +9,7 @@ struct PipelineHandle;
 
 class CommandBuffer
 {
+  public:
     virtual void init(u32 buffer_size, u32 submit_size, bool baked) = 0;
     virtual void finish()                                           = 0;
 

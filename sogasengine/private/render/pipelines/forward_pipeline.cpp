@@ -517,6 +517,14 @@ void ForwardPipeline::render()
           i++;
       });
 
+    CommandBuffer* cmd = renderer->GetCommandBuffer(true);
+
+    cmd->bind_pass(renderer->GetSwapchainRenderpass());
+    cmd->bind_pipeline(pipeline);
+    cmd->draw(0, 3, 0, 1);
+
+    renderer->Present();
+
     // Bind constants per frame.
     // Draw mesh instances.
     // CommandBuffer* cmd;

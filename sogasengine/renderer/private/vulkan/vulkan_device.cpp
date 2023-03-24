@@ -25,6 +25,7 @@ namespace Vk
 {
 
 static std::unordered_map<u64, VkRenderPass> render_pass_cache;
+static VulkanCommandBufferResources          commandbuffer_resources;
 
 const std::vector<const char*> validationLayers = {"VK_LAYER_KHRONOS_validation"};
 
@@ -206,6 +207,8 @@ bool VulkanDevice::Init(const DeviceDescriptor& InDescriptor)
 
     GLFWwindow* window = reinterpret_cast<GLFWwindow*>(InDescriptor.window);
     CreateSwapchain(window);
+
+    commandbuffer_resources.init(this);
 
     static const u32 global_pool_elements = 128;
 
@@ -503,11 +506,12 @@ bool VulkanDevice::CreateDevice()
     u32 i = 0;
     for (const auto& queueFamily : queueFamilyProperties)
     {
-        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+        if (queueFamily.queueCount > 0 && queueFamily.queueFlags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT))
         {
             GraphicsFamily = i;
+            break;
         }
-        i++;
+        ++i;
     }
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -715,6 +719,16 @@ RenderPassHandle VulkanDevice::GetSwapchainRenderpass()
 const RenderPassOutput& VulkanDevice::GetSwapchainOutput() const
 {
     return swapchain->output;
+}
+
+CommandBuffer* VulkanDevice::GetCommandBuffer(bool begin)
+{
+    return commandbuffer_resources.get_command_buffer(GetFrameIndex(), begin);
+}
+
+void VulkanDevice::Present()
+{
+    
 }
 
 } // namespace Vk

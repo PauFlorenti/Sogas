@@ -22,6 +22,7 @@ class VulkanDevice : public GPU_device
     friend class VulkanAttachment;
     friend class VulkanBuffer;
     friend class VulkanCommandBuffer;
+    friend class VulkanCommandBufferResources;
     friend class VulkanDescriptorSet;
     friend class VulkanDescriptorSetLayout;
     friend class VulkanPipeline;
@@ -83,6 +84,9 @@ class VulkanDevice : public GPU_device
     void DestroyRenderPass(RenderPassHandle InHandle) override;
 
     std::vector<i8> ReadShaderBinary(std::string InFilename) override;
+    CommandBuffer* GetCommandBuffer(bool begin) override;
+
+    void Present() override;
 
     void                              CreateSwapchain(GLFWwindow *window) override;
     void                              CreateTexture(Texture *texture, void* data = nullptr) const override;
@@ -110,6 +114,11 @@ class VulkanDevice : public GPU_device
     const VkQueue GetGraphicsQueue() const
     {
         return GraphicsQueue;
+    }
+
+    const u32 GetFamilyQueueIndex()
+    {
+        return GraphicsFamily;
     }
 
     VulkanSampler* GetDefaultSampler()

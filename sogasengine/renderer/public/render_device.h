@@ -1,6 +1,7 @@
 #pragma once
 
 #include "buffer.h"
+#include "commandbuffer.h"
 #include "device_resource_pool.h"
 #include "device_resources.h"
 #include "render_types.h"
@@ -68,6 +69,9 @@ class GPU_device
     virtual void DestroyRenderPass(RenderPassHandle InHandle) = 0;
 
     virtual std::vector<i8> ReadShaderBinary(std::string InFilename) = 0;
+    virtual CommandBuffer* GetCommandBuffer(bool begin) = 0;
+
+    virtual void Present() = 0;
 
     virtual void                     CreateSwapchain(GLFWwindow* window) = 0;
     virtual void                     CreateTexture(Texture *texture, void* data) const = 0;

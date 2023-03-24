@@ -29,6 +29,7 @@ static RenderPassHandle             INVALID_RENDERPASS { INVALID_ID };
 static PipelineHandle               INVALID_PIPELINE { INVALID_ID };
 // clang-format on
 
+static const u8 MAX_SWAPCHAIN_IMAGES       = 3;
 static const u8 MAX_SHADER_STAGES          = 5;
 static const u8 MAX_IMAGE_OUTPUTS          = 8;
 static const u8 MAX_DESCRIPTOR_SET_LAYOUTS = 8;
