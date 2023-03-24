@@ -76,13 +76,13 @@ class GPU_device
     virtual void Present() = 0;
 
     virtual void                     CreateSwapchain(GLFWwindow* window) = 0;
-    virtual void                     CreateTexture(Texture *texture, void* data) const = 0;
-    virtual std::shared_ptr<Texture> CreateTexture(TextureDescriptor desc, void* data = nullptr) const = 0;
+    // virtual void                     CreateTexture(Texture *texture, void* data) const = 0;
+    // virtual std::shared_ptr<Texture> CreateTexture(TextureDescriptor desc, void* data = nullptr) const = 0;
 
     // API calls
     // This are commands that will execute when submitCommands is called.
     //virtual void SetWindowSize(std::shared_ptr<Swapchain> InSwapchain, const u32& width, const u32& height) = 0;
-    virtual void SetTopology(PrimitiveTopology topology) = 0;
+    // virtual void SetTopology(PrimitiveTopology topology) = 0;
 
     // clang-format on
 
