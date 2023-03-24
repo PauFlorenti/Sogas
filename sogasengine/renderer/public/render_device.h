@@ -45,7 +45,6 @@ class GPU_device
     // virtual statistics getStatistics() const = 0;
 
     // clang-format off
-
     virtual bool                     Init(const DeviceDescriptor& InDescriptor) = 0;
     virtual void                     shutdown() = 0;
 
@@ -75,15 +74,7 @@ class GPU_device
     virtual void BeginFrame() = 0;
     virtual void Present() = 0;
 
-    virtual void                     CreateSwapchain(GLFWwindow* window) = 0;
-    // virtual void                     CreateTexture(Texture *texture, void* data) const = 0;
-    // virtual std::shared_ptr<Texture> CreateTexture(TextureDescriptor desc, void* data = nullptr) const = 0;
-
-    // API calls
-    // This are commands that will execute when submitCommands is called.
-    //virtual void SetWindowSize(std::shared_ptr<Swapchain> InSwapchain, const u32& width, const u32& height) = 0;
-    // virtual void SetTopology(PrimitiveTopology topology) = 0;
-
+    virtual void CreateSwapchain(GLFWwindow* window) = 0;
     // clang-format on
 
     virtual RenderPassHandle        GetSwapchainRenderpass()   = 0;

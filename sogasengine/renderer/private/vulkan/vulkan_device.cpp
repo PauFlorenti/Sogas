@@ -382,46 +382,6 @@ std::vector<i8> VulkanDevice::ReadShaderBinary(std::string InFilename)
     return VulkanShader::ReadShaderFile(InFilename);
 }
 
-// void VulkanDevice::CreateTexture(Texture* texture, void* data) const
-// {
-//     VulkanTexture::Create(this, texture, data);
-// }
-
-// std::shared_ptr<Texture> VulkanDevice::CreateTexture(TextureDescriptor desc, void* data) const
-// {
-//     return VulkanTexture::Create(this, std::move(desc), data);
-// };
-
-// void VulkanDevice::SetWindowSize(std::shared_ptr<Renderer::Swapchain> InSwapchain, const u32& width, const u32& height)
-// {
-//     const auto& swapchain_descriptor = InSwapchain->GetDescriptor();
-//     if (InSwapchain->resized || (swapchain_descriptor.width != width, swapchain_descriptor.height != height))
-//     {
-//         InSwapchain->SetSwapchainSize(width, height);
-//         InSwapchain->resized = false;
-//     }
-// }
-
-// void VulkanDevice::SetTopology(PrimitiveTopology topology)
-// {
-//     VkCommandBuffer& cmd = resourcesCommandBuffer[GetFrameIndex()];
-//     switch (topology)
-//     {
-//         case PrimitiveTopology::POINTLIST:
-//             vkCmdSetPrimitiveTopology(cmd, VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
-//             break;
-//         case PrimitiveTopology::LINELIST:
-//             vkCmdSetPrimitiveTopology(cmd, VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
-//             break;
-//         case PrimitiveTopology::TRIANGLELIST:
-//             vkCmdSetPrimitiveTopology(cmd, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-//             break;
-//         default:
-//             SERROR("No valid topology!");
-//             break;
-//     }
-// }
-
 bool VulkanDevice::CreateInstance()
 {
     STRACE("\tCreating the Vulkan Instance ...");

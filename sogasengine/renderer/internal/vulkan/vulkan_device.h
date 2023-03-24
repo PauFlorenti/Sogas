@@ -91,12 +91,6 @@ class VulkanDevice : public GPU_device
     void Present() override;
 
     void                              CreateSwapchain(GLFWwindow *window) override;
-    // void                              CreateTexture(Texture *texture, void* data = nullptr) const override;
-    // std::shared_ptr<Texture>          CreateTexture(TextureDescriptor desc, void* data = nullptr) const override;
-
-    // API calls ...
-    //void SetWindowSize(std::shared_ptr<Swapchain> InSwapchain, const u32 &width, const u32 &height) override;
-    // void SetTopology(PrimitiveTopology topology) override;
     // clang-format on
 
     RenderPassHandle        GetSwapchainRenderpass() override;
