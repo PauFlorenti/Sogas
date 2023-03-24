@@ -87,6 +87,7 @@ class VulkanDevice : public GPU_device
     CommandBuffer* GetCommandBuffer(bool begin) override;
     void QueueCommandBuffer(CommandBuffer* cmd) override;
 
+    void BeginFrame() override;
     void Present() override;
 
     void                              CreateSwapchain(GLFWwindow *window) override;

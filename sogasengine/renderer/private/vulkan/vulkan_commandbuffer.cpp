@@ -13,7 +13,7 @@ namespace Vk
 
 void VulkanCommandBufferResources::init(VulkanDevice* device)
 {
-    device = device;
+    this->device = device;
 
     for (u32 i = 0; i < MAX_POOLS; ++i)
     {
@@ -53,7 +53,7 @@ void VulkanCommandBufferResources::reset_pools(u32 frame_index)
 {
     for (u32 i = 0; i < MAX_THREADS; ++i)
     {
-        vkResetCommandPool(device->Handle, command_pools[MAX_SWAPCHAIN_IMAGES * MAX_THREADS + frame_index], 0);
+        vkResetCommandPool(device->Handle, command_pools[frame_index * MAX_THREADS + i], 0);
     }
 }
 
@@ -130,10 +130,12 @@ void VulkanCommandBuffer::bind_pipeline(PipelineHandle handle)
 void VulkanCommandBuffer::set_viewport()
 {
     VkViewport viewport;
-    viewport.x      = 0;
-    viewport.y      = 0;
-    viewport.width  = device->swapchain->width;
-    viewport.height = device->swapchain->height;
+    viewport.x        = 0;
+    viewport.y        = 0;
+    viewport.width    = device->swapchain->width;
+    viewport.height   = device->swapchain->height;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
 
     vkCmdSetViewport(command_buffer, 0, 1, &viewport);
 }

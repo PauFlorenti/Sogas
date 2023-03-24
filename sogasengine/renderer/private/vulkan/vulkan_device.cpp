@@ -647,6 +647,7 @@ void VulkanDevice::CreateCommandResources()
         }
 
         VkFenceCreateInfo fenceInfo = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+        fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
         if (vkCreateFence(Handle, &fenceInfo, nullptr, &fence[i]) != VK_SUCCESS)
         {
@@ -731,6 +732,19 @@ void VulkanDevice::QueueCommandBuffer(CommandBuffer* cmd)
     queued_command_buffers.push_back(cmd);
 }
 
+void VulkanDevice::BeginFrame()
+{
+    const u32& frame_index = GetFrameIndex();
+    if (vkGetFenceStatus(Handle, fence[frame_index]) != VK_SUCCESS)
+    {
+        vkWaitForFences(Handle, 1, &fence[frame_index], VK_TRUE, UINT64_MAX);
+    }
+
+    vkResetFences(Handle, 1, &fence[frame_index]);
+
+    commandbuffer_resources.reset_pools(frame_index);
+}
+
 void VulkanDevice::Present()
 {
     VkResult ok = vkAcquireNextImageKHR(Handle, swapchain->swapchain, UINT64_MAX, swapchain->presentCompleteSemaphore, VK_NULL_HANDLE, &swapchain->imageIndex);
@@ -738,6 +752,7 @@ void VulkanDevice::Present()
     if (ok == VK_ERROR_OUT_OF_DATE_KHR)
     {
         // TODO resize
+        ++FrameCount;
         return;
     }
 
@@ -775,7 +790,7 @@ void VulkanDevice::Present()
     present_info.waitSemaphoreCount = 1;
     present_info.pWaitSemaphores    = &swapchain->renderCompleteSemaphore;
     present_info.pImageIndices      = &swapchain->imageIndex;
-    
+
     ok = vkQueuePresentKHR(GraphicsQueue, &present_info);
 
     queued_command_buffers.clear();
@@ -785,8 +800,11 @@ void VulkanDevice::Present()
         resized = false;
 
         // TODO resized swapchain.
+        ++FrameCount;
         return;
     }
+
+    ++FrameCount;
 
     // Resource deletion here ...
 }

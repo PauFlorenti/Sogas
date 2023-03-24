@@ -72,6 +72,7 @@ class GPU_device
     virtual CommandBuffer* GetCommandBuffer(bool begin) = 0;
     virtual void QueueCommandBuffer(CommandBuffer* cmd) = 0;
 
+    virtual void BeginFrame() = 0;
     virtual void Present() = 0;
 
     virtual void                     CreateSwapchain(GLFWwindow* window) = 0;
