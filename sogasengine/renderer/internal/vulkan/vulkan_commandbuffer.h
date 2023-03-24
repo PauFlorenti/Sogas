@@ -1,45 +1,47 @@
 #pragma once
 
+#include "commandbuffer.h"
 #include "vulkan_types.h"
 namespace Sogas
 {
 namespace Renderer
 {
-class RenderPass;
-class Swapchain;
 namespace Vk
 {
-class VulkanPipeline;
-class VulkanSwapchain;
+
 class VulkanDevice;
+class VulkanRenderPass;
+class VulkanPipeline;
 
-class VulkanCommandBuffer
+class VulkanCommandBuffer : public CommandBuffer
 {
-  public:
-    explicit VulkanCommandBuffer(const VulkanDevice* device = nullptr);
-    ~VulkanCommandBuffer();
+    void init(u32 buffer_size, u32 submit_size, bool baked) override;
+    void finish() override;
 
-    static inline VulkanCommandBuffer* ToInternal(const CommandBuffer* cmd)
-    {
-        return static_cast<VulkanCommandBuffer*>(cmd->internalState);
-    }
+    // interface
 
-    void Destroy();
+    void bind_pass(RenderPassHandle handle) override;
+    void bind_pipeline(PipelineHandle handle) override;
 
-    VkCommandPool              commandPools[MAX_FRAMES_IN_FLIGHT];
-    VkCommandBuffer            commandBuffers[MAX_FRAMES_IN_FLIGHT];
-    VkDescriptorPool           descriptorPools[MAX_FRAMES_IN_FLIGHT];
-    std::vector<CommandBuffer> commandsToWait;
+    void draw(u32 first_vertex, u32 vertex_count, u32 first_instance, u32 instance_count) override;
 
-    const Renderer::RenderPass*          activeRenderPass   = nullptr;
-    std::shared_ptr<Renderer::Swapchain> swapchain          = nullptr;
-    DescriptorSet*                       descriptorSetBound = nullptr;
-    VkSemaphore                          semaphore          = VK_NULL_HANDLE;
-    u32                                  frameIndex;
-    bool                                 dirty{true};
+    void reset() override;
 
-  private:
-    const VulkanDevice* device = nullptr;
+    VulkanDevice* device = nullptr;
+
+    VkCommandBuffer command_buffer;
+
+    VulkanRenderPass* current_renderpass = nullptr;
+    VulkanPipeline*   current_pipeline   = nullptr;
+    VkClearValue      clears[2];
+    bool              is_recording;
+
+    u32 handle;
+
+    u32            current_command;
+    ResourceHandle resource_handle;
+    u32            buffer_size = 0;
+    bool           baked       = false;
 };
 
 } // namespace Vk

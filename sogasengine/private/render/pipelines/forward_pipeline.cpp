@@ -125,10 +125,10 @@ ForwardPipeline::ForwardPipeline(std::shared_ptr<GPU_device> InRenderer)
     auto forward_vs = renderer->ReadShaderBinary(std::move(CEngine::FindFile("triangle.vert.spv")));
 
     pipeline_creation.shaders
-        .SetName("Triangle")
-        .AddStage(reinterpret_cast<char*>(forward_vs.data()), static_cast<u32>(forward_vs.size()), ShaderStageType::VERTEX)
-        .AddStage(reinterpret_cast<char*>(forward_ps.data()), static_cast<u32>(forward_ps.size()), ShaderStageType::FRAGMENT)
-        .SetSpvInput(true);
+      .SetName("Triangle")
+      .AddStage(reinterpret_cast<char*>(forward_vs.data()), static_cast<u32>(forward_vs.size()), ShaderStageType::VERTEX)
+      .AddStage(reinterpret_cast<char*>(forward_ps.data()), static_cast<u32>(forward_ps.size()), ShaderStageType::FRAGMENT)
+      .SetSpvInput(true);
 
     //DescriptorSetLayoutDescriptor descLayoutDescriptor {};
     //descLayoutDescriptor.AddBinding({DescriptorType::UNIFORM_BUFFER, 0, 1, "LocalConstants"});
@@ -493,9 +493,6 @@ void ForwardPipeline::update_constants()
 
 void ForwardPipeline::render()
 {
-    // Start drawing.
-    CommandBuffer cmd = renderer->BeginCommandBuffer();
-
     // Update constants per frame data.
     CEntity* eCamera = getEntityByName("camera");
     SASSERT(eCamera);
@@ -522,16 +519,8 @@ void ForwardPipeline::render()
 
     // Bind constants per frame.
     // Draw mesh instances.
-    RenderManager.RenderAll(CHandle(), DrawChannel::SOLID, cmd);
-
-    // End drawing.
-    // Present
-    auto presentCmd = renderer->BeginCommandBuffer();
-    renderer->WaitCommand(presentCmd, cmd);
-    // Bind textures
-    renderer->DrawIndexed(6, 0, presentCmd);
-
-    renderer->SubmitCommandBuffers();
+    // CommandBuffer* cmd;
+    // RenderManager.RenderAll(CHandle(), DrawChannel::SOLID, *cmd);
 }
 
 void ForwardPipeline::destroy()

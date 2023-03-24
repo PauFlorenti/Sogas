@@ -79,13 +79,10 @@ class VulkanDevice : public GPU_device
     void DestroySampler(SamplerHandle InHandle) override;
     void DestroyDescriptorSet(DescriptorSetHandle InHandle) override;
     void DestroyDescriptorSetLayout(DescriptorSetLayoutHandle InHandle) override;
-    void DestroyPipeline(PipelineHandle InPipInHandleeline) override;
+    void DestroyPipeline(PipelineHandle InPipelineHandle) override;
     void DestroyRenderPass(RenderPassHandle InHandle) override;
 
     std::vector<i8> ReadShaderBinary(std::string InFilename) override;
-
-    CommandBuffer BeginCommandBuffer() override;
-    void          SubmitCommandBuffers() override;
 
     void                              CreateSwapchain(GLFWwindow *window) override;
     void                              CreateTexture(Texture *texture, void* data = nullptr) const override;
@@ -94,9 +91,6 @@ class VulkanDevice : public GPU_device
     // API calls ...
     //void SetWindowSize(std::shared_ptr<Swapchain> InSwapchain, const u32 &width, const u32 &height) override;
     void SetTopology(PrimitiveTopology topology) override;
-    void Draw(const u32 count, const u32 offset, CommandBuffer cmd) override;
-    void DrawIndexed(const u32 count, const u32 offset, CommandBuffer cmd) override;
-    void WaitCommand(CommandBuffer &cmd, CommandBuffer &cmdToWait) override;
     // clang-format on
 
     RenderPassHandle        GetSwapchainRenderpass() override;

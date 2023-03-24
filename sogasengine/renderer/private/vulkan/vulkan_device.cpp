@@ -241,16 +241,16 @@ bool VulkanDevice::Init(const DeviceDescriptor& InDescriptor)
     default_sampler = CreateSampler(sampler_descriptor);
 
     TextureDescriptor depth_texture_descriptor = {nullptr, swapchain->width, swapchain->height, 1, 1, 0, Format::D32_SFLOAT, TextureDescriptor::TextureType::TEXTURE_TYPE_2D, "DepthTexture"};
-    depth_texture = CreateTexture(depth_texture_descriptor);
+    depth_texture                              = CreateTexture(depth_texture_descriptor);
 
     swapchain->output.SetDepth(Format::D32_SFLOAT);
 
     RenderPassDescriptor swapchain_renderpass_descriptor;
     swapchain_renderpass_descriptor
-        .SetType(RenderPassType::SWAPCHAIN)
-        .SetName("Swapchain")
-        .SetOperations(RenderPassOperation::CLEAR, RenderPassOperation::CLEAR, RenderPassOperation::CLEAR);
-    
+      .SetType(RenderPassType::SWAPCHAIN)
+      .SetName("Swapchain")
+      .SetOperations(RenderPassOperation::CLEAR, RenderPassOperation::CLEAR, RenderPassOperation::CLEAR);
+
     swapchain_renderpass = CreateRenderPass(swapchain_renderpass_descriptor);
 
     STRACE("Finished Initializing Vulkan device.\n");
@@ -288,182 +288,6 @@ void VulkanDevice::shutdown()
     vkDestroyInstance(Instance, nullptr);
     STRACE("\tInstance destroyed.");
     STRACE("Vulkan renderer has shut down.\n");
-}
-
-CommandBuffer VulkanDevice::BeginCommandBuffer()
-{
-    u32 count = commandBufferCounter++;
-    if (count >= commandBuffers.size())
-    {
-        commandBuffers.push_back(std::make_unique<VulkanCommandBuffer>(this));
-    }
-
-    CommandBuffer cmd;
-    cmd.internalState = commandBuffers[count].get();
-    auto internalCmd  = VulkanCommandBuffer::ToInternal(&cmd);
-
-    if (internalCmd->commandBuffers[GetFrameIndex()] == VK_NULL_HANDLE)
-    {
-        for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-        {
-            VkCommandPoolCreateInfo commandPoolInfo = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
-            commandPoolInfo.queueFamilyIndex        = GraphicsFamily; // TODO make it configurable
-            commandPoolInfo.flags                   = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-
-            if (vkCreateCommandPool(Handle, &commandPoolInfo, nullptr, &internalCmd->commandPools[i]) != VK_SUCCESS)
-            {
-                SERROR("Failed to create command pool.");
-                return {};
-            }
-
-            VkCommandBufferAllocateInfo allocInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
-            allocInfo.commandBufferCount          = 1;
-            allocInfo.commandPool                 = VulkanCommandBuffer::ToInternal(&cmd)->commandPools[i];
-            allocInfo.level                       = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-
-            if (vkAllocateCommandBuffers(Handle, &allocInfo, &internalCmd->commandBuffers[i]) != VK_SUCCESS)
-            {
-                SERROR("Failed to allocate command buffer");
-                return {};
-            }
-
-            VkDescriptorPoolSize poolSize;
-            poolSize.descriptorCount = 1;
-            poolSize.type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-
-            VkDescriptorPoolCreateInfo descriptorPoolInfo = {VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
-            descriptorPoolInfo.maxSets                    = 1;
-            descriptorPoolInfo.poolSizeCount              = 1;
-            descriptorPoolInfo.pPoolSizes                 = &poolSize;
-
-            if (vkCreateDescriptorPool(Handle, &descriptorPoolInfo, nullptr, &internalCmd->descriptorPools[i]) !=
-                VK_SUCCESS)
-            {
-                SERROR("Failed to allocate descriptor pool.");
-                return {};
-            }
-        }
-
-        VkSemaphoreCreateInfo semaphoreInfo = {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
-        vkCreateSemaphore(Handle, &semaphoreInfo, nullptr, &internalCmd->semaphore);
-    }
-
-    VkCommandBufferBeginInfo beginInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
-
-    if (vkBeginCommandBuffer(VulkanCommandBuffer::ToInternal(&cmd)->commandBuffers[GetFrameIndex()], &beginInfo) !=
-        VK_SUCCESS)
-    {
-        SERROR("Begin command buffer failed.");
-        return {};
-    }
-
-    return cmd;
-}
-
-void VulkanDevice::SubmitCommandBuffers()
-{
-    // TODO submit frame resources commands
-
-    commandBufferCounter = 0;
-    std::vector<VkCommandBuffer> submitCommands;
-    std::vector<VkSemaphore>     signalSemaphores;
-    std::vector<VkSemaphore>     waitSemaphores;
-    std::vector<VkSemaphore>     presentWaitSemaphores;
-    //std::shared_ptr<Renderer::Swapchain> swapchain;
-    std::vector<VkPipelineStageFlags> waitStages = {};
-
-    std::vector<VkFence> fences;
-
-    for (const auto& cmd : commandBuffers)
-    {
-        if (vkEndCommandBuffer(cmd->commandBuffers[GetFrameIndex()]) != VK_SUCCESS)
-        {
-            SFATAL("Failed to end command buffer");
-            SASSERT_MSG(false, "Failed to end command buffer.");
-        }
-
-        if (cmd->swapchain)
-        {
-            //swapchain                   = cmd->swapchain;
-            waitStages.push_back(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
-            waitSemaphores.push_back(swapchain->presentCompleteSemaphore);
-            signalSemaphores.push_back(swapchain->renderCompleteSemaphore);
-        }
-
-        submitCommands.push_back(cmd->commandBuffers[GetFrameIndex()]);
-        signalSemaphores.push_back(cmd->semaphore);
-
-        if (!cmd->commandsToWait.empty())
-        {
-            for (auto& cmdToWait : cmd->commandsToWait)
-            {
-                auto commandInternalState = VulkanCommandBuffer::ToInternal(&cmdToWait);
-                waitSemaphores.push_back(commandInternalState->semaphore);
-                waitStages.push_back(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-            }
-            cmd->commandsToWait.clear();
-        }
-
-        VkSubmitInfo submitInfo         = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
-        submitInfo.commandBufferCount   = static_cast<u32>(submitCommands.size());
-        submitInfo.pCommandBuffers      = submitCommands.data();
-        submitInfo.signalSemaphoreCount = static_cast<u32>(signalSemaphores.size());
-        submitInfo.pSignalSemaphores    = signalSemaphores.data();
-        submitInfo.waitSemaphoreCount   = static_cast<u32>(waitSemaphores.size());
-        submitInfo.pWaitSemaphores      = waitSemaphores.data();
-        submitInfo.pWaitDstStageMask    = waitStages.data();
-
-        VkFence           f;
-        VkFenceCreateInfo fenceInfo = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
-        vkCreateFence(Handle, &fenceInfo, nullptr, &f);
-        fences.push_back(f);
-
-        if (vkQueueSubmit(GraphicsQueue, 1, &submitInfo, fences.back()) != VK_SUCCESS)
-        {
-            SASSERT_MSG(false, "Failed to submit graphics commands");
-        }
-
-        if (cmd == commandBuffers.back())
-        {
-            presentWaitSemaphores = signalSemaphores;
-        }
-
-        waitStages.clear();
-        submitCommands.clear();
-        waitSemaphores.clear();
-        signalSemaphores.clear();
-    }
-
-    VkPresentInfoKHR presentInfo   = {VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
-    presentInfo.swapchainCount     = 1;
-    presentInfo.pSwapchains        = &swapchain->swapchain;
-    presentInfo.waitSemaphoreCount = static_cast<u32>(presentWaitSemaphores.size());
-    presentInfo.pWaitSemaphores    = presentWaitSemaphores.data();
-    presentInfo.pImageIndices      = &swapchain->imageIndex;
-
-    VkResult res = vkQueuePresentKHR(GraphicsQueue, &presentInfo);
-
-    if (res != VK_SUCCESS)
-    {
-        if (res == VK_SUBOPTIMAL_KHR || res == VK_ERROR_OUT_OF_DATE_KHR)
-        {
-            //swapchain->resized = true;
-            SASSERT(VulkanSwapchain::Create(this, swapchain));
-        }
-        else
-        {
-            SASSERT_MSG(false, "Failed to present image.");
-        }
-    }
-
-    FrameCount++;
-
-    vkWaitForFences(Handle, static_cast<u32>(fences.size()), fences.data(), VK_TRUE, UINT64_MAX);
-
-    for (auto& f : fences)
-    {
-        vkDestroyFence(Handle, f, nullptr);
-    }
 }
 
 BufferHandle VulkanDevice::CreateBuffer(const BufferDescriptor& InDescriptor)
@@ -593,28 +417,6 @@ void VulkanDevice::SetTopology(PrimitiveTopology topology)
             SERROR("No valid topology!");
             break;
     }
-}
-
-void VulkanDevice::Draw(const u32 count, const u32 offset, CommandBuffer cmd)
-{
-    SASSERT(count > 0);
-    SASSERT(offset >= 0);
-
-    vkCmdDraw(VulkanCommandBuffer::ToInternal(&cmd)->commandBuffers[GetFrameIndex()], count, 1, offset, 0);
-}
-
-void VulkanDevice::DrawIndexed(const u32 count, const u32 offset, CommandBuffer cmd)
-{
-    SASSERT(count > 0);
-    SASSERT(offset >= 0);
-
-    vkCmdDrawIndexed(VulkanCommandBuffer::ToInternal(&cmd)->commandBuffers[GetFrameIndex()], count, 1, offset, 0, 0);
-}
-
-void VulkanDevice::WaitCommand(CommandBuffer& cmd, CommandBuffer& cmdToWait)
-{
-    auto commandInternalState = VulkanCommandBuffer::ToInternal(&cmd);
-    commandInternalState->commandsToWait.push_back(cmdToWait);
 }
 
 bool VulkanDevice::CreateInstance()

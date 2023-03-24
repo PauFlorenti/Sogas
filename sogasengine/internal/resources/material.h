@@ -19,6 +19,6 @@ class Material : public IResource
   public:
     bool CreateFromJson(const json& j);
 
-    void Activate(Renderer::CommandBuffer cmd) const;
+    //void Activate(Renderer::CommandBuffer cmd) const;
 };
 } // namespace Sogas

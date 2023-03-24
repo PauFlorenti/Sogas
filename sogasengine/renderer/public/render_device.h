@@ -64,13 +64,10 @@ class GPU_device
     virtual void DestroySampler(SamplerHandle InHandle) = 0;
     virtual void DestroyDescriptorSet(DescriptorSetHandle InHandle) = 0;
     virtual void DestroyDescriptorSetLayout(DescriptorSetLayoutHandle InHandle) = 0;
-    virtual void DestroyPipeline(PipelineHandle InPipInHandleeline) = 0;
+    virtual void DestroyPipeline(PipelineHandle InPipelineHandle) = 0;
     virtual void DestroyRenderPass(RenderPassHandle InHandle) = 0;
 
     virtual std::vector<i8> ReadShaderBinary(std::string InFilename) = 0;
-
-    virtual CommandBuffer            BeginCommandBuffer() = 0;
-    virtual void                     SubmitCommandBuffers() = 0;
 
     virtual void                     CreateSwapchain(GLFWwindow* window) = 0;
     virtual void                     CreateTexture(Texture *texture, void* data) const = 0;
@@ -80,9 +77,6 @@ class GPU_device
     // This are commands that will execute when submitCommands is called.
     //virtual void SetWindowSize(std::shared_ptr<Swapchain> InSwapchain, const u32& width, const u32& height) = 0;
     virtual void SetTopology(PrimitiveTopology topology) = 0;
-    virtual void Draw(const u32 count, const u32 offset, CommandBuffer cmd) = 0;
-    virtual void DrawIndexed(const u32 count, const u32 offset, CommandBuffer cmd) = 0;
-    virtual void WaitCommand(CommandBuffer& cmd, CommandBuffer& cmdToWait) = 0;
 
     // clang-format on
 

@@ -48,14 +48,14 @@ namespace Sogas
         return true;
     }
 
-    void Material::Activate(Renderer::CommandBuffer /*cmd*/) const
-    {
-        auto renderer = CEngine::Get()->GetRenderModule()->GetGraphicsDevice();
-        // renderer->BindTexture(albedo, cmd.activePipeline, 0, 1);
-        // renderer->BindTexture(normal, cmd.activePipeline, 1, 1);
-        // renderer->BindTexture(metallic_roughness, cmd.activePipeline, 2, 1);
-        // renderer->BindTexture(emissive, cmd.activePipeline, 3, 1);
-    }
+    // void Material::Activate(Renderer::CommandBuffer /*cmd*/) const
+    // {
+    //     auto renderer = CEngine::Get()->GetRenderModule()->GetGraphicsDevice();
+    //     // renderer->BindTexture(albedo, cmd.activePipeline, 0, 1);
+    //     // renderer->BindTexture(normal, cmd.activePipeline, 1, 1);
+    //     // renderer->BindTexture(metallic_roughness, cmd.activePipeline, 2, 1);
+    //     // renderer->BindTexture(emissive, cmd.activePipeline, 3, 1);
+    // }
 
     template<>
     IResourceType* GetResourceType<Material>()

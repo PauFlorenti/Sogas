@@ -38,27 +38,27 @@ bool CMesh::Create(std::vector<Renderer::VertexLayout> vs, std::vector<u32> is, 
     return true;
 }
 
-void CMesh::Activate(CommandBuffer /*cmd*/) const
-{
-    // device.lock()->BindVertexBuffer(vertexBuffer, cmd);
+// void CMesh::Activate(CommandBuffer /*cmd*/) const
+// {
+//     // device.lock()->BindVertexBuffer(vertexBuffer, cmd);
 
-    // if (Indexed)
-    // {
-    //     device.lock()->BindIndexBuffer(indexBuffer, cmd);
-    // }
-}
+//     // if (Indexed)
+//     // {
+//     //     device.lock()->BindIndexBuffer(indexBuffer, cmd);
+//     // }
+// }
 
-void CMesh::Render(CommandBuffer cmd) const
-{
-    if (Indexed)
-    {
-        device.lock()->DrawIndexed(static_cast<u32>(indices.size()), indexOffset, cmd);
-    }
-    else
-    {
-        device.lock()->Draw(static_cast<u32>(vertices.size()), vertexOffset, cmd);
-    }
-}
+// void CMesh::Render(CommandBuffer cmd) const
+// {
+//     if (Indexed)
+//     {
+//         device.lock()->DrawIndexed(static_cast<u32>(indices.size()), indexOffset, cmd);
+//     }
+//     else
+//     {
+//         device.lock()->Draw(static_cast<u32>(vertices.size()), vertexOffset, cmd);
+//     }
+// }
 
 void CMesh::Destroy()
 {

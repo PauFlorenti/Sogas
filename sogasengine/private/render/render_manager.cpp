@@ -44,64 +44,64 @@ namespace Sogas
         KeysAreDirty = true;
     }
 
-    void CRenderManager::RenderAll(CHandle /*camera_handle*/, DrawChannel channel, CommandBuffer cmd)
-    {
-        auto renderer = CEngine::Get()->GetRenderModule()->GetGraphicsDevice();
+    // void CRenderManager::RenderAll(CHandle /*camera_handle*/, DrawChannel channel, CommandBuffer cmd)
+    // {
+    //     auto renderer = CEngine::Get()->GetRenderModule()->GetGraphicsDevice();
 
-        // TODO If keys are dirty, sort keys
+    //     // TODO If keys are dirty, sort keys
 
-        u32 nDrawCalls = 0;
-        DrawCallsPerChannel[static_cast<u32>(channel)] = 0;
+    //     u32 nDrawCalls = 0;
+    //     DrawCallsPerChannel[static_cast<u32>(channel)] = 0;
 
-        auto it = keys.begin();
+    //     auto it = keys.begin();
 
-        Key null_key = Key{};
-        const Key* prev_key = &null_key;
-        const Key* key = &null_key;
+    //     Key null_key = Key{};
+    //     const Key* prev_key = &null_key;
+    //     const Key* key = &null_key;
 
-        while(it != keys.end())
-        {
-            key = &(*it);
+    //     while(it != keys.end())
+    //     {
+    //         key = &(*it);
 
-            // Check if visible by culling test.
+    //         // Check if visible by culling test.
 
-            if (key->Transform.IsValid())
-            {
-                CEntity* e = key->Owner.GetOwner();
-                TCompTransform* transform = e->Get<TCompTransform>();
-                SASSERT(transform);
-                glm::vec4 color = glm::vec4(1.0f);
+    //         if (key->Transform.IsValid())
+    //         {
+    //             CEntity* e = key->Owner.GetOwner();
+    //             TCompTransform* transform = e->Get<TCompTransform>();
+    //             SASSERT(transform);
+    //             glm::vec4 color = glm::vec4(1.0f);
 
-                // Activate model and color
-                ConstantsMesh cte;
-                cte.model = transform->AsMatrix();
-                cte.color = color;
+    //             // Activate model and color
+    //             ConstantsMesh cte;
+    //             cte.model = transform->AsMatrix();
+    //             cte.color = color;
                 
-                //renderer->PushConstants(&cte, sizeof(ConstantsMesh), cmd);
-            }
+    //             //renderer->PushConstants(&cte, sizeof(ConstantsMesh), cmd);
+    //         }
 
-            // Activate material
-            if (key->Material != prev_key->Material) {
-                key->Material->Activate(cmd);
-            }
+    //         // Activate material
+    //         if (key->Material != prev_key->Material) {
+    //             key->Material->Activate(cmd);
+    //         }
 
-            // Activate mesh
-            if( key->Mesh != prev_key->Mesh)
-            {
-                key->Mesh->Activate(cmd);
-            }
+    //         // Activate mesh
+    //         if( key->Mesh != prev_key->Mesh)
+    //         {
+    //             key->Mesh->Activate(cmd);
+    //         }
 
-            //renderer->UpdateDescriptorSet(cmd.activePipeline);
+    //         //renderer->UpdateDescriptorSet(cmd.activePipeline);
 
-            key->Mesh->Render(cmd);
+    //         key->Mesh->Render(cmd);
             
-            prev_key = key;
-            ++nDrawCalls;
-            ++it;
-        }
+    //         prev_key = key;
+    //         ++nDrawCalls;
+    //         ++it;
+    //     }
 
-        DrawCallsPerChannel[static_cast<u32>(channel)] = nDrawCalls;
-    }
+    //     DrawCallsPerChannel[static_cast<u32>(channel)] = nDrawCalls;
+    // }
 
     void CRenderManager::DeleteKeysFromOwner(CHandle owner)
     {

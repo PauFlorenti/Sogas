@@ -470,13 +470,6 @@ struct GPUResource : public GPUBase
     void* mapdata;
 };
 
-// Objects
-struct CommandBuffer
-{
-    void*           internalState;
-    //const Pipeline* activePipeline = nullptr;
-};
-
 struct VertexLayout
 {
     glm::vec3 position;
