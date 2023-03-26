@@ -89,7 +89,7 @@ void* StackAllocator::allocate(size_t size, size_t alignment)
 void StackAllocator::deallocate(void* pointer)
 {
     SASSERT(memory <= pointer);
-    SASSERT_MSG(pointer > (memory + total_size), "Out of bound total size.");
+    SASSERT_MSG(pointer < (memory + total_size), "Out of bound total size.");
     SASSERT_MSG(pointer < (memory + allocated_size), "Out of bound allocated size.");
 
     const size_t size_at_pointer = (u8*)pointer - memory;

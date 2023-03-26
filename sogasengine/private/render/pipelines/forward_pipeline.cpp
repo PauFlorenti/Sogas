@@ -541,6 +541,7 @@ void ForwardPipeline::render()
 
 void ForwardPipeline::destroy()
 {
+    renderer->DestroyPipeline(pipeline);
 }
 } // namespace Renderer
 } // namespace Sogas

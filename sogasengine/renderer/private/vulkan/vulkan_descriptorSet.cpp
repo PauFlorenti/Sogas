@@ -82,7 +82,7 @@ static void FillWriteDescriptorSets(
 
                 if (texture->sampler)
                 {
-                    InImageInfo[resources_used].sampler = texture->sampler;
+                    InImageInfo[resources_used].sampler = texture->sampler->sampler;
                 }
 
                 if (InSamplers[i].index != INVALID_ID)

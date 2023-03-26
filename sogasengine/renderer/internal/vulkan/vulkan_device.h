@@ -149,14 +149,10 @@ class VulkanDevice : public GPU_device
     u32                                  FrameCount     = 0; // Number of frames since the beginning of the application.
 
     VkCommandPool   resourcesCommandPool[MAX_FRAMES_IN_FLIGHT];
-    VkCommandBuffer resourcesCommandBuffer[MAX_FRAMES_IN_FLIGHT];
     VkFence         fence[MAX_FRAMES_IN_FLIGHT];
 
     VkSemaphore beginSemaphore = VK_NULL_HANDLE;
     VkSemaphore endSemaphore   = VK_NULL_HANDLE;
-
-    std::vector<std::unique_ptr<VulkanCommandBuffer>> commandBuffers;
-    u32                                               commandBufferCounter{0};
 
     bool bIsBindlessSupported{false};
 

@@ -13,6 +13,7 @@ namespace Vk
 {
 class VulkanDevice;
 class VulkanBuffer;
+class VulkanSampler;
 
 void TransitionImageLayout(const VulkanDevice* device, VkCommandBuffer command_buffer, VkImage& image, VkImageLayout source_layout, VkImageLayout destination_layout, bool is_depth);
 
@@ -57,36 +58,21 @@ class VulkanTexture : public DeviceTexture
 
     static TextureHandle Create(VulkanDevice* device, const TextureDescriptor& InDescriptor);
     static void          Create(const VulkanDevice* device, Texture* texture, void* data);
-    static std::shared_ptr<Texture>
-    Create(const VulkanDevice* device, TextureDescriptor descriptor, void* data = nullptr);
-
-    static inline VulkanTexture* ToInternal(const Texture* InTexture)
-    {
-        return static_cast<VulkanTexture*>(InTexture->internalState);
-    }
 
     void Release() override;
     void SetData(void* data);
 
-    const VkImage GetHandle() const
-    {
-        return texture;
-    }
-    const VkImageView GetImageView() const
-    {
-        return image_view;
-    }
-    const VkSampler GetSampler();
-
     VkDescriptorImageInfo descriptorImageInfo;
 
-    TextureHandle           handle;
+    VkImage        texture    = VK_NULL_HANDLE;
+    VkImageView    image_view = VK_NULL_HANDLE;
+    VkDeviceMemory memory     = VK_NULL_HANDLE;
+    VkImageLayout  image_layout;
+
     VulkanTextureDescriptor descriptor;
-    VkImage                 texture    = VK_NULL_HANDLE;
-    VkImageView             image_view = VK_NULL_HANDLE;
-    VkDeviceMemory          memory     = VK_NULL_HANDLE;
-    VkSampler               sampler    = VK_NULL_HANDLE;
-    VkImageLayout           image_layout;
+    TextureHandle           handle;
+    VulkanSampler*          sampler = nullptr;
+    void*                   mapdata = nullptr;
 
     void Allocate_and_bind_texture_memory(VkMemoryPropertyFlags memory_properties);
 
@@ -94,8 +80,7 @@ class VulkanTexture : public DeviceTexture
     void TransitionLayout(VkImageLayout srcLayout, VkImageLayout dstLayout);
     void CopyBufferToImage(const VulkanBuffer* buffer);
 
-    void*               mapdata = nullptr;
-    const VulkanDevice* device  = nullptr;
+    const VulkanDevice* device = nullptr;
 };
 } // namespace Vk
 } // namespace Renderer

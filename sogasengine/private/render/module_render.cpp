@@ -38,7 +38,7 @@ bool CRenderModule::Start()
 
 void CRenderModule::Stop()
 {
-    //forwardPipeline->destroy();
+    forwardPipeline->destroy();
     renderer->shutdown();
 }
 

@@ -238,7 +238,7 @@ bool VulkanDevice::Init(const DeviceDescriptor& InDescriptor)
 
     SamplerDescriptor sampler_descriptor{};
     sampler_descriptor
-      .SetAddressModeUVW(SamplerDescriptor::SamplerAddressMode::CLAMP_TO_EDGE, SamplerDescriptor::SamplerAddressMode::CLAMP_TO_EDGE, SamplerDescriptor::SamplerAddressMode::CLAMP_TO_EDGE)
+      .SetAddressModeUVW(SamplerDescriptor::SamplerAddressMode::REPEAT, SamplerDescriptor::SamplerAddressMode::REPEAT, SamplerDescriptor::SamplerAddressMode::REPEAT)
       .SetMinMagMip(SamplerDescriptor::SamplerFilter::LINEAR, SamplerDescriptor::SamplerFilter::LINEAR, SamplerDescriptor::SamplerMipmapMode::LINEAR)
       .SetName("Default Sampler");
     default_sampler = CreateSampler(sampler_descriptor);
@@ -265,6 +265,10 @@ void VulkanDevice::shutdown()
 {
     STRACE("Shutting down Vulkan renderer ...");
 
+    vkDeviceWaitIdle(Handle);
+
+    commandbuffer_resources.shutdown();
+
     STRACE("\tDestroying Command Pool ...");
     for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
@@ -272,14 +276,33 @@ void VulkanDevice::shutdown()
         vkDestroyFence(Handle, fence[i], nullptr);
     }
 
-    commandBuffers.clear();
-
     vkDestroySemaphore(Handle, beginSemaphore, nullptr);
     vkDestroySemaphore(Handle, endSemaphore, nullptr);
 
     vkDestroyDescriptorPool(Handle, descriptor_pool, nullptr);
 
+    DestroyTexture(depth_texture);
+    DestroyRenderPass(swapchain_renderpass);
+    DestroySampler(default_sampler);
+
+    //auto it = render_pass_cache.begin();
+    //while (it != render_pass_cache.end())
+    //{
+    //    auto render_pass = it->second;
+    //    vkDestroyRenderPass(Handle, render_pass, nullptr);
+    //}
+    render_pass_cache.clear();
+
     swapchain->Destroy();
+
+    shaders.Shutdown();
+    buffers.Shutdown();
+    textures.Shutdown();
+    samplers.Shutdown();
+    pipelines.Shutdown();
+    renderpasses.Shutdown();
+    descriptorSets.Shutdown();
+    descriptorSetLayouts.Shutdown();
 
     STRACE("\tDestroying Vulkan logical device ...");
     vkDestroyDevice(Handle, nullptr);
@@ -310,7 +333,7 @@ ShaderStateHandle VulkanDevice::CreateShaderState(const ShaderStateDescriptor& I
 
 SamplerHandle VulkanDevice::CreateSampler(const SamplerDescriptor& InDescriptor)
 {
-    return SamplerHandle();
+    return VulkanSampler::Create(this, InDescriptor);
 }
 DescriptorSetHandle VulkanDevice::CreateDescriptorSet(const DescriptorSetDescriptor& InDescriptor)
 {
@@ -334,7 +357,7 @@ RenderPassHandle VulkanDevice::CreateRenderPass(const RenderPassDescriptor& InDe
 
 void VulkanDevice::DestroyBuffer(BufferHandle InHandle)
 {
-    auto buffer = static_cast<VulkanBuffer*>(buffers.AccessResource(InHandle.index));
+    auto buffer = GetBufferResource(InHandle);
 
     if (buffer)
     {
@@ -346,35 +369,94 @@ void VulkanDevice::DestroyBuffer(BufferHandle InHandle)
 
 void VulkanDevice::DestroyTexture(TextureHandle InHandle)
 {
-    VulkanTexture* texture = static_cast<VulkanTexture*>(textures.AccessResource(InHandle.index));
+    VulkanTexture* texture = GetTextureResource(InHandle);
 
     if (texture)
     {
         vkFreeMemory(Handle, texture->memory, nullptr);
         vkDestroyImageView(Handle, texture->image_view, nullptr);
         vkDestroyImage(Handle, texture->texture, nullptr);
-        //texture->Release();
     }
 
     textures.ReleaseResource(InHandle.index);
 }
 void VulkanDevice::DestroyShaderState(ShaderStateHandle InHandle)
 {
+    auto shader = GetShaderResource(InHandle);
+
+    if (shader)
+    {
+        for (u32 i = 0; i < MAX_SHADER_STAGES; ++i)
+        {
+            vkDestroyShaderModule(Handle, shader->ShaderStageInfo[i].module, nullptr);
+        }
+    }
+
+    shaders.ReleaseResource(InHandle.index);
 }
+
 void VulkanDevice::DestroySampler(SamplerHandle InHandle)
 {
+    auto sampler = GetSamplerResource(InHandle);
+
+    if (sampler)
+    {
+        vkDestroySampler(Handle, sampler->sampler, nullptr);
+    }
+
+    samplers.ReleaseResource(InHandle.index);
 }
+
 void VulkanDevice::DestroyDescriptorSet(DescriptorSetHandle InHandle)
 {
+    auto descriptor_set = GetDescriptorSetResource(InHandle);
+
+    if (descriptor_set)
+    {
+        // TODO deallocate resources
+        //descriptor_set.
+        descriptor_set->resources_count = 0;
+    }
+
+    descriptorSets.ReleaseResource(InHandle.index);
 }
+
 void VulkanDevice::DestroyDescriptorSetLayout(DescriptorSetLayoutHandle InHandle)
 {
+    auto descriptor_set_layout = GetDescriptorSetLayoutResource(InHandle);
+
+    if (descriptor_set_layout)
+    {
+        vkDestroyDescriptorSetLayout(Handle, descriptor_set_layout->descriptor_set_layout, nullptr);
+    }
+
+    descriptorSetLayouts.ReleaseResource(InHandle.index);
 }
-void VulkanDevice::DestroyPipeline(PipelineHandle InPipInHandleeline)
+
+void VulkanDevice::DestroyPipeline(PipelineHandle InHandle)
 {
+    auto pipeline = GetPipelineResource(InHandle);
+
+    if (pipeline)
+    {
+        DestroyShaderState(pipeline->shader_state);
+        vkDestroyPipeline(Handle, pipeline->pipeline, nullptr);
+        vkDestroyPipelineLayout(Handle, pipeline->pipelineLayout, nullptr);
+    }
+
+    pipelines.ReleaseResource(InHandle.index);
 }
+
 void VulkanDevice::DestroyRenderPass(RenderPassHandle InHandle)
 {
+    auto renderpass = GetRenderPassResource(InHandle);
+
+    if (renderpass)
+    {
+        vkDestroyRenderPass(Handle, renderpass->renderpass, nullptr);
+    }
+
+    renderpasses.ReleaseResource(InHandle.index);
 }
 
 std::vector<i8> VulkanDevice::ReadShaderBinary(std::string InFilename)
@@ -596,18 +678,8 @@ void VulkanDevice::CreateCommandResources()
             throw std::runtime_error("Failed to create command pool!");
         }
 
-        VkCommandBufferAllocateInfo allocInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
-        allocInfo.commandPool                 = resourcesCommandPool[i];
-        allocInfo.commandBufferCount          = 1;
-        allocInfo.level                       = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-
-        if (vkAllocateCommandBuffers(Handle, &allocInfo, &resourcesCommandBuffer[i]) != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to allcoate command buffer!");
-        }
-
         VkFenceCreateInfo fenceInfo = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
-        fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+        fenceInfo.flags             = VK_FENCE_CREATE_SIGNALED_BIT;
 
         if (vkCreateFence(Handle, &fenceInfo, nullptr, &fence[i]) != VK_SUCCESS)
         {

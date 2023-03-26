@@ -4,9 +4,6 @@
 #include "vulkan/vulkan_device.h"
 #include "vulkan/vulkan_types.h"
 
-// TODO Texture transition function abstraction
-// TODO BufferCopyToImage function abstraction
-
 namespace Sogas
 {
 namespace Renderer
@@ -223,208 +220,6 @@ TextureHandle VulkanTexture::Create(VulkanDevice* InDevice, const TextureDescrip
     return handle;
 }
 
-void VulkanTexture::Create(const VulkanDevice* device, Texture* texture, void* data)
-{
-    SASSERT(device);
-    SASSERT(texture);
-
-    const auto& desc = texture->GetDescriptor();
-
-    auto internalState        = new VulkanTexture(device);
-    internalState->descriptor = desc;
-
-    texture->internalState = internalState;
-
-    // Create image
-    VkImageCreateInfo imageInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
-    {
-        imageInfo.format                = ConvertFormat(desc.format);
-        imageInfo.extent                = {desc.width, desc.height, 1};
-        imageInfo.mipLevels             = 1;
-        imageInfo.arrayLayers           = 1;
-        imageInfo.samples               = VK_SAMPLE_COUNT_1_BIT;
-        imageInfo.tiling                = VK_IMAGE_TILING_OPTIMAL;
-        imageInfo.sharingMode           = VK_SHARING_MODE_EXCLUSIVE;
-        imageInfo.queueFamilyIndexCount = static_cast<u32>(device->queueFamilies.size());
-        imageInfo.pQueueFamilyIndices   = device->queueFamilies.data();
-        imageInfo.initialLayout         = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageInfo.imageType             = ConverTextureType(desc.type);
-
-        // if (desc.usage == Usage::UPLOAD)
-        // {
-        //     imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-        // }
-        // if (desc.usage == Usage::READBACK)
-        // {
-        //     imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-        // }
-
-        // if (desc.bindPoint == BindPoint::SHADER_SAMPLE)
-        // {
-        //     imageInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-        // }
-        // if (desc.bindPoint == BindPoint::DEPTH_STENCIL)
-        // {
-        //     imageInfo.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        // }
-        // if (desc.bindPoint == BindPoint::RENDER_TARGET)
-        // {
-        //     imageInfo.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        //     imageInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-        // }
-
-        VkDeviceSize imageSize = imageInfo.extent.width * imageInfo.extent.height * imageInfo.extent.depth *
-                                 imageInfo.arrayLayers * GetFormatStride(desc.format);
-
-        if (vkCreateImage(device->Handle, &imageInfo, nullptr, &internalState->texture) != VK_SUCCESS)
-        {
-            SFATAL("Could not create image.");
-            return;
-        }
-    }
-
-    internalState->Allocate_and_bind_texture_memory(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-    if (data != nullptr)
-    {
-        internalState->SetData(data);
-    }
-    else
-    {
-        // if (desc.bindPoint == BindPoint::DEPTH_STENCIL)
-        // {
-        //     internalState->TransitionLayout(imageInfo.initialLayout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-        // }
-        // if (desc.bindPoint == BindPoint::SHADER_SAMPLE)
-        // {
-        //     internalState->TransitionLayout(imageInfo.initialLayout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-        // }
-        // else if (desc.bindPoint == BindPoint::RENDER_TARGET)
-        // {
-        //     internalState->TransitionLayout(imageInfo.initialLayout, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-        // }
-    }
-
-    // Create image view
-    {
-        VkImageViewCreateInfo imageViewInfo           = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
-        imageViewInfo.image                           = internalState->texture;
-        imageViewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
-        imageViewInfo.format                          = imageInfo.format;
-        //imageViewInfo.subresourceRange.aspectMask     = desc.bindPoint == BindPoint::DEPTH_STENCIL ? (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) : VK_IMAGE_ASPECT_COLOR_BIT;
-        imageViewInfo.subresourceRange.layerCount     = 1;
-        imageViewInfo.subresourceRange.baseArrayLayer = 0;
-        imageViewInfo.subresourceRange.levelCount     = 1;
-        imageViewInfo.subresourceRange.baseMipLevel   = 0;
-
-        if (vkCreateImageView(device->Handle, &imageViewInfo, nullptr, &internalState->image_view) != VK_SUCCESS)
-        {
-            SERROR("Failed to create image view!");
-            return;
-        }
-    }
-}
-
-std::shared_ptr<Texture> VulkanTexture::Create(const VulkanDevice* device, TextureDescriptor descriptor, void* data)
-{
-    SASSERT(device);
-
-    auto texture           = std::make_shared<Texture>(std::move(descriptor));
-    auto internalState     = new VulkanTexture(device, texture->GetDescriptor());
-    auto desc              = internalState->descriptor;
-    texture->internalState = internalState;
-
-    // Create image
-    VkImageCreateInfo imageInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
-    {
-        imageInfo.format                = desc.format;
-        imageInfo.extent                = {desc.width, desc.height, 1};
-        imageInfo.mipLevels             = 1;
-        imageInfo.arrayLayers           = 1;
-        imageInfo.samples               = VK_SAMPLE_COUNT_1_BIT;
-        imageInfo.tiling                = VK_IMAGE_TILING_OPTIMAL;
-        imageInfo.sharingMode           = VK_SHARING_MODE_EXCLUSIVE;
-        imageInfo.queueFamilyIndexCount = static_cast<u32>(device->queueFamilies.size());
-        imageInfo.pQueueFamilyIndices   = device->queueFamilies.data();
-        imageInfo.initialLayout         = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageInfo.imageType             = ConverTextureType(texture->GetDescriptor().type);
-
-        // if (texture->GetDescriptor().usage == Usage::UPLOAD)
-        // {
-        //     imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-        // }
-        // if (texture->GetDescriptor().usage == Usage::READBACK)
-        // {
-        //     imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-        // }
-        // if (texture->GetDescriptor().bindPoint == BindPoint::SHADER_SAMPLE)
-        // {
-        //     imageInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-        // }
-        // if (texture->GetDescriptor().bindPoint == BindPoint::DEPTH_STENCIL)
-        // {
-        //     imageInfo.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        // }
-        // if (texture->GetDescriptor().bindPoint == BindPoint::RENDER_TARGET)
-        // {
-        //     imageInfo.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        //     imageInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-        // }
-
-        VkDeviceSize imageSize = imageInfo.extent.width * imageInfo.extent.height * imageInfo.extent.depth *
-                                 imageInfo.arrayLayers * GetFormatStride(texture->GetDescriptor().format);
-
-        if (vkCreateImage(device->Handle, &imageInfo, nullptr, &internalState->texture) != VK_SUCCESS)
-        {
-            SFATAL("Could not create image.");
-            return std::make_shared<Texture>();
-        }
-    }
-
-    internalState->Allocate_and_bind_texture_memory(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-    if (data != nullptr)
-    {
-        internalState->SetData(data);
-    }
-    else
-    {
-        // if (texture->GetDescriptor().bindPoint == BindPoint::DEPTH_STENCIL)
-        // {
-        //     internalState->TransitionLayout(imageInfo.initialLayout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-        // }
-        // if (texture->GetDescriptor().bindPoint == BindPoint::SHADER_SAMPLE)
-        // {
-        //     internalState->TransitionLayout(imageInfo.initialLayout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-        // }
-        // else if (texture->GetDescriptor().bindPoint == BindPoint::RENDER_TARGET)
-        // {
-        //     internalState->TransitionLayout(imageInfo.initialLayout, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-        // }
-    }
-
-    // Create image view
-    {
-        VkImageViewCreateInfo imageViewInfo           = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
-        imageViewInfo.image                           = internalState->texture;
-        imageViewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
-        imageViewInfo.format                          = imageInfo.format;
-        imageViewInfo.subresourceRange.aspectMask     = HasDepthOrStencil(descriptor.format) ? (HasDepth(descriptor.format) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0) : VK_IMAGE_ASPECT_COLOR_BIT;
-        imageViewInfo.subresourceRange.layerCount     = 1;
-        imageViewInfo.subresourceRange.baseArrayLayer = 0;
-        imageViewInfo.subresourceRange.levelCount     = 1;
-        imageViewInfo.subresourceRange.baseMipLevel   = 0;
-
-        if (vkCreateImageView(device->Handle, &imageViewInfo, nullptr, &internalState->image_view) != VK_SUCCESS)
-        {
-            SERROR("Failed to create image view!");
-            return std::make_shared<Texture>();
-        }
-    }
-
-    return texture;
-}
-
 void VulkanTexture::SetData(void* data)
 {
     auto image_size = descriptor.width * descriptor.height * descriptor.format_stride;
@@ -453,43 +248,12 @@ void VulkanTexture::SetData(void* data)
     TransitionLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
-const VkSampler VulkanTexture::GetSampler()
-{
-    if (sampler != VK_NULL_HANDLE)
-    {
-        return sampler;
-    }
-
-    VkSamplerCreateInfo samplerInfo     = {VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
-    samplerInfo.magFilter               = VK_FILTER_LINEAR;
-    samplerInfo.minFilter               = VK_FILTER_LINEAR;
-    samplerInfo.addressModeU            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.addressModeV            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.addressModeW            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.anisotropyEnable        = VK_FALSE; // TODO check gpu properties and enable it!
-    samplerInfo.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-    samplerInfo.unnormalizedCoordinates = VK_FALSE;
-    samplerInfo.compareEnable           = VK_TRUE;
-    samplerInfo.compareOp               = VK_COMPARE_OP_ALWAYS;
-    samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    samplerInfo.mipLodBias              = 0.0f;
-    samplerInfo.minLod                  = 0.0f;
-    samplerInfo.maxLod                  = 0.0f;
-
-    if (vkCreateSampler(device->Handle, &samplerInfo, nullptr, &sampler) != VK_SUCCESS)
-    {
-        SFATAL("Failed to create sampler.");
-    }
-    return sampler;
-}
-
 void VulkanTexture::Release()
 {
     {
         vkFreeMemory(device->Handle, memory, nullptr);
         vkDestroyImageView(device->Handle, image_view, nullptr);
         vkDestroyImage(device->Handle, texture, nullptr);
-        vkDestroySampler(device->Handle, sampler, nullptr);
     }
 
     VkDevice       device    = VK_NULL_HANDLE;

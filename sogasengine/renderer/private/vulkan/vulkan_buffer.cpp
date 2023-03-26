@@ -135,7 +135,7 @@ void VulkanBuffer::Upload_data_to_buffer(const u64& size, void* data)
 
     VkCommandBufferAllocateInfo commandBufferAllocateInfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     commandBufferAllocateInfo.commandBufferCount = 1;
-    commandBufferAllocateInfo.commandPool        = device->resourcesCommandPool[device->GetFrameIndex()];
+    //commandBufferAllocateInfo.commandPool        = device->resourcesCommandPool[device->GetFrameIndex()];
     commandBufferAllocateInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
     VkCommandBuffer cmd;
@@ -182,7 +182,7 @@ void VulkanBuffer::Upload_data_to_buffer(const u64& size, void* data)
         return;
     }
 
-    vkFreeCommandBuffers(device->Handle, device->resourcesCommandPool[device->GetFrameIndex()], 1, &cmd);
+    //vkFreeCommandBuffers(device->Handle, device->resourcesCommandPool[device->GetFrameIndex()], 1, &cmd);
 }
 
 void VulkanBuffer::Allocate_buffer_memory(VkMemoryPropertyFlags memoryPropertyFlags)
