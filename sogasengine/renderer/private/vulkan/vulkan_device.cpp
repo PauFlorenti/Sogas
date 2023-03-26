@@ -27,8 +27,7 @@ namespace Vk
 static std::unordered_map<u64, VkRenderPass> render_pass_cache;
 static VulkanCommandBufferResources          commandbuffer_resources;
 
-const std::vector<const char*> validationLayers = {"VK_LAYER_KHRONOS_validation"};
-
+const std::vector<const char*> validationLayers         = {"VK_LAYER_KHRONOS_validation"};
 const std::vector<const char*> requiredDeviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
 #ifdef NDEBUG
@@ -123,6 +122,19 @@ void VulkanDevice::PickPhysicalDevice()
 
     // TODO Make a proper Physical device selector ...
     // Is Device suitable ??
+}
+
+void VulkanDevice::DestroyPipelineInstant(ResourceHandle InHandle)
+{
+    auto pipeline = static_cast<VulkanPipeline*>(pipelines.AccessResource(InHandle));
+
+    if (pipeline)
+    {
+        vkDestroyPipeline(Handle, pipeline->pipeline, nullptr);
+        vkDestroyPipelineLayout(Handle, pipeline->pipelineLayout, nullptr);
+    }
+
+    pipelines.ReleaseResource(InHandle);
 }
 
 VulkanDevice::VulkanDevice(GraphicsAPI              apiType,
@@ -285,6 +297,18 @@ void VulkanDevice::shutdown()
     DestroyRenderPass(swapchain_renderpass);
     DestroySampler(default_sampler);
 
+    for (auto& resource : resource_deletion_queue)
+    {
+        switch (resource.type)
+        {
+            case ResourceType::PIPELINE:
+                DestroyPipelineInstant(resource.handle);
+                break;
+            default:
+                break;
+        }
+    }
+
     //auto it = render_pass_cache.begin();
     //while (it != render_pass_cache.end())
     //{
@@ -440,11 +464,9 @@ void VulkanDevice::DestroyPipeline(PipelineHandle InHandle)
     if (pipeline)
     {
         DestroyShaderState(pipeline->shader_state);
-        vkDestroyPipeline(Handle, pipeline->pipeline, nullptr);
-        vkDestroyPipelineLayout(Handle, pipeline->pipelineLayout, nullptr);
-    }
 
-    pipelines.ReleaseResource(InHandle.index);
+        resource_deletion_queue.push_back({ResourceType::PIPELINE, InHandle.index, GetFrameCount()});
+    }
 }
 
 void VulkanDevice::DestroyRenderPass(RenderPassHandle InHandle)
@@ -839,6 +861,30 @@ void VulkanDevice::Present()
     ++FrameCount;
 
     // Resource deletion here ...
+    if (!resource_deletion_queue.empty())
+    {
+        for (auto& resource : resource_deletion_queue)
+        {
+            if (resource.current_frame == GetFrameCount())
+            {
+                switch (resource.type)
+                {
+                    case ResourceType::BUFFER:
+                        break;
+                    case ResourceType::TEXTURE:
+                        break;
+
+                    case ResourceType::PIPELINE:
+
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
+        resource_deletion_queue.clear();
+    }
 }
 
 } // namespace Vk

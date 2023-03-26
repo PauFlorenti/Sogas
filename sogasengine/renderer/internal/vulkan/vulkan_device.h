@@ -1,5 +1,6 @@
 #pragma once
 
+#include "device_resources.h"
 #include "vulkan_commandbuffer.h"
 #include "vulkan_types.h"
 
@@ -137,6 +138,8 @@ class VulkanDevice : public GPU_device
 
     bool resized = false;
 
+    std::vector<ResourceUpdate> resource_deletion_queue;
+
     // Queues
     std::vector<VkQueueFamilyProperties> queueFamilyProperties;
     std::vector<u32>                     queueFamilies;
@@ -148,13 +151,15 @@ class VulkanDevice : public GPU_device
     VkQueue                              TransferQueue  = VK_NULL_HANDLE;
     u32                                  FrameCount     = 0; // Number of frames since the beginning of the application.
 
-    VkCommandPool   resourcesCommandPool[MAX_FRAMES_IN_FLIGHT];
-    VkFence         fence[MAX_FRAMES_IN_FLIGHT];
+    VkCommandPool resourcesCommandPool[MAX_FRAMES_IN_FLIGHT];
+    VkFence       fence[MAX_FRAMES_IN_FLIGHT];
 
     VkSemaphore beginSemaphore = VK_NULL_HANDLE;
     VkSemaphore endSemaphore   = VK_NULL_HANDLE;
 
     bool bIsBindlessSupported{false};
+
+    void DestroyPipelineInstant(ResourceHandle InHandle);
 
     bool CreateInstance();
     void SetupDebugMessenger();

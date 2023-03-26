@@ -37,5 +37,24 @@ static const u8 MAX_DESCRIPTOR_PER_SET     = 16;
 static const u8 MAX_VERTEX_STREAMS         = 16;
 static const u8 MAX_VERTEX_ATTRIBUTE       = 16;
 
+enum class ResourceType
+{
+    BUFFER = 0,
+    TEXTURE,
+    SHADER,
+    SAMPLER,
+    DESCRIPTOR_SET,
+    DESCRIPTOR_SET_LAYOUT,
+    RENDERPASS,
+    PIPELINE,
+    COUNT
+};
+struct ResourceUpdate
+{
+    ResourceType   type;
+    ResourceHandle handle;
+    u32            current_frame;
+};
+
 } // namespace Renderer
 } // namespace Sogas
