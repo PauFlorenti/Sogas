@@ -98,6 +98,8 @@ class GPU_device
   protected:
     virtual void CreateSwapchain(GLFWwindow* window) = 0;
 
+    virtual void DestroyPipelineInstant(ResourceHandle InHandle) = 0;
+
     GraphicsAPI                 api_type;
     void*                       window = nullptr;
     std::vector<CommandBuffer*> queued_command_buffers;

@@ -26,17 +26,7 @@ class VulkanBuffer final : public Renderer::DeviceBuffer
 
     static BufferHandle Create(VulkanDevice* InDevice, const BufferDescriptor& InDescriptor);
 
-    const VkDeviceMemory GetMemory() const
-    {
-        return memory;
-    }
-    
     void SetData(void* data, const u64& size, const u64& offset = 0) override;
-
-    const VkDescriptorBufferInfo GetDescriptor() const
-    {
-        return descriptorInfo;
-    }
 
     VkDescriptorBufferInfo descriptorInfo;
 
