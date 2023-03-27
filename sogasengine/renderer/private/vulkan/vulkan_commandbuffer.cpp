@@ -73,6 +73,11 @@ VulkanCommandBuffer* VulkanCommandBufferResources::get_command_buffer(u32 frame,
     return command_buffer;
 }
 
+VulkanCommandBuffer* VulkanCommandBufferResources::get_instant_command_buffer(u32 frame)
+{
+    return &command_buffers[frame * BUFFER_PER_POOL + 1];
+}
+
 void VulkanCommandBuffer::init(u32 buffer_size, u32 submit_size, bool baked)
 {
     buffer_size = buffer_size;

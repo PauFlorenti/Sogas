@@ -42,7 +42,7 @@ constexpr static VkDescriptorType ConvertDescriptorType(DescriptorType InType)
     }
 }
 
-static void FillWriteDescriptorSets(
+void VulkanDescriptorSet::FillWriteDescriptorSets(
   VulkanDevice*                    InDevice,
   const VulkanDescriptorSetLayout* InDescriptorSetLayout,
   VkDescriptorSet                  InDescriptorSet,
@@ -198,7 +198,7 @@ DescriptorSetHandle VulkanDescriptorSet::Create(VulkanDevice* InDevice, const De
     VulkanSampler* default_sampler = InDevice->GetDefaultSampler();
 
     u32 resources_count = InDescriptor.resources_count;
-    FillWriteDescriptorSets(
+    descriptor_set->FillWriteDescriptorSets(
       InDevice,
       descriptor_set_layout,
       descriptor_set->descriptorSet,

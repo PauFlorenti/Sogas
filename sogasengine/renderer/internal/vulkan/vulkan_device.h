@@ -42,24 +42,6 @@ class VulkanDevice : public GPU_device
 
     const VulkanDevice& operator=(const VulkanDevice& other) = delete;
 
-    // Helpers
-    GraphicsAPI getApiType() const
-    {
-        return api_type;
-    }
-    const VkPhysicalDevice& GetGPU() const
-    {
-        return Physical_device;
-    }
-    constexpr u32 GetFrameCount() const
-    {
-        return FrameCount;
-    }
-    constexpr u32 GetFrameIndex() const
-    {
-        return GetFrameCount() % MAX_FRAMES_IN_FLIGHT;
-    }
-
     // Init/shutownd
     bool Init(const DeviceDescriptor& InDescriptor) override;
     void shutdown() override;
@@ -75,29 +57,44 @@ class VulkanDevice : public GPU_device
     PipelineHandle            CreatePipeline(const PipelineDescriptor& InDescriptor) override;
     RenderPassHandle          CreateRenderPass(const RenderPassDescriptor& InDescriptor) override;
 
-    void DestroyBuffer(BufferHandle InHandle) override;
-    void DestroyTexture(TextureHandle InHandle) override;
-    void DestroyShaderState(ShaderStateHandle InHandle) override;
-    void DestroySampler(SamplerHandle InHandle) override;
-    void DestroyDescriptorSet(DescriptorSetHandle InHandle) override;
-    void DestroyDescriptorSetLayout(DescriptorSetLayoutHandle InHandle) override;
-    void DestroyPipeline(PipelineHandle InPipelineHandle) override;
-    void DestroyRenderPass(RenderPassHandle InHandle) override;
+    void                      DestroyBuffer(BufferHandle InHandle) override;
+    void                      DestroyTexture(TextureHandle InHandle) override;
+    void                      DestroyShaderState(ShaderStateHandle InHandle) override;
+    void                      DestroySampler(SamplerHandle InHandle) override;
+    void                      DestroyDescriptorSet(DescriptorSetHandle InHandle) override;
+    void                      DestroyDescriptorSetLayout(DescriptorSetLayoutHandle InHandle) override;
+    void                      DestroyPipeline(PipelineHandle InPipelineHandle) override;
+    void                      DestroyRenderPass(RenderPassHandle InHandle) override;
 
-    std::vector<i8> ReadShaderBinary(std::string InFilename) override;
-    CommandBuffer* GetCommandBuffer(bool begin) override;
-    void QueueCommandBuffer(CommandBuffer* cmd) override;
-
+    // clang-format on
     void BeginFrame() override;
     void Present() override;
 
-    void                              CreateSwapchain(GLFWwindow *window) override;
-    // clang-format on
+    std::vector<i8> ReadShaderBinary(std::string InFilename) override;
+    CommandBuffer*  GetCommandBuffer(bool begin) override;
+    CommandBuffer*  GetInstantCommandBuffer() override;
+    void            QueueCommandBuffer(CommandBuffer* cmd) override;
 
+    GraphicsAPI             getApiType() const;
+    const VkPhysicalDevice& GetGPU() const;
+    const u32               GetFamilyQueueIndex();
+    const u32               GetFrameCount() const;
+    const u32               GetFrameIndex() const;
     RenderPassHandle        GetSwapchainRenderpass() override;
     const RenderPassOutput& GetSwapchainOutput() const override;
+    VkRenderPass            GetVulkanRenderPass(const RenderPassOutput& InOutput, std::string InName);
+    const VkQueue           GetGraphicsQueue() const;
+    VulkanSampler*          GetDefaultSampler();
 
-    VkRenderPass GetVulkanRenderPass(const RenderPassOutput& InOutput, std::string InName);
+  private:
+    bool CreateInstance();
+    void PickPhysicalDevice();
+    bool CreateDevice();
+    void SetupDebugMessenger();
+    bool CheckValidationLayersSupport();
+
+    u32  FindMemoryType(u32 typeFilter, VkMemoryPropertyFlags propertyFlags) const;
+    void CreateSwapchain(GLFWwindow* window) override;
 
     VulkanBuffer*              GetBufferResource(BufferHandle handle);
     VulkanShaderState*         GetShaderResource(ShaderStateHandle handle);
@@ -108,22 +105,8 @@ class VulkanDevice : public GPU_device
     VulkanPipeline*            GetPipelineResource(PipelineHandle handle);
     VulkanRenderPass*          GetRenderPassResource(RenderPassHandle handle);
 
-    const VkQueue GetGraphicsQueue() const
-    {
-        return GraphicsQueue;
-    }
+    void DestroyPipelineInstant(ResourceHandle InHandle);
 
-    const u32 GetFamilyQueueIndex()
-    {
-        return GraphicsFamily;
-    }
-
-    VulkanSampler* GetDefaultSampler()
-    {
-        return GetSamplerResource(default_sampler);
-    };
-
-  private:
     // Device
     VkInstance                 Instance        = VK_NULL_HANDLE;
     VkDevice                   Handle          = VK_NULL_HANDLE;
@@ -136,10 +119,6 @@ class VulkanDevice : public GPU_device
 
     VkDescriptorPool descriptor_pool;
 
-    bool resized = false;
-
-    std::vector<ResourceUpdate> resource_deletion_queue;
-
     // Queues
     std::vector<VkQueueFamilyProperties> queueFamilyProperties;
     std::vector<u32>                     queueFamilies;
@@ -151,23 +130,10 @@ class VulkanDevice : public GPU_device
     VkQueue                              TransferQueue  = VK_NULL_HANDLE;
     u32                                  FrameCount     = 0; // Number of frames since the beginning of the application.
 
-    VkCommandPool resourcesCommandPool[MAX_FRAMES_IN_FLIGHT];
-    VkFence       fence[MAX_FRAMES_IN_FLIGHT];
+    VkFence fence[MAX_FRAMES_IN_FLIGHT];
 
     VkSemaphore beginSemaphore = VK_NULL_HANDLE;
     VkSemaphore endSemaphore   = VK_NULL_HANDLE;
-
-    bool bIsBindlessSupported{false};
-
-    void DestroyPipelineInstant(ResourceHandle InHandle);
-
-    bool CreateInstance();
-    void SetupDebugMessenger();
-    void PickPhysicalDevice();
-    bool CreateDevice();
-    bool CheckValidationLayersSupport();
-    void CreateCommandResources();
-    u32  FindMemoryType(u32 typeFilter, VkMemoryPropertyFlags propertyFlags) const;
 };
 
 } // namespace Vk

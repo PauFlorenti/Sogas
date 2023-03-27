@@ -1,6 +1,7 @@
 
 #include "vulkan/vulkan_texture.h"
 #include "vulkan/vulkan_buffer.h"
+#include "vulkan/vulkan_commandbuffer.h"
 #include "vulkan/vulkan_device.h"
 #include "vulkan/vulkan_types.h"
 
@@ -43,10 +44,10 @@ namespace Vk
 
 void TransitionImageLayout(const VulkanDevice* device, VkCommandBuffer command_buffer, VkImage& image, VkImageLayout source_layout, VkImageLayout destination_layout, bool is_depth)
 {
-    VkImageMemoryBarrier barrier            = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
-    barrier.image                           = image;
-    barrier.oldLayout                       = source_layout;
-    barrier.newLayout                       = destination_layout;
+    VkImageMemoryBarrier barrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+    barrier.image                = image;
+    barrier.oldLayout            = source_layout;
+    barrier.newLayout            = destination_layout;
 
     barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
     barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
@@ -103,12 +104,12 @@ void TransitionImageLayout(const VulkanDevice* device, VkCommandBuffer command_b
     vkCmdPipelineBarrier(command_buffer, srcStage, dstStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 }
 
-VulkanTexture::VulkanTexture(const VulkanDevice* InDevice)
+VulkanTexture::VulkanTexture(VulkanDevice* InDevice)
 : device(InDevice)
 {
 }
 
-VulkanTexture::VulkanTexture(const VulkanDevice* InDevice, const TextureDescriptor& InDescriptor)
+VulkanTexture::VulkanTexture(VulkanDevice* InDevice, const TextureDescriptor& InDescriptor)
 : device(InDevice)
 {
     descriptor = InDescriptor;
@@ -194,8 +195,9 @@ TextureHandle VulkanTexture::Create(VulkanDevice* InDevice, const TextureDescrip
     if (InDescriptor.data)
     {
         // Staging buffer
-        u32                image_size = InDescriptor.width * InDescriptor.height * texture->descriptor.format_stride;
-        VulkanBuffer       staging_buffer;
+        u32          image_size = InDescriptor.width * InDescriptor.height * texture->descriptor.format_stride;
+        VulkanBuffer staging_buffer;
+
         VkBufferCreateInfo buffer_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
         buffer_info.usage              = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
         buffer_info.size               = image_size;
@@ -210,9 +212,11 @@ TextureHandle VulkanTexture::Create(VulkanDevice* InDevice, const TextureDescrip
         memcpy(staging_buffer.mapdata, InDescriptor.data, image_size);
         vkUnmapMemory(InDevice->Handle, staging_buffer.memory);
 
-        texture->TransitionLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        auto command_buffer = static_cast<VulkanCommandBuffer*>(InDevice->GetInstantCommandBuffer());
+
+        texture->TransitionLayout(command_buffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
         texture->CopyBufferToImage(&staging_buffer);
-        texture->TransitionLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        texture->TransitionLayout(command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
         texture->image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
@@ -243,9 +247,11 @@ void VulkanTexture::SetData(void* data)
 
     stagingBuffer.SetData(data, image_size);
 
-    TransitionLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    CopyBufferToImage(&stagingBuffer);
-    TransitionLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    // auto command_buffer = static_cast<VulkanCommandBuffer*>(device->GetInstantCommandBuffer());
+
+    // TransitionLayout(command_buffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    // CopyBufferToImage(&stagingBuffer);
+    // TransitionLayout(command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void VulkanTexture::Release()
@@ -263,31 +269,19 @@ void VulkanTexture::Release()
     VkSampler      sampler   = VK_NULL_HANDLE;
 }
 
-void VulkanTexture::TransitionLayout(VkImageLayout srcLayout, VkImageLayout dstLayout)
+void VulkanTexture::TransitionLayout(VulkanCommandBuffer* cmd, VkImageLayout srcLayout, VkImageLayout dstLayout)
 {
-    VkCommandBufferAllocateInfo cmdAllocInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
-    cmdAllocInfo.commandBufferCount          = 1;
-    cmdAllocInfo.commandPool                 = device->resourcesCommandPool[device->GetFrameIndex()];
-    cmdAllocInfo.level                       = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-
-    VkCommandBuffer cmd;
-    if (vkAllocateCommandBuffers(device->Handle, &cmdAllocInfo, &cmd) != VK_SUCCESS)
-    {
-        SERROR("Failed to allcoate command buffer.");
-        return;
-    }
-
     VkCommandBufferBeginInfo beginInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
-    if (vkBeginCommandBuffer(cmd, &beginInfo) == VK_SUCCESS)
+    if (vkBeginCommandBuffer(cmd->command_buffer, &beginInfo) == VK_SUCCESS)
     {
-        TransitionImageLayout(device, cmd, texture, srcLayout, dstLayout, HasDepth(descriptor.generic_format));
+        TransitionImageLayout(device, cmd->command_buffer, texture, srcLayout, dstLayout, HasDepth(descriptor.generic_format));
     }
 
-    vkEndCommandBuffer(cmd);
+    vkEndCommandBuffer(cmd->command_buffer);
 
     VkSubmitInfo submitInfo       = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers    = &cmd;
+    submitInfo.pCommandBuffers    = &cmd->command_buffer;
 
     if (vkQueueSubmit(device->GetGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
     {
@@ -296,26 +290,14 @@ void VulkanTexture::TransitionLayout(VkImageLayout srcLayout, VkImageLayout dstL
     }
 
     vkQueueWaitIdle(device->GetGraphicsQueue());
-
-    vkFreeCommandBuffers(device->Handle, device->resourcesCommandPool[device->GetFrameIndex()], 1, &cmd);
 }
 
 void VulkanTexture::CopyBufferToImage(const VulkanBuffer* buffer)
 {
-    VkCommandBufferAllocateInfo cmdAllocInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
-    cmdAllocInfo.commandBufferCount          = 1;
-    cmdAllocInfo.commandPool                 = device->resourcesCommandPool[device->GetFrameIndex()];
-    cmdAllocInfo.level                       = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-
-    VkCommandBuffer cmd;
-    if (vkAllocateCommandBuffers(device->Handle, &cmdAllocInfo, &cmd) != VK_SUCCESS)
-    {
-        SERROR("Failed to allcoate command buffer.");
-        return;
-    }
+    auto cmd = static_cast<VulkanCommandBuffer*>(device->GetInstantCommandBuffer());
 
     VkCommandBufferBeginInfo beginInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
-    if (vkBeginCommandBuffer(cmd, &beginInfo) == VK_SUCCESS)
+    if (vkBeginCommandBuffer(cmd->command_buffer, &beginInfo) == VK_SUCCESS)
     {
         VkBufferImageCopy region{};
         region.bufferOffset                    = 0;
@@ -328,13 +310,13 @@ void VulkanTexture::CopyBufferToImage(const VulkanBuffer* buffer)
         region.imageOffset                     = {0, 0, 0};
         region.imageExtent                     = {descriptor.width, descriptor.height, 1};
 
-        vkCmdCopyBufferToImage(cmd, buffer->buffer, texture, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+        vkCmdCopyBufferToImage(cmd->command_buffer, buffer->buffer, texture, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-        vkEndCommandBuffer(cmd);
+        vkEndCommandBuffer(cmd->command_buffer);
 
         VkSubmitInfo submitInfo       = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers    = &cmd;
+        submitInfo.pCommandBuffers    = &cmd->command_buffer;
 
         if (vkQueueSubmit(device->GraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
         {
@@ -344,7 +326,6 @@ void VulkanTexture::CopyBufferToImage(const VulkanBuffer* buffer)
 
         vkQueueWaitIdle(device->GraphicsQueue);
     }
-    vkFreeCommandBuffers(device->Handle, device->resourcesCommandPool[device->GetFrameIndex()], 1, &cmd);
 }
 
 void VulkanTexture::Allocate_and_bind_texture_memory(VkMemoryPropertyFlags memory_properties)

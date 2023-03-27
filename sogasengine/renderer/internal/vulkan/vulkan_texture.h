@@ -14,6 +14,7 @@ namespace Vk
 class VulkanDevice;
 class VulkanBuffer;
 class VulkanSampler;
+class VulkanCommandBuffer;
 
 void TransitionImageLayout(const VulkanDevice* device, VkCommandBuffer command_buffer, VkImage& image, VkImageLayout source_layout, VkImageLayout destination_layout, bool is_depth);
 
@@ -46,8 +47,8 @@ struct VulkanTextureDescriptor
 class VulkanTexture : public DeviceTexture
 {
   public:
-    explicit VulkanTexture(const VulkanDevice* InDevice = nullptr);
-    explicit VulkanTexture(const VulkanDevice* InDevice, const TextureDescriptor& InDescriptor);
+    explicit VulkanTexture(VulkanDevice* InDevice = nullptr);
+    explicit VulkanTexture(VulkanDevice* InDevice, const TextureDescriptor& InDescriptor);
     VulkanTexture(const VulkanTexture&)                        = delete;
     VulkanTexture(VulkanTexture&&)                             = delete;
     const VulkanTexture& operator=(const VulkanTexture& other) = delete;
@@ -57,7 +58,6 @@ class VulkanTexture : public DeviceTexture
     }
 
     static TextureHandle Create(VulkanDevice* device, const TextureDescriptor& InDescriptor);
-    static void          Create(const VulkanDevice* device, Texture* texture, void* data);
 
     void Release() override;
     void SetData(void* data);
@@ -77,10 +77,10 @@ class VulkanTexture : public DeviceTexture
     void Allocate_and_bind_texture_memory(VkMemoryPropertyFlags memory_properties);
 
   private:
-    void TransitionLayout(VkImageLayout srcLayout, VkImageLayout dstLayout);
+    void TransitionLayout(VulkanCommandBuffer* cmd, VkImageLayout srcLayout, VkImageLayout dstLayout);
     void CopyBufferToImage(const VulkanBuffer* buffer);
 
-    const VulkanDevice* device = nullptr;
+    VulkanDevice* device = nullptr;
 };
 } // namespace Vk
 } // namespace Renderer

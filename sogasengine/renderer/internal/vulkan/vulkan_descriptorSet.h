@@ -62,6 +62,18 @@ class VulkanDescriptorSet
     const u32                                 setNumber;
 
   private:
+    void FillWriteDescriptorSets(
+      VulkanDevice*                    InDevice,
+      const VulkanDescriptorSetLayout* InDescriptorSetLayout,
+      VkDescriptorSet                  InDescriptorSet,
+      VkWriteDescriptorSet*            InWriteDescriptorSet,
+      VkDescriptorBufferInfo*          InBufferInfo,
+      VkDescriptorImageInfo*           InImageInfo,
+      u32&                             OutResourcesCount,
+      const ResourceHandle*            InResources,
+      const SamplerHandle*             InSamplers,
+      const u16*                       InBindings);
+      
     const VulkanDevice* device = nullptr;
     VkPipelineBindPoint pipelineBindPoint;
     VkPipelineLayout    pipelineLayout = VK_NULL_HANDLE;

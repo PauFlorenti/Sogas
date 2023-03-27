@@ -169,15 +169,8 @@ void VulkanSwapchain::CreateRenderPass(VulkanRenderPass* render_pass)
     VkCommandBufferBeginInfo beginInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
     beginInfo.flags                    = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-    VkCommandBufferAllocateInfo cmdAllocInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
-    cmdAllocInfo.commandBufferCount          = 1;
-    cmdAllocInfo.commandPool                 = device->resourcesCommandPool[device->GetFrameIndex()];
-    cmdAllocInfo.level                       = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-
-    VkCommandBuffer cmd;
-    vkcheck(vkAllocateCommandBuffers(device->Handle, &cmdAllocInfo, &cmd));
-
-    vkBeginCommandBuffer(cmd, &beginInfo);
+    VulkanCommandBuffer* cmd = static_cast<VulkanCommandBuffer*>(device->GetInstantCommandBuffer());
+    vkBeginCommandBuffer(cmd->command_buffer, &beginInfo);
 
     VkBufferImageCopy region{};
     region.bufferOffset      = 0;
@@ -194,15 +187,15 @@ void VulkanSwapchain::CreateRenderPass(VulkanRenderPass* render_pass)
 
     for (auto& image : images)
     {
-        TransitionImageLayout(device, cmd, image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, false);
+        TransitionImageLayout(device, cmd->command_buffer, image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, false);
     }
-    TransitionImageLayout(device, cmd, depth_texture->texture, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, true);
+    TransitionImageLayout(device, cmd->command_buffer, depth_texture->texture, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, true);
 
-    vkEndCommandBuffer(cmd);
+    vkEndCommandBuffer(cmd->command_buffer);
 
     VkSubmitInfo submit_info{VK_STRUCTURE_TYPE_SUBMIT_INFO};
     submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers    = &cmd;
+    submit_info.pCommandBuffers    = &cmd->command_buffer;
 
     vkQueueSubmit(device->GetGraphicsQueue(), 1, &submit_info, VK_NULL_HANDLE);
     vkQueueWaitIdle(device->GetGraphicsQueue());

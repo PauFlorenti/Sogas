@@ -62,6 +62,7 @@ class VulkanCommandBufferResources
     void reset_pools(u32 frame_index);
 
     VulkanCommandBuffer* get_command_buffer(u32 frame, bool begin);
+    VulkanCommandBuffer* get_instant_command_buffer(u32 frame);
 
     static u16 pool_from_index(u32 index)
     {
