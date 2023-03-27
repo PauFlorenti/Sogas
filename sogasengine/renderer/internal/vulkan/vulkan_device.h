@@ -105,7 +105,14 @@ class VulkanDevice : public GPU_device
     VulkanPipeline*            GetPipelineResource(PipelineHandle handle);
     VulkanRenderPass*          GetRenderPassResource(RenderPassHandle handle);
 
+    void DestroyBufferInstant(ResourceHandle InHandle) override;
+    void DestroyTextureInstant(ResourceHandle InHandle) override;
+    void DestroyShaderStateInstant(ResourceHandle InHandle) override;
+    void DestroySamplerInstant(ResourceHandle InHandle) override;
+    void DestroyDescriptorSetInstant(ResourceHandle InHandle) override;
+    void DestroyDescriptorSetLayoutInstant(ResourceHandle InHandle) override;
     void DestroyPipelineInstant(ResourceHandle InHandle) override;
+    void DestroyRenderPassInstant(ResourceHandle InHandle) override;
 
     // Device
     VkInstance                 Instance        = VK_NULL_HANDLE;

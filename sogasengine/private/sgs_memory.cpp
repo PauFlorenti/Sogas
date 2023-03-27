@@ -34,10 +34,10 @@ void* LinearAllocator::allocate(size_t size, size_t alignment)
 {
     SASSERT(size > 0);
 
-    const size_t start = memory_align(allocated_size, alignment);
-    SASSERT(start < total_size);
+    const size_t new_start = memory_align(allocated_size, alignment);
+    SASSERT(new_start < total_size);
 
-    const size_t new_allocated_size = start + size;
+    const size_t new_allocated_size = new_start + size;
     if (new_allocated_size > total_size)
     {
         SASSERT_MSG(false, "LinearAllocator overflow.");
@@ -45,7 +45,7 @@ void* LinearAllocator::allocate(size_t size, size_t alignment)
     }
 
     allocated_size = new_allocated_size;
-    return memory + start;
+    return memory + new_start;
 }
 
 void LinearAllocator::deallocate(void* /*memory*/)
@@ -74,23 +74,23 @@ void StackAllocator::shutdown()
 
 void* StackAllocator::allocate(size_t size, size_t alignment)
 {
-    SASSERT(size < total_size);
+    SASSERT(size > 0);
     
-    auto start = memory_align(allocated_size, alignment);
-    SASSERT(start < total_size);
+    auto new_start = memory_align(allocated_size, alignment);
+    SASSERT(new_start < total_size);
 
-    const auto new_start = start + size;
-    SASSERT_MSG(new_start < total_size, "StackAllocator Overflow!");
+    const auto new_allocated_size = new_start + size;
+    SASSERT_MSG(new_allocated_size < total_size, "StackAllocator Overflow!");
 
-    allocated_size = new_start;
-    return memory + start;
+    allocated_size = new_allocated_size;
+    return memory + new_start;
 }
 
 void StackAllocator::deallocate(void* pointer)
 {
     SASSERT(memory <= pointer);
-    SASSERT_MSG(pointer < (memory + total_size), "Out of bound total size.");
-    SASSERT_MSG(pointer < (memory + allocated_size), "Out of bound allocated size.");
+    SASSERT_MSG(pointer < memory + total_size, "Out of bound total size.");
+    SASSERT_MSG(pointer < memory + allocated_size, "Out of bound allocated size.");
 
     const size_t size_at_pointer = (u8*)pointer - memory;
     allocated_size = size_at_pointer;

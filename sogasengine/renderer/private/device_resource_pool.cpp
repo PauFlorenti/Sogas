@@ -16,7 +16,7 @@ void ResourcePool::Init(Memory::Allocator* InAllocator, u32 InPoolSize, u32 InRe
     memory      = static_cast<u8*>(allocator->allocate(size, 1));
     memset(memory, 0, size);
 
-    free_indices      = (u32*)(memory) + (pool_size * resource_size);
+    free_indices      = (u32*)(memory + pool_size * resource_size);
     free_indices_head = 0;
 
     for (u32 i = 0; i < pool_size; ++i)

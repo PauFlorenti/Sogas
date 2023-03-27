@@ -98,7 +98,14 @@ class GPU_device
   protected:
     virtual void CreateSwapchain(GLFWwindow* window) = 0;
 
+    virtual void DestroyBufferInstant(ResourceHandle InHandle) = 0;
+    virtual void DestroyTextureInstant(ResourceHandle InHandle) = 0;
+    virtual void DestroyShaderStateInstant(ResourceHandle InHandle) = 0;
+    virtual void DestroySamplerInstant(ResourceHandle InHandle) = 0;
+    virtual void DestroyDescriptorSetInstant(ResourceHandle InHandle) = 0;
+    virtual void DestroyDescriptorSetLayoutInstant(ResourceHandle InHandle) = 0;
     virtual void DestroyPipelineInstant(ResourceHandle InHandle) = 0;
+    virtual void DestroyRenderPassInstant(ResourceHandle InHandle) = 0;
 
     GraphicsAPI                 api_type;
     void*                       window = nullptr;

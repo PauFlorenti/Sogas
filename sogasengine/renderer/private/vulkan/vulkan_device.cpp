@@ -210,32 +210,52 @@ void VulkanDevice::shutdown()
     {
         switch (resource.type)
         {
+            case ResourceType::BUFFER:
+                DestroyBufferInstant(resource.handle);
+                break;
+            case ResourceType::TEXTURE:
+                DestroyTextureInstant(resource.handle);
+                break;
+            case ResourceType::SHADER:
+                DestroyShaderStateInstant(resource.handle);
+                break;
+            case ResourceType::SAMPLER:
+                DestroySamplerInstant(resource.handle);
+                break;
+            case ResourceType::DESCRIPTOR_SET:
+                DestroyDescriptorSetInstant(resource.handle);
+                break;
+            case ResourceType::DESCRIPTOR_SET_LAYOUT:
+                DestroyDescriptorSetLayoutInstant(resource.handle);
+                break;
             case ResourceType::PIPELINE:
                 DestroyPipelineInstant(resource.handle);
                 break;
-            default:
+            case ResourceType::RENDERPASS:
+                DestroyRenderPassInstant(resource.handle);
                 break;
         }
     }
 
-    //auto it = render_pass_cache.begin();
-    //while (it != render_pass_cache.end())
-    //{
-    //    auto render_pass = it->second;
-    //    vkDestroyRenderPass(Handle, render_pass, nullptr);
-    //}
+    auto it = render_pass_cache.begin();
+    while (it != render_pass_cache.end())
+    {
+        vkDestroyRenderPass(Handle, it->second, nullptr);
+        ++it;
+    }
+
     render_pass_cache.clear();
 
     swapchain->Destroy();
 
-    shaders.Shutdown();
-    buffers.Shutdown();
-    textures.Shutdown();
     samplers.Shutdown();
+    descriptorSetLayouts.Shutdown();
+    descriptorSets.Shutdown();
+    shaders.Shutdown();
     pipelines.Shutdown();
     renderpasses.Shutdown();
-    descriptorSets.Shutdown();
-    descriptorSetLayouts.Shutdown();
+    textures.Shutdown();
+    buffers.Shutdown();
 
     STRACE("\tDestroying Vulkan logical device ...");
     vkDestroyDevice(Handle, nullptr);
@@ -290,104 +310,103 @@ RenderPassHandle VulkanDevice::CreateRenderPass(const RenderPassDescriptor& InDe
 
 void VulkanDevice::DestroyBuffer(BufferHandle InHandle)
 {
-    auto buffer = GetBufferResource(InHandle);
-
-    if (buffer)
+    if (InHandle.index < buffers.pool_size)
     {
-        buffer->Release();
+        resource_deletion_queue.push_back({ResourceType::BUFFER, InHandle.index, GetFrameCount()});
     }
-
-    buffers.ReleaseResource(InHandle.index);
+    else
+    {
+        SERROR("Trying to delete an invalid buffer.");
+    }
 }
 
 void VulkanDevice::DestroyTexture(TextureHandle InHandle)
 {
-    VulkanTexture* texture = GetTextureResource(InHandle);
-
-    if (texture)
+    if (InHandle.index < textures.pool_size)
     {
-        vkFreeMemory(Handle, texture->memory, nullptr);
-        vkDestroyImageView(Handle, texture->image_view, nullptr);
-        vkDestroyImage(Handle, texture->texture, nullptr);
+        resource_deletion_queue.push_back({ResourceType::TEXTURE, InHandle.index, GetFrameCount()});
     }
-
-    textures.ReleaseResource(InHandle.index);
+    else
+    {
+        SERROR("Trying to delete an invalid texture.");
+    }
 }
 void VulkanDevice::DestroyShaderState(ShaderStateHandle InHandle)
 {
-    auto shader = GetShaderResource(InHandle);
-
-    if (shader)
+    if (InHandle.index < shaders.pool_size)
     {
-        for (u32 i = 0; i < MAX_SHADER_STAGES; ++i)
-        {
-            vkDestroyShaderModule(Handle, shader->ShaderStageInfo[i].module, nullptr);
-        }
+        resource_deletion_queue.push_back({ResourceType::SHADER, InHandle.index, GetFrameCount()});
     }
-
-    shaders.ReleaseResource(InHandle.index);
+    else
+    {
+        SERROR("Trying to delete an invalid shader.");
+    }
 }
 
 void VulkanDevice::DestroySampler(SamplerHandle InHandle)
 {
-    auto sampler = GetSamplerResource(InHandle);
-
-    if (sampler)
+    if (InHandle.index < samplers.pool_size)
     {
-        vkDestroySampler(Handle, sampler->sampler, nullptr);
+        resource_deletion_queue.push_back({ResourceType::SAMPLER, InHandle.index, GetFrameCount()});
     }
-
-    samplers.ReleaseResource(InHandle.index);
+    else
+    {
+        SERROR("Trying to delete an invalid sampler.");
+    }
 }
 
 void VulkanDevice::DestroyDescriptorSet(DescriptorSetHandle InHandle)
 {
-    auto descriptor_set = GetDescriptorSetResource(InHandle);
-
-    if (descriptor_set)
+    if (InHandle.index < descriptorSets.pool_size)
     {
-        // TODO deallocate resources
-        //descriptor_set.
-        descriptor_set->resources_count = 0;
+        resource_deletion_queue.push_back({ResourceType::DESCRIPTOR_SET, InHandle.index, GetFrameCount()});
     }
-
-    descriptorSets.ReleaseResource(InHandle.index);
+    else
+    {
+        SERROR("Trying to delete an invalid descriptor set.");
+    }
 }
 
 void VulkanDevice::DestroyDescriptorSetLayout(DescriptorSetLayoutHandle InHandle)
 {
-    auto descriptor_set_layout = GetDescriptorSetLayoutResource(InHandle);
-
-    if (descriptor_set_layout)
+    if (InHandle.index < descriptorSetLayouts.pool_size)
     {
-        vkDestroyDescriptorSetLayout(Handle, descriptor_set_layout->descriptor_set_layout, nullptr);
+        resource_deletion_queue.push_back({ResourceType::DESCRIPTOR_SET_LAYOUT, InHandle.index, GetFrameCount()});
     }
-
-    descriptorSetLayouts.ReleaseResource(InHandle.index);
+    else
+    {
+        SERROR("Trying to delete an invalid descriptor set layout.");
+    }
 }
 
 void VulkanDevice::DestroyPipeline(PipelineHandle InHandle)
 {
-    auto pipeline = GetPipelineResource(InHandle);
-
-    if (pipeline)
+    if (InHandle.index < pipelines.pool_size)
     {
-        DestroyShaderState(pipeline->shader_state);
-
         resource_deletion_queue.push_back({ResourceType::PIPELINE, InHandle.index, GetFrameCount()});
+        auto pipeline = GetPipelineResource(InHandle);
+
+        if (pipeline)
+        {
+            DestroyShaderState(pipeline->shader_state);
+        }
+    }
+    else
+    {
+        SERROR("Trying to delete an invalid pipeline.");
     }
 }
 
 void VulkanDevice::DestroyRenderPass(RenderPassHandle InHandle)
 {
-    auto renderpass = GetRenderPassResource(InHandle);
-
-    if (renderpass)
+    if (InHandle.index < renderpasses.pool_size)
     {
-        vkDestroyRenderPass(Handle, renderpass->renderpass, nullptr);
+        resource_deletion_queue.push_back({ResourceType::RENDERPASS, InHandle.index, GetFrameCount()});
     }
-
-    renderpasses.ReleaseResource(InHandle.index);
+    else
+    {
+        SERROR("Trying to delete an invalid renderpass.");
+    }
 }
 
 void VulkanDevice::BeginFrame()
@@ -474,14 +493,28 @@ void VulkanDevice::Present()
                 switch (resource.type)
                 {
                     case ResourceType::BUFFER:
+                        DestroyBufferInstant(resource.handle);
                         break;
                     case ResourceType::TEXTURE:
+                        DestroyTextureInstant(resource.handle);
                         break;
-
+                    case ResourceType::SHADER:
+                        DestroyShaderStateInstant(resource.handle);
+                        break;
+                    case ResourceType::SAMPLER:
+                        DestroySamplerInstant(resource.handle);
+                        break;
+                    case ResourceType::DESCRIPTOR_SET:
+                        DestroyDescriptorSetInstant(resource.handle);
+                        break;
+                    case ResourceType::DESCRIPTOR_SET_LAYOUT:
+                        DestroyDescriptorSetLayoutInstant(resource.handle);
+                        break;
                     case ResourceType::PIPELINE:
-
+                        DestroyPipelineInstant(resource.handle);
                         break;
-                    default:
+                    case ResourceType::RENDERPASS:
+                        DestroyRenderPassInstant(resource.handle);
                         break;
                 }
             }
@@ -903,6 +936,85 @@ VulkanRenderPass* VulkanDevice::GetRenderPassResource(RenderPassHandle handle)
     return static_cast<VulkanRenderPass*>(renderpasses.AccessResource(handle.index));
 }
 
+void VulkanDevice::DestroyBufferInstant(ResourceHandle InHandle)
+{
+    auto buffer = static_cast<VulkanBuffer*>(buffers.AccessResource(InHandle));
+
+    if (buffer)
+    {
+        buffer->Release();
+    }
+
+    buffers.ReleaseResource(InHandle);
+}
+
+void VulkanDevice::DestroyTextureInstant(ResourceHandle InHandle)
+{
+    VulkanTexture* texture = static_cast<VulkanTexture*>(textures.AccessResource(InHandle));
+
+    if (texture)
+    {
+        vkFreeMemory(Handle, texture->memory, nullptr);
+        vkDestroyImageView(Handle, texture->image_view, nullptr);
+        vkDestroyImage(Handle, texture->texture, nullptr);
+    }
+
+    textures.ReleaseResource(InHandle);
+}
+
+void VulkanDevice::DestroyShaderStateInstant(ResourceHandle InHandle)
+{
+    auto shader = static_cast<VulkanShaderState*>(shaders.AccessResource(InHandle));
+
+    if (shader)
+    {
+        for (u32 i = 0; i < shader->ActiveShaders; ++i)
+        {
+            vkDestroyShaderModule(Handle, shader->ShaderStageInfo[i].module, nullptr);
+        }
+    }
+
+    shaders.ReleaseResource(InHandle);
+}
+
+void VulkanDevice::DestroySamplerInstant(ResourceHandle InHandle)
+{
+    auto sampler = static_cast<VulkanSampler*>(samplers.AccessResource(InHandle));
+
+    if (sampler)
+    {
+        vkDestroySampler(Handle, sampler->sampler, nullptr);
+    }
+
+    samplers.ReleaseResource(InHandle);
+}
+
+void VulkanDevice::DestroyDescriptorSetInstant(ResourceHandle InHandle)
+{
+    auto descriptor_set = static_cast<VulkanDescriptorSet*>(descriptorSets.AccessResource(InHandle));
+
+    if (descriptor_set)
+    {
+        allocator->deallocate(descriptor_set->resources);
+        descriptor_set->resources_count = 0;
+    }
+
+    descriptorSets.ReleaseResource(InHandle);
+}
+
+void VulkanDevice::DestroyDescriptorSetLayoutInstant(ResourceHandle InHandle)
+{
+    auto descriptor_set_layout = static_cast<VulkanDescriptorSetLayout*>(descriptorSetLayouts.AccessResource(InHandle));
+
+    if (descriptor_set_layout)
+    {
+        vkDestroyDescriptorSetLayout(Handle, descriptor_set_layout->descriptor_set_layout, nullptr);
+        allocator->deallocate(descriptor_set_layout->bindings);
+    }
+
+    descriptorSetLayouts.ReleaseResource(InHandle);
+}
+
 void VulkanDevice::DestroyPipelineInstant(ResourceHandle InHandle)
 {
     auto pipeline = static_cast<VulkanPipeline*>(pipelines.AccessResource(InHandle));
@@ -914,6 +1026,23 @@ void VulkanDevice::DestroyPipelineInstant(ResourceHandle InHandle)
     }
 
     pipelines.ReleaseResource(InHandle);
+}
+
+void VulkanDevice::DestroyRenderPassInstant(ResourceHandle InHandle)
+{
+    auto render_pass = static_cast<VulkanRenderPass*>(renderpasses.AccessResource(InHandle));
+
+    if (render_pass)
+    {
+        if (render_pass->render_targets_count > 0)
+        {
+            vkDestroyFramebuffer(Handle, render_pass->framebuffer, nullptr);
+        }
+
+        // This should be destroyed with the renderpass static map ... avoid duplicate destruction calls.
+    }
+
+    renderpasses.ReleaseResource(InHandle);
 }
 
 } // namespace Vk
