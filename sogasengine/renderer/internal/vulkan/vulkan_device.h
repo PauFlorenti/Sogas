@@ -83,7 +83,7 @@ class VulkanDevice : public GPU_device
     RenderPassHandle        GetSwapchainRenderpass() override;
     const RenderPassOutput& GetSwapchainOutput() const override;
     VkRenderPass            GetVulkanRenderPass(const RenderPassOutput& InOutput, std::string InName);
-    const VkQueue           GetGraphicsQueue() const;
+    const VkQueue           GetGraphicsQueue();
     VulkanSampler*          GetDefaultSampler();
 
   private:

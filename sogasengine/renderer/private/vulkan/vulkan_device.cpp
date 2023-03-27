@@ -561,7 +561,7 @@ VkRenderPass VulkanDevice::GetVulkanRenderPass(const RenderPassOutput& InOutput,
     return render_pass;
 }
 
-const VkQueue VulkanDevice::GetGraphicsQueue() const
+const VkQueue VulkanDevice::GetGraphicsQueue()
 {
     return GraphicsQueue;
 }

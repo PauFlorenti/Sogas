@@ -187,9 +187,9 @@ void VulkanSwapchain::CreateRenderPass(VulkanRenderPass* render_pass)
 
     for (auto& image : images)
     {
-        TransitionImageLayout(device, cmd->command_buffer, image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, false);
+        VulkanTexture::TransitionLayout(cmd, image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, false);
     }
-    TransitionImageLayout(device, cmd->command_buffer, depth_texture->texture, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, true);
+    VulkanTexture::TransitionLayout(cmd, depth_texture->texture, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, true);
 
     vkEndCommandBuffer(cmd->command_buffer);
 
@@ -199,6 +199,8 @@ void VulkanSwapchain::CreateRenderPass(VulkanRenderPass* render_pass)
 
     vkQueueSubmit(device->GetGraphicsQueue(), 1, &submit_info, VK_NULL_HANDLE);
     vkQueueWaitIdle(device->GetGraphicsQueue());
+
+    vkResetCommandBuffer(cmd->command_buffer, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
 }
 
 bool VulkanSwapchain::Create(VulkanDevice* device, std::shared_ptr<VulkanSwapchain> swapchain)

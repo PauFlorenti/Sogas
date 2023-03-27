@@ -58,6 +58,12 @@ class VulkanTexture : public DeviceTexture
     }
 
     static TextureHandle Create(VulkanDevice* device, const TextureDescriptor& InDescriptor);
+    static void TransitionLayout(
+      VulkanCommandBuffer* cmd, 
+      VkImage image, 
+      VkImageLayout srcLayout, 
+      VkImageLayout dstLayout,
+      bool is_depth = false);
 
     void Release() override;
     void SetData(void* data);
@@ -77,7 +83,6 @@ class VulkanTexture : public DeviceTexture
     void Allocate_and_bind_texture_memory(VkMemoryPropertyFlags memory_properties);
 
   private:
-    void TransitionLayout(VulkanCommandBuffer* cmd, VkImageLayout srcLayout, VkImageLayout dstLayout);
     void CopyBufferToImage(const VulkanBuffer* buffer);
 
     VulkanDevice* device = nullptr;
