@@ -83,8 +83,6 @@ class VulkanTexture : public DeviceTexture
     void Allocate_and_bind_texture_memory(VkMemoryPropertyFlags memory_properties);
 
   private:
-    void CopyBufferToImage(const VulkanBuffer* buffer);
-
     VulkanDevice* device = nullptr;
 };
 } // namespace Vk

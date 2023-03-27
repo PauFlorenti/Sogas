@@ -155,9 +155,20 @@ TextureHandle VulkanTexture::Create(VulkanDevice* InDevice, const TextureDescrip
         begin_info.flags                        = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         vkBeginCommandBuffer(command_buffer->command_buffer, &begin_info);
 
+        VkBufferImageCopy region               = {};
+        region.bufferOffset                    = 0;
+        region.bufferImageHeight               = 0;
+        region.bufferRowLength                 = 0;
+        region.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.mipLevel       = 0;
+        region.imageSubresource.layerCount     = 1;
+        region.imageOffset                     = {0, 0, 0};
+        region.imageExtent                     = {texture->descriptor.width, texture->descriptor.height, 1};
+
         bool is_depth = HasDepth(texture->descriptor.generic_format);
         TransitionLayout(command_buffer, texture->texture, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, is_depth);
-        texture->CopyBufferToImage(&staging_buffer);
+        vkCmdCopyBufferToImage(command_buffer->command_buffer, staging_buffer.buffer, texture->texture, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
         TransitionLayout(command_buffer, texture->texture, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, is_depth);
 
         vkEndCommandBuffer(command_buffer->command_buffer);
@@ -288,42 +299,6 @@ void VulkanTexture::TransitionLayout(
     }
 
     vkCmdPipelineBarrier(command_buffer->command_buffer, srcStage, dstStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-}
-
-void VulkanTexture::CopyBufferToImage(const VulkanBuffer* buffer)
-{
-    auto cmd = static_cast<VulkanCommandBuffer*>(device->GetInstantCommandBuffer());
-
-    VkCommandBufferBeginInfo beginInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
-    if (vkBeginCommandBuffer(cmd->command_buffer, &beginInfo) == VK_SUCCESS)
-    {
-        VkBufferImageCopy region{};
-        region.bufferOffset                    = 0;
-        region.bufferImageHeight               = 0;
-        region.bufferRowLength                 = 0;
-        region.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-        region.imageSubresource.baseArrayLayer = 0;
-        region.imageSubresource.mipLevel       = 0;
-        region.imageSubresource.layerCount     = 1;
-        region.imageOffset                     = {0, 0, 0};
-        region.imageExtent                     = {descriptor.width, descriptor.height, 1};
-
-        vkCmdCopyBufferToImage(cmd->command_buffer, buffer->buffer, texture, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-
-        vkEndCommandBuffer(cmd->command_buffer);
-
-        VkSubmitInfo submitInfo       = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers    = &cmd->command_buffer;
-
-        if (vkQueueSubmit(device->GraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
-        {
-            SERROR("Failed to submit graphics queue commands.");
-            return;
-        }
-
-        vkQueueWaitIdle(device->GraphicsQueue);
-    }
 }
 
 void VulkanTexture::Allocate_and_bind_texture_memory(VkMemoryPropertyFlags memory_properties)
