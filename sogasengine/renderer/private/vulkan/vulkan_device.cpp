@@ -190,10 +190,8 @@ void VulkanDevice::shutdown()
 
     commandbuffer_resources.shutdown();
 
-    STRACE("\tDestroying Command Pool ...");
     for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
-        //vkDestroyCommandPool(Handle, resourcesCommandPool[i], nullptr);
         vkDestroyFence(Handle, fence[i], nullptr);
     }
 
@@ -263,10 +261,12 @@ void VulkanDevice::shutdown()
 
     STRACE("\tDestroying Vulkan logical device ...");
     vkDestroyDevice(Handle, nullptr);
+
     if (validationLayersEnabled)
     {
         DestroyDebugUtilsMessengerEXT(Instance, DebugMessenger, nullptr);
     }
+
     STRACE("\tDestroying instance ...");
     vkDestroyInstance(Instance, nullptr);
     STRACE("\tInstance destroyed.");
