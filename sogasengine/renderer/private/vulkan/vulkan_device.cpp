@@ -246,6 +246,10 @@ void VulkanDevice::shutdown()
 
     render_pass_cache.clear();
 
+    // Swapchain pass not present in the cache
+    VulkanRenderPass* swapchain_pass = GetRenderPassResource(swapchain_renderpass);
+    vkDestroyRenderPass(Handle, swapchain_pass->renderpass, nullptr);
+
     swapchain->Destroy();
 
     samplers.Shutdown();
