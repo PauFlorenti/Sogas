@@ -912,7 +912,7 @@ VulkanShaderState* VulkanDevice::GetShaderResource(ShaderStateHandle handle)
 
 VulkanSampler* VulkanDevice::GetSamplerResource(SamplerHandle handle)
 {
-    return static_cast<VulkanSampler*>(shaders.AccessResource(handle.index));
+    return static_cast<VulkanSampler*>(samplers.AccessResource(handle.index));
 }
 
 VulkanTexture* VulkanDevice::GetTextureResource(TextureHandle handle)
