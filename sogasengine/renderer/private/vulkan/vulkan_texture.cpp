@@ -146,8 +146,9 @@ TextureHandle VulkanTexture::Create(VulkanDevice* InDevice, const TextureDescrip
         vkcheck(vkCreateBuffer(InDevice->Handle, &buffer_info, nullptr, &staging_buffer.buffer));
 
         // Copy data
-        vkMapMemory(InDevice->Handle, staging_buffer.memory, 0, image_size, 0, &staging_buffer.mapdata);
-        memcpy(staging_buffer.mapdata, InDescriptor.data, image_size);
+        void* mapdata;
+        vkMapMemory(InDevice->Handle, staging_buffer.memory, 0, image_size, 0, &mapdata);
+        memcpy(mapdata, InDescriptor.data, image_size);
         vkUnmapMemory(InDevice->Handle, staging_buffer.memory);
 
         auto                     command_buffer = static_cast<VulkanCommandBuffer*>(InDevice->GetInstantCommandBuffer());
@@ -182,7 +183,8 @@ TextureHandle VulkanTexture::Create(VulkanDevice* InDevice, const TextureDescrip
 
         vkResetCommandBuffer(command_buffer->command_buffer, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
 
-        staging_buffer.Release();
+        vkDestroyBuffer(InDevice->Handle, staging_buffer.buffer, nullptr);
+        vkFreeMemory(InDevice->Handle, staging_buffer.memory, nullptr);
 
         texture->image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
@@ -194,7 +196,7 @@ void VulkanTexture::SetData(void* data)
 {
     auto image_size = descriptor.width * descriptor.height * descriptor.format_stride;
 
-    VulkanBuffer       stagingBuffer(device);
+    VulkanBuffer       stagingBuffer;
     VkBufferCreateInfo bufferInfo    = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
     bufferInfo.usage                 = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     bufferInfo.queueFamilyIndexCount = static_cast<u32>(device->queueFamilies.size());
@@ -211,7 +213,7 @@ void VulkanTexture::SetData(void* data)
 
     vkBindBufferMemory(device->Handle, stagingBuffer.buffer, stagingBuffer.memory, 0);
 
-    stagingBuffer.SetData(data, image_size);
+    //stagingBuffer.SetData(data, image_size);
 
     // auto command_buffer = static_cast<VulkanCommandBuffer*>(device->GetInstantCommandBuffer());
 

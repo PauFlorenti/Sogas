@@ -946,7 +946,8 @@ void VulkanDevice::DestroyBufferInstant(ResourceHandle InHandle)
 
     if (buffer)
     {
-        buffer->Release();
+        vkDestroyBuffer(Handle, buffer->buffer, nullptr);
+        vkFreeMemory(Handle, buffer->memory, nullptr);
     }
 
     buffers.ReleaseResource(InHandle);

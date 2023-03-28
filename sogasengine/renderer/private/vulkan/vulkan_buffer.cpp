@@ -37,24 +37,6 @@ static VkBufferUsageFlags ConvertUsage(BufferUsage InUsage)
     };
 }
 
-VulkanBuffer::VulkanBuffer(const VulkanDevice* device)
-    : device(device)
-{
-    SASSERT(device != nullptr);
-}
-
-VulkanBuffer::~VulkanBuffer()
-{
-    Release();
-}
-
-void VulkanBuffer::Release()
-{
-    SASSERT(device != nullptr);
-    vkDestroyBuffer(device->Handle, buffer, nullptr);
-    vkFreeMemory(device->Handle, memory, nullptr);
-}
-
 BufferHandle VulkanBuffer::Create(VulkanDevice* InDevice, const BufferDescriptor& InDescriptor)
 {
     BufferHandle handle = {InDevice->buffers.ObtainResource()};
@@ -93,16 +75,9 @@ BufferHandle VulkanBuffer::Create(VulkanDevice* InDevice, const BufferDescriptor
     return handle;
 }
 
-void VulkanBuffer::SetData(void* data, const u64& size, const u64& offset)
-{
-    vkMapMemory(device->Handle, memory, offset, size, 0, &mapdata);
-    memcpy(mapdata, data, size);
-    vkUnmapMemory(device->Handle, memory);
-}
-
 void VulkanBuffer::Upload_data_to_buffer(const u64& size, void* data)
 {
-    VulkanBuffer       stagingBuffer(device);
+    VulkanBuffer       stagingBuffer;
     VkBufferCreateInfo stagingBufferInfo{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
 
     std::array<u32, 2> families = {device->GraphicsFamily, device->PresentFamily};
@@ -131,7 +106,7 @@ void VulkanBuffer::Upload_data_to_buffer(const u64& size, void* data)
 
     vkBindBufferMemory(device->Handle, stagingBuffer.buffer, stagingBuffer.memory, 0);
 
-    stagingBuffer.SetData(data, size);
+    //stagingBuffer.SetData(data, size);
 
     VkCommandBufferAllocateInfo commandBufferAllocateInfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     commandBufferAllocateInfo.commandBufferCount = 1;

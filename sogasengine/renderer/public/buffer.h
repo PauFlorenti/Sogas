@@ -1,7 +1,5 @@
 #pragma once
 
-#include "device_buffer.h"
-
 namespace Sogas
 {
 namespace Renderer
