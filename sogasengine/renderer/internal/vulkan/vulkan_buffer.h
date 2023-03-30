@@ -28,7 +28,6 @@ class VulkanBuffer
     std::string name;
 
   private:
-    void Upload_data_to_buffer(const u64& size, void* data);
     void Allocate_buffer_memory(VkMemoryPropertyFlags memoryPropertyFlags);
 
     const VulkanDevice* device = nullptr;
