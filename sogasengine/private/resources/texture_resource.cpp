@@ -3,6 +3,7 @@
 #include "render_device.h"
 #include "render_types.h"
 #include "resources/resource.h"
+#include "resources/texture.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
@@ -10,6 +11,7 @@
 namespace Sogas
 {
 using namespace Renderer;
+
 class TextureResource : public IResourceType
 {
     const u32   extensionNumber = 2;
@@ -23,6 +25,8 @@ class TextureResource : public IResourceType
         size_t      extensionIndex = InName.find_last_of(".");
         std::string extension      = InName.substr(extensionIndex);
 
+        Texture* texture = new Texture();
+
         TextureDescriptor desc;
         if (extension == extensions[0])
         {
@@ -31,35 +35,37 @@ class TextureResource : public IResourceType
             stbi_uc*   pixels = stbi_load(filename.c_str(), &width, &height, &channels, STBI_rgb_alpha);
             SASSERT(pixels);
 
-            desc.type      = TextureDescriptor::TextureType::TEXTURE_TYPE_2D;
-            desc.width     = static_cast<i16>(width);
-            desc.height    = static_cast<i16>(height);
-            desc.format    = Format::R8G8B8A8_SRGB;
-            Texture* texture = new Texture(std::move(desc));
-            //render->CreateTexture(texture, pixels);
-            return texture;
+            desc.type   = TextureDescriptor::TextureType::TEXTURE_TYPE_2D;
+            desc.width  = static_cast<i16>(width);
+            desc.height = static_cast<i16>(height);
+            desc.format = Format::R8G8B8A8_SRGB;
+
+            texture->descriptor = desc;
+            texture->handle = render->CreateTexture(std::move(desc));
         }
         else if (extension == extensions[1])
         {
-            desc.type        = TextureDescriptor::TextureType::TEXTURE_TYPE_2D;
-            desc.width       = 1;
-            desc.height      = 1;
-            desc.format      = Format::R8G8B8A8_SRGB;
-            Texture* texture = new Texture(std::move(desc));
+            desc.type   = TextureDescriptor::TextureType::TEXTURE_TYPE_2D;
+            desc.width  = 1;
+            desc.height = 1;
+            desc.format = Format::R8G8B8A8_SRGB;
+
+            texture->descriptor = desc;
 
             if (InName == "white.text")
             {
-                //u32 data = 0xFFFFFFFF;
-                //render->CreateTexture(texture, static_cast<void*>(&data));
+                u32 data = 0xFFFFFFFF;
+                desc.data = (void*)&data;
             }
             else if (InName == "black.text")
             {
-                //render->CreateTexture(texture, 0x00000000);
+                desc.data = 0x00000000;
             }
-            return texture;
+
+            texture->handle = render->CreateTexture(std::move(desc));
         }
 
-        return nullptr;
+        return texture;
     }
 
   public:
@@ -83,6 +89,16 @@ class TextureResource : public IResourceType
         return LoadTexture(std::move(InName));
     }
 };
+
+void Texture::Destroy()
+{
+    auto renderer = CEngine::Get()->GetRenderModule()->GetGraphicsDevice();
+
+    SASSERT_MSG(renderer != nullptr, "No renderer device while resources still alive.");
+
+    renderer->DestroyTexture(handle);
+    handle = INVALID_TEXTURE;
+}
 
 template <>
 IResourceType* GetResourceType<Texture>()

@@ -190,7 +190,6 @@ enum TextureFlagsMask
     COMPUTE       = 1 << 2
 };
 
-class DeviceTexture;
 struct TextureDescriptor
 {
     enum class TextureType
@@ -219,29 +218,5 @@ struct TextureDescriptor
     TextureDescriptor& SetData(void* InData);
 };
 
-class Texture final : public IResource
-{
-  public:
-    Texture() = default;
-    Texture(TextureDescriptor descriptor, void* data = nullptr);
-    ~Texture()
-    {
-        Destroy();
-    };
-
-    void Destroy() override;
-
-    const u32                GetWidth() const;
-    const u32                GetHeight() const;
-    const TextureDescriptor& GetDescriptor() const;
-
-    void SetData(void* data) const;
-
-    DeviceTexture* internalState = nullptr;
-
-    TextureDescriptor descriptor;
-
-  private:
-};
 } // namespace Renderer
 } // namespace Sogas

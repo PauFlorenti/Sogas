@@ -1,6 +1,5 @@
 #pragma once
 
-#include "device_texture.h"
 #include "texture.h"
 #include "vulkan_types.h"
 
@@ -44,11 +43,9 @@ struct VulkanTextureDescriptor
     VkImageAspectFlags aspect;
 };
 
-class VulkanTexture : public DeviceTexture
+class VulkanTexture
 {
   public:
-    explicit VulkanTexture(VulkanDevice* InDevice = nullptr);
-    explicit VulkanTexture(VulkanDevice* InDevice, const TextureDescriptor& InDescriptor);
     VulkanTexture(const VulkanTexture&)                        = delete;
     VulkanTexture(VulkanTexture&&)                             = delete;
     const VulkanTexture& operator=(const VulkanTexture& other) = delete;
@@ -65,8 +62,7 @@ class VulkanTexture : public DeviceTexture
       VkImageLayout dstLayout,
       bool is_depth = false);
 
-    void Release() override;
-    void SetData(void* data);
+    void Release();
 
     VkDescriptorImageInfo descriptorImageInfo;
 

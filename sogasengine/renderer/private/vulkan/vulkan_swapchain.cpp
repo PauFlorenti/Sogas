@@ -14,7 +14,6 @@ namespace Vk
 VulkanSwapchain::VulkanSwapchain(VulkanDevice* InDevice)
 {
     device  = InDevice;
-    texture = new Texture({});
 }
 
 VulkanSwapchain::~VulkanSwapchain()

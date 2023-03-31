@@ -6,7 +6,6 @@ namespace Sogas
 {
 namespace Renderer
 {
-class Texture;
 namespace Vk
 {
 class VulkanDevice;
@@ -23,10 +22,6 @@ class VulkanSwapchain
 
     void           CreateRenderPass(VulkanRenderPass* render_pass);
     void           Destroy();
-    const Texture* GetTexture() const
-    {
-        return texture;
-    }
 
     VkSwapchainKHR     swapchain = VK_NULL_HANDLE;
     VkSurfaceKHR       surface   = VK_NULL_HANDLE;
@@ -46,8 +41,6 @@ class VulkanSwapchain
     VkSemaphore renderCompleteSemaphore  = VK_NULL_HANDLE;
 
   private:
-    Texture*      texture;
-    //VkRenderPass  renderpass;
     VulkanDevice* device = nullptr;
 };
 

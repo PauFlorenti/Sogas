@@ -5,19 +5,18 @@
 
 namespace Sogas
 {
-namespace Renderer
-{
 class Texture;
-}
 class Material : public IResource
 {
-    const Renderer::Texture* albedo             = nullptr;
-    const Renderer::Texture* normal             = nullptr;
-    const Renderer::Texture* metallic_roughness = nullptr;
-    const Renderer::Texture* emissive           = nullptr;
+    const Texture* albedo             = nullptr;
+    const Texture* normal             = nullptr;
+    const Texture* metallic_roughness = nullptr;
+    const Texture* emissive           = nullptr;
 
   public:
     bool CreateFromJson(const json& j);
+
+    void Destroy() override;
 
     //void Activate(Renderer::CommandBuffer cmd) const;
 };

@@ -25,7 +25,6 @@ class ForwardPipeline
     PipelineHandle pipeline;
 
     std::shared_ptr<GPU_device> renderer;
-    std::shared_ptr<Texture>    colorBuffer;
 
     const u32 nLights = 10;
 };

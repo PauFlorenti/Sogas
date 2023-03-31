@@ -42,17 +42,6 @@ VkImageViewType ConvertTextureTypeToImageViewType(TextureDescriptor::TextureType
 namespace Vk
 {
 
-VulkanTexture::VulkanTexture(VulkanDevice* InDevice)
-: device(InDevice)
-{
-}
-
-VulkanTexture::VulkanTexture(VulkanDevice* InDevice, const TextureDescriptor& InDescriptor)
-: device(InDevice)
-{
-    descriptor = InDescriptor;
-}
-
 static void CreateTexture(VkDevice InDevice, const TextureDescriptor& InDescriptor, TextureHandle InHandle, VulkanTexture* OutTexture)
 {
     OutTexture->descriptor = InDescriptor;
@@ -135,15 +124,16 @@ TextureHandle VulkanTexture::Create(VulkanDevice* InDevice, const TextureDescrip
         // Staging buffer
         u32          image_size = InDescriptor.width * InDescriptor.height * texture->descriptor.format_stride;
         VulkanBuffer staging_buffer;
+        staging_buffer.device = InDevice;
 
         VkBufferCreateInfo buffer_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
         buffer_info.usage              = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
         buffer_info.size               = image_size;
 
+        vkcheck(vkCreateBuffer(InDevice->Handle, &buffer_info, nullptr, &staging_buffer.buffer));
+
         staging_buffer.Allocate_buffer_memory(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
         vkcheck(vkBindBufferMemory(InDevice->Handle, staging_buffer.buffer, staging_buffer.memory, 0));
-
-        vkcheck(vkCreateBuffer(InDevice->Handle, &buffer_info, nullptr, &staging_buffer.buffer));
 
         // Copy data
         void* mapdata;
@@ -190,36 +180,6 @@ TextureHandle VulkanTexture::Create(VulkanDevice* InDevice, const TextureDescrip
     }
 
     return handle;
-}
-
-void VulkanTexture::SetData(void* data)
-{
-    auto image_size = descriptor.width * descriptor.height * descriptor.format_stride;
-
-    VulkanBuffer       stagingBuffer;
-    VkBufferCreateInfo bufferInfo    = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
-    bufferInfo.usage                 = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    bufferInfo.queueFamilyIndexCount = static_cast<u32>(device->queueFamilies.size());
-    bufferInfo.pQueueFamilyIndices   = device->queueFamilies.data();
-    bufferInfo.size                  = image_size;
-
-    if (vkCreateBuffer(device->Handle, &bufferInfo, nullptr, &stagingBuffer.buffer) != VK_SUCCESS)
-    {
-        SERROR("Failed to create staging buffer for image texture.");
-        return;
-    }
-
-    stagingBuffer.Allocate_buffer_memory(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-    vkBindBufferMemory(device->Handle, stagingBuffer.buffer, stagingBuffer.memory, 0);
-
-    //stagingBuffer.SetData(data, image_size);
-
-    // auto command_buffer = static_cast<VulkanCommandBuffer*>(device->GetInstantCommandBuffer());
-
-    // TransitionLayout(command_buffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    // CopyBufferToImage(&stagingBuffer);
-    // TransitionLayout(command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void VulkanTexture::Release()
