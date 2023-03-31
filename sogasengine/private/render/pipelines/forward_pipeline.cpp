@@ -99,19 +99,24 @@ ForwardPipeline::ForwardPipeline(std::shared_ptr<Renderer::GPU_device> InRendere
     pipeline = renderer->CreatePipeline(pipeline_creation);
 
     BufferDescriptor ubo_desc;
-    ubo_desc.reset().set(BufferUsage::UNIFORM, BufferBindingPoint::Uniform, sizeof(ConstantsCamera)).setName("UniformBufferObject");
+    ubo_desc.reset().set(BufferUsage::UNIFORM, BufferType::Dynamic, BufferBindingPoint::Uniform, sizeof(ConstantsCamera)).setName("UniformBufferObject");
 
     camera_buffer = renderer->CreateBuffer(std::move(ubo_desc));
 
     BufferDescriptor mesh_desc;
-    mesh_desc.reset().set(BufferUsage::UNIFORM, BufferBindingPoint::Uniform, sizeof(ConstantsMesh)).setName("MeshObject");
+    mesh_desc.reset().set(BufferUsage::UNIFORM, BufferType::Dynamic, BufferBindingPoint::Uniform, sizeof(ConstantsMesh)).setName("MeshObject");
 
     mesh_buffer = renderer->CreateBuffer(std::move(mesh_desc));
 
     BufferDescriptor light_desc;
-    light_desc.reset().set(BufferUsage::UNIFORM, BufferBindingPoint::Uniform, sizeof(Light)).setName("Lights");
+    light_desc.reset().set(BufferUsage::UNIFORM, BufferType::Dynamic, BufferBindingPoint::Uniform, sizeof(Light)).setName("Lights");
 
     light_buffer = renderer->CreateBuffer(std::move(light_desc));
+
+    DescriptorSetDescriptor descriptorSet_desc;
+    descriptorSet_desc.SetLayout(descriptorLayout).Buffer(camera_buffer, 0).Buffer(mesh_buffer, 1).Buffer(light_buffer, 2);
+
+    descriptorSet = renderer->CreateDescriptorSet(std::move(descriptorSet_desc));
 }
 
 void ForwardPipeline::update_constants()
@@ -154,6 +159,13 @@ void ForwardPipeline::render()
 
     cmd->bind_pass(renderer->GetSwapchainRenderpass());
     cmd->bind_pipeline(pipeline);
+
+    ConstantsCamera camera_ctes;
+    camera_ctes.camera_view                    = cCamera->GetView();
+    camera_ctes.camera_projection              = cCamera->GetProjection();
+    camera_ctes.camera_view_projection         = cCamera->GetViewProjection();
+    camera_ctes.camera_inverse_view_projection = glm::inverse(cCamera->GetViewProjection());
+
     //cmd->draw(0, 3, 0, 1);
 
     renderer->QueueCommandBuffer(cmd);
@@ -171,6 +183,7 @@ void ForwardPipeline::destroy()
     renderer->DestroyBuffer(camera_buffer);
     renderer->DestroyBuffer(mesh_buffer);
     renderer->DestroyBuffer(light_buffer);
+    renderer->DestroyDescriptorSet(descriptorSet);
     renderer->DestroyDescriptorSetLayout(descriptorLayout);
     renderer->DestroyPipeline(pipeline);
 }

@@ -13,10 +13,11 @@ BufferDescriptor& BufferDescriptor::reset()
     return *this;
 }
 
-BufferDescriptor& BufferDescriptor::set(BufferUsage InUsage, BufferBindingPoint InBindingPoint, u32 InSize)
+BufferDescriptor& BufferDescriptor::set(BufferUsage InUsage, BufferType InType, BufferBindingPoint InBindingPoint, u32 InSize)
 {
     usage   = InUsage;
     binding = InBindingPoint;
+    type    = InType;
     size    = InSize;
     return *this;
 }

@@ -175,8 +175,9 @@ DescriptorSetDescriptor& DescriptorSetDescriptor::Texture(TextureHandle InTextur
 
 DescriptorSetDescriptor& DescriptorSetDescriptor::Buffer(BufferHandle InBuffer, u16 InBinding)
 {
-    bindings[resources_count] = InBinding;
-    bindings[resources_count] = InBuffer.index;
+    samplers[resources_count]  = INVALID_SAMPLER;
+    bindings[resources_count]  = InBinding;
+    resources[resources_count] = InBuffer.index;
     ++resources_count;
     return *this;
 }

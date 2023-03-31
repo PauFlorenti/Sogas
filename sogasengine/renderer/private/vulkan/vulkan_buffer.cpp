@@ -15,25 +15,25 @@ static VkBufferUsageFlags ConvertUsage(BufferUsage InUsage)
 {
     switch (InUsage)
     {
-    case BufferUsage::INDEX:
-        return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-        break;
-    case BufferUsage::VERTEX:
-        return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-        break;
-    case BufferUsage::UNIFORM:
-        return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        break;
-    case BufferUsage::TRANSFER_DST:
-        return VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-        break;
-    case BufferUsage::TRANSFER_SRC:
-        return VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-        break;
-    default:
-    case BufferUsage::UNDEFINED:
-        return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        break;
+        case BufferUsage::INDEX:
+            return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+            break;
+        case BufferUsage::VERTEX:
+            return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+            break;
+        case BufferUsage::UNIFORM:
+            return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+            break;
+        case BufferUsage::TRANSFER_DST:
+            return VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+            break;
+        case BufferUsage::TRANSFER_SRC:
+            return VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+            break;
+        default:
+        case BufferUsage::UNDEFINED:
+            return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+            break;
     };
 }
 
@@ -52,6 +52,7 @@ BufferHandle VulkanBuffer::Create(VulkanDevice* InDevice, const BufferDescriptor
     buffer->usage_flags   = ConvertUsage(InDescriptor.usage);
     buffer->size          = InDescriptor.size;
     buffer->global_offset = 0;
+    buffer->usage_type    = InDescriptor.type;
     buffer->handle        = handle;
 
     VkBufferCreateInfo buffer_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
@@ -61,7 +62,7 @@ BufferHandle VulkanBuffer::Create(VulkanDevice* InDevice, const BufferDescriptor
     SASSERT(vkCreateBuffer(InDevice->Handle, &buffer_info, nullptr, &buffer->buffer) == VK_SUCCESS);
 
     VkMemoryPropertyFlags memory_property_flags =
-        VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
 
     buffer->Allocate_buffer_memory(memory_property_flags);
 

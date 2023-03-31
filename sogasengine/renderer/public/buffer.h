@@ -44,7 +44,7 @@ struct BufferDescriptor
     std::string name;
 
     BufferDescriptor& reset();
-    BufferDescriptor& set(BufferUsage usage, BufferBindingPoint bindingPoint, u32 size);
+    BufferDescriptor& set(BufferUsage usage, BufferType InType, BufferBindingPoint bindingPoint, u32 size);
     BufferDescriptor& setData(void* InData);
     BufferDescriptor& setName(const std::string& InName);
 };

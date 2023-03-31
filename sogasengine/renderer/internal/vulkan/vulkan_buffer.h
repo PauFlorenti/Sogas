@@ -22,6 +22,7 @@ class VulkanBuffer
     BufferHandle   handle;
 
     VkBufferUsageFlags usage_flags   = 0;
+    BufferType         usage_type    = BufferType::Static;
     u32                size          = 0;
     u32                global_offset = 0; // Offset into global constant, if dynamic.
 

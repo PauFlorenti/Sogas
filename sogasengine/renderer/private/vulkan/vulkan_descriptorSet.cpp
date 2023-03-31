@@ -117,7 +117,8 @@ void VulkanDescriptorSet::FillWriteDescriptorSets(
                 BufferHandle  buffer_handle = {InResources[i]};
                 VulkanBuffer* buffer        = InDevice->GetBufferResource(buffer_handle);
 
-                //InWriteDescriptorSet[resources_used].descriptorType = buffer->
+                InWriteDescriptorSet[resources_used].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                InWriteDescriptorSet[resources_used].descriptorType = buffer->usage_type == BufferType::Dynamic ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 
                 InBufferInfo[resources_used].buffer = buffer->buffer;
                 InBufferInfo[resources_used].offset = 0;
@@ -180,6 +181,7 @@ DescriptorSetHandle VulkanDescriptorSet::Create(VulkanDevice* InDevice, const De
     VkDescriptorSetAllocateInfo allocate_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
     allocate_info.descriptorPool              = InDevice->descriptor_pool;
     allocate_info.pSetLayouts                 = &descriptor_set_layout->descriptor_set_layout;
+    allocate_info.descriptorSetCount          = 1;
 
     vkcheck(vkAllocateDescriptorSets(InDevice->Handle, &allocate_info, &descriptor_set->descriptorSet));
 

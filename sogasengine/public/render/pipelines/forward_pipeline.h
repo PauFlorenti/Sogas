@@ -29,6 +29,7 @@ class ForwardPipeline
     Renderer::BufferHandle              mesh_buffer;
     Renderer::BufferHandle              light_buffer;
     Renderer::PipelineHandle            pipeline;
+    Renderer::DescriptorSetHandle       descriptorSet;
     Renderer::DescriptorSetLayoutHandle descriptorLayout;
 
     const u32 nLights = 10;
