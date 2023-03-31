@@ -1,6 +1,5 @@
 #pragma once
 
-#include "device_renderpass.h"
 #include "vulkan_types.h"
 
 namespace Sogas
@@ -11,7 +10,7 @@ struct RenderPassDescriptor;
 namespace Vk
 {
 class VulkanDevice;
-class VulkanRenderPass : public Renderer::DeviceRenderpass
+class VulkanRenderPass
 {
   public:
     explicit VulkanRenderPass(const VulkanDevice* = nullptr);
@@ -23,7 +22,7 @@ class VulkanRenderPass : public Renderer::DeviceRenderpass
     static RenderPassHandle Create(VulkanDevice* InDevice, const RenderPassDescriptor& InDescriptor);
     static VkRenderPass     CreateRenderPass(const VulkanDevice* InDevice, const RenderPassOutput& InOutput, std::string InName);
 
-    void Destroy() override;
+    void Destroy();
 
     VkRenderPass     renderpass  = VK_NULL_HANDLE;
     VkFramebuffer    framebuffer = VK_NULL_HANDLE;

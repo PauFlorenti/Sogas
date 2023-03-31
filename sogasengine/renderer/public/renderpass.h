@@ -1,13 +1,11 @@
 #pragma once
 
 #include "render_types.h" // TODO move attachment to own file.
-//#include "attachment.h"
 
 namespace Sogas
 {
 namespace Renderer
 {
-class DeviceRenderpass;
 
 enum class RenderPassType
 {
@@ -41,9 +39,7 @@ struct RenderPassDescriptor
     RenderPassDescriptor& SetName(std::string InName);
     RenderPassDescriptor& SetType(RenderPassType InType);
     RenderPassDescriptor& SetOperations(RenderPassOperation InColor, RenderPassOperation InDepth, RenderPassOperation InStencil);
-
-    // std::vector<Attachment>
-    //   attachments;
 };
+
 } // namespace Renderer
 } // namespace Sogas
