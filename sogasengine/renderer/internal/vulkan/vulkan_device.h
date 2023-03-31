@@ -70,6 +70,9 @@ class VulkanDevice : public GPU_device
     void BeginFrame() override;
     void Present() override;
 
+    void* MapBuffer(const BufferHandle& InHandle) override;
+    void UnmapBuffer(const BufferHandle& InHandle) override;
+
     std::vector<i8> ReadShaderBinary(std::string InFilename) override;
     CommandBuffer*  GetCommandBuffer(bool begin) override;
     CommandBuffer*  GetInstantCommandBuffer() override;

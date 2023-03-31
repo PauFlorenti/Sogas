@@ -528,6 +528,29 @@ void VulkanDevice::Present()
     }
 }
 
+void* VulkanDevice::MapBuffer(const BufferHandle& InHandle)
+{
+    auto buffer = GetBufferResource(InHandle);
+
+    void* data = nullptr;
+    if (buffer != nullptr)
+    {
+        vkMapMemory(Handle, buffer->memory, 0, buffer->size, 0, &data);
+    }
+
+    return data;
+}
+
+void VulkanDevice::UnmapBuffer(const BufferHandle& InHandle)
+{
+    auto buffer = GetBufferResource(InHandle);
+
+    if (buffer)
+    {
+        vkUnmapMemory(Handle, buffer->memory);
+    }
+}
+
 std::vector<i8> VulkanDevice::ReadShaderBinary(std::string InFilename)
 {
     return VulkanShader::ReadShaderFile(InFilename);

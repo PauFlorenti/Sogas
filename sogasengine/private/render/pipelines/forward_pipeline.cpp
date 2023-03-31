@@ -125,16 +125,6 @@ void ForwardPipeline::update_constants()
 
 void ForwardPipeline::render()
 {
-    // Update constants per frame data.
-    CEntity* eCamera = getEntityByName("camera");
-    SASSERT(eCamera);
-    TCompCamera* cCamera = eCamera->Get<TCompCamera>();
-    SASSERT(cCamera);
-
-    ConstantsCamera cameraCtes;
-    cameraCtes.camera_view            = cCamera->GetView();
-    cameraCtes.camera_projection      = cCamera->GetProjection();
-    cameraCtes.camera_view_projection = cCamera->GetViewProjection();
 
     u32 i = 0;
     GetObjectManager<TCompPointLight>()->ForEach(
@@ -160,11 +150,21 @@ void ForwardPipeline::render()
     cmd->bind_pass(renderer->GetSwapchainRenderpass());
     cmd->bind_pipeline(pipeline);
 
+    // Update constants per frame data.
+    CEntity* eCamera = getEntityByName("camera");
+    SASSERT(eCamera);
+    TCompCamera* cCamera = eCamera->Get<TCompCamera>();
+    SASSERT(cCamera);
+
+    auto camera_data = renderer->MapBuffer(camera_buffer);
     ConstantsCamera camera_ctes;
     camera_ctes.camera_view                    = cCamera->GetView();
     camera_ctes.camera_projection              = cCamera->GetProjection();
     camera_ctes.camera_view_projection         = cCamera->GetViewProjection();
     camera_ctes.camera_inverse_view_projection = glm::inverse(cCamera->GetViewProjection());
+
+    memcpy(camera_data, &camera_ctes, sizeof(ConstantsCamera));
+    renderer->UnmapBuffer(camera_buffer);
 
     //cmd->draw(0, 3, 0, 1);
 
