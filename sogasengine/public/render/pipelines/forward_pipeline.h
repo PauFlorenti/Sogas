@@ -6,15 +6,16 @@
 namespace Sogas
 {
 struct Swapchain;
+
 namespace Renderer
 {
 class GPU_device;
-class Swapchain;
+}
 
 class ForwardPipeline
 {
   public:
-    explicit ForwardPipeline(std::shared_ptr<GPU_device> InRenderer = nullptr);
+    explicit ForwardPipeline(std::shared_ptr<Renderer::GPU_device> InRenderer = nullptr);
     ~ForwardPipeline(){};
 
     void update_constants();
@@ -22,11 +23,14 @@ class ForwardPipeline
     void destroy();
 
   private:
-    PipelineHandle pipeline;
+    std::shared_ptr<Renderer::GPU_device> renderer;
 
-    std::shared_ptr<GPU_device> renderer;
+    Renderer::BufferHandle              camera_buffer;
+    Renderer::BufferHandle              mesh_buffer;
+    Renderer::BufferHandle              light_buffer;
+    Renderer::PipelineHandle            pipeline;
+    Renderer::DescriptorSetLayoutHandle descriptorLayout;
 
     const u32 nLights = 10;
 };
-} // namespace Renderer
 } // namespace Sogas

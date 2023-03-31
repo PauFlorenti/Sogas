@@ -102,6 +102,13 @@ VertexInputDescriptor& VertexInputDescriptor::AddVertexAttribute(const VertexAtt
     return *this;
 }
 
+PipelineDescriptor& PipelineDescriptor::AddDescriptorSetLayout(DescriptorSetLayoutHandle InDescriptorHandle)
+{
+    descriptor_set_layout[active_layouts_count] = InDescriptorHandle;
+    ++active_layouts_count;
+    return *this;
+}
+
 DepthStencilState& DepthStencilState::SetDepth(bool write, CompareOperation comparison_test)
 {
     writeDepthEnabled = true;

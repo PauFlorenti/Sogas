@@ -248,9 +248,9 @@ DescriptorSetLayoutHandle VulkanDescriptorSet::Create(VulkanDevice* InDevice, co
         binding.start                                               = input_binding.start == UINT16_MAX ? static_cast<u16>(i) : input_binding.start;
         binding.count                                               = 1;
         binding.type                                                = ConvertDescriptorType(input_binding.type);
-        binding.name                                                = input_binding.name;
+        binding.name                                                = input_binding.name.c_str();
 
-        VkDescriptorSetLayoutBinding vulkan_binding = descriptor_set_layout->binding[used_bindings];
+        VkDescriptorSetLayoutBinding& vulkan_binding = descriptor_set_layout->binding[used_bindings];
         ++used_bindings;
 
         vulkan_binding.binding         = binding.start;

@@ -16,7 +16,7 @@ struct DescriptorBinding
     u16              count = 0;
     u16              set   = 0;
 
-    std::string name;
+    const char* name;
 };
 
 class VulkanDescriptorSetLayout

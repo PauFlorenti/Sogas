@@ -10,7 +10,7 @@
 namespace Sogas
 {
 
-std::shared_ptr<Renderer::ForwardPipeline> forwardPipeline;
+std::shared_ptr<ForwardPipeline> forwardPipeline;
 
 bool CRenderModule::Start()
 {
@@ -31,7 +31,7 @@ bool CRenderModule::Start()
     dc.SetWindow(CApplication::Get()->GetWindow(), static_cast<u16>(width), static_cast<u16>(height)).SetAllocator(&allocator);
     renderer->Init(dc);
 
-    forwardPipeline = std::make_shared<Renderer::ForwardPipeline>(renderer);
+    forwardPipeline = std::make_shared<ForwardPipeline>(renderer);
 
     return true;
 }

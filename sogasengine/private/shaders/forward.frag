@@ -14,25 +14,27 @@ struct Light {
     float   radius;
 };
 
-layout(set = 0, binding = 1) uniform Lights
+layout(set = 0, binding = 2) uniform Lights
 {
     Light light[MAX_LIGHTS];
 } LightUniform;
 
-layout(set = 1, binding = 0) uniform sampler2D diffuse;
-layout(set = 1, binding = 1) uniform sampler2D normal;
-layout(set = 1, binding = 2) uniform sampler2D metallic_roughness;
-layout(set = 1, binding = 3) uniform sampler2D emissive;
+// layout(set = 1, binding = 0) uniform sampler2D diffuse;
+// layout(set = 1, binding = 1) uniform sampler2D normal;
+// layout(set = 1, binding = 2) uniform sampler2D metallic_roughness;
+// layout(set = 1, binding = 3) uniform sampler2D emissive;
 
 layout(location = 0) out vec4 OutColor;
+
+const vec3 white = vec3(1.0);
 
 void main() 
 {
     vec3    N                   = normalize(InNormal);
-    vec3    diffuse_color       = InColor.xyz * texture(diffuse, InUv).xyz;
-    vec3    normal_color        = texture(normal, InUv).xyz;
-    vec3    metallic_roughness  = texture(metallic_roughness, InUv).xyz;
-    vec3    emissive            = texture(emissive, InUv).xyz;
+    vec3    diffuse_color       = white; //InColor.xyz * texture(diffuse, InUv).xyz;
+    vec3    normal_color        = white; //texture(normal, InUv).xyz;
+    vec3    metallic_roughness  = white; //texture(metallic_roughness, InUv).xyz;
+    vec3    emissive            = white; //texture(emissive, InUv).xyz;
     float   ambientLight        = 0.1;
 
     vec3 light = vec3(ambientLight);

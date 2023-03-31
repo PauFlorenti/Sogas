@@ -18,16 +18,24 @@ layout( set = 0, binding = 0) uniform UniformBufferObject
     mat4 inverse_view_projection;
 } Camera;
 
+layout ( binding = 1 ) uniform MeshObject
+{
+    mat4 model;
+    vec4 color;
+} mesh;
+
+/*
 layout( push_constant ) uniform constants
 {
     mat4 model;
     vec4 color;
 } MeshConstants;
+*/
 
 void main() 
 {
-    mat4 model          = MeshConstants.model;
-    vec4 color          = MeshConstants.color;
+    mat4 model          = mesh.model;
+    vec4 color          = mesh.color;
     vec3 worldPosition  = vec4(model * vec4(InPosition, 1.0)).xyz;
 
     gl_Position = Camera.projection * Camera.view * vec4(worldPosition, 1.0);
