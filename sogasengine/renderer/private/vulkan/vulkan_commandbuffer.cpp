@@ -1,4 +1,7 @@
+
+#include "vulkan/vulkan_buffer.h"
 #include "vulkan/vulkan_commandbuffer.h"
+#include "vulkan/vulkan_descriptorSet.h"
 #include "vulkan/vulkan_device.h"
 #include "vulkan/vulkan_pipeline.h"
 #include "vulkan/vulkan_renderpass.h"
@@ -132,6 +135,33 @@ void VulkanCommandBuffer::bind_pipeline(PipelineHandle handle)
     current_pipeline = pipeline;
 }
 
+void VulkanCommandBuffer::bind_descriptor_set(DescriptorSetHandle handle, u32* offsets, u32 offsets_count)
+{
+    auto descriptor_set = device->GetDescriptorSetResource(handle);
+
+    auto descriptor_set_layout = descriptor_set->layout;
+
+    vkCmdBindDescriptorSets(command_buffer, current_pipeline->bind_point, current_pipeline->pipelineLayout, 0, 1, &descriptor_set->descriptorSet, 0, nullptr);
+}
+
+void VulkanCommandBuffer::bind_vertex_buffer(BufferHandle handle, u32 binding, u32 offset)
+{
+    auto buffer = device->GetBufferResource(handle);
+
+    VkDeviceSize offsets = {offset};
+
+    vkCmdBindVertexBuffers(command_buffer, binding, 1, &buffer->buffer, &offsets);
+}
+
+void VulkanCommandBuffer::bind_index_buffer(BufferHandle handle, u32 offset)
+{
+    auto buffer = device->GetBufferResource(handle);
+
+    VkDeviceSize offsets = {offset};
+
+    vkCmdBindIndexBuffer(command_buffer, buffer->buffer, offsets, VK_INDEX_TYPE_UINT32);
+}
+
 void VulkanCommandBuffer::set_viewport()
 {
     VkViewport viewport;
@@ -156,6 +186,11 @@ void VulkanCommandBuffer::set_scissors()
 void VulkanCommandBuffer::draw(u32 first_vertex, u32 vertex_count, u32 first_instance, u32 instance_count)
 {
     vkCmdDraw(command_buffer, vertex_count, instance_count, first_vertex, first_instance);
+}
+
+void VulkanCommandBuffer::draw_indexed(u32 index_count, u32 instance_count, u32 first_index, i32 vertex_offset, u32 first_instance)
+{
+    vkCmdDrawIndexed(command_buffer, index_count, instance_count, first_index, vertex_offset, first_instance);
 }
 
 void VulkanCommandBuffer::reset()

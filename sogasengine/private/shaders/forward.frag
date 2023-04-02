@@ -27,6 +27,7 @@ layout(set = 0, binding = 2) uniform Lights
 layout(location = 0) out vec4 OutColor;
 
 const vec3 white = vec3(1.0);
+const vec3 red = vec3(1.0, 0.0, 0.0);
 
 void main() 
 {
@@ -48,5 +49,6 @@ void main()
         light += NdotL * l.color.xyz;
     }
 
-    OutColor = vec4(diffuse_color * light, 1.0);
+    //OutColor = vec4(diffuse_color * light, 1.0);
+    OutColor = vec4(red, 1.0);
 }

@@ -50,9 +50,11 @@ class VulkanDescriptorSet
         return descriptorSet;
     }
 
-    ResourceHandle* resources = nullptr;
-    SamplerHandle*  samplers  = nullptr;
-    u16*            bindings  = nullptr;
+    ResourceHandle*  resources      = nullptr;
+    SamplerHandle*   samplers       = nullptr;
+    u16*             bindings       = nullptr;
+    VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+    VkDescriptorSet  descriptorSet  = VK_NULL_HANDLE;
 
     u32                              resources_count = 0;
     const VulkanDescriptorSetLayout* layout          = nullptr;
@@ -73,11 +75,9 @@ class VulkanDescriptorSet
       const ResourceHandle*            InResources,
       const SamplerHandle*             InSamplers,
       const u16*                       InBindings);
-      
+
     const VulkanDevice* device = nullptr;
     VkPipelineBindPoint pipelineBindPoint;
-    VkPipelineLayout    pipelineLayout = VK_NULL_HANDLE;
-    VkDescriptorSet     descriptorSet  = VK_NULL_HANDLE;
 };
 
 } // namespace Vk

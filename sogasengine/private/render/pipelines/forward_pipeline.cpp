@@ -17,6 +17,24 @@ std::vector<Sogas::Renderer::VertexLayout> quad = {
 
 std::vector<u32> quadIdx = {0, 1, 2, 2, 3, 0};
 
+Sogas::Renderer::BufferHandle buffer_quad;
+Sogas::Renderer::BufferHandle buffer_quad_index;
+
+std::vector<glm::vec3> quad_positions = { {1.0f, 1.0f, 0.0f}, {-1.0f, 1.0f, 0.0f}, {-1.0f, -1.0f, 0.0f}, {1.0f, -1.0f, 0.0f} };
+std::vector<glm::vec3> quad_normals = { glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f) };
+std::vector<glm::vec2> quad_uvs = { {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f} };
+std::vector<glm::vec4> quad_colors = { glm::vec4(1.0f), glm::vec4(1.0f), glm::vec4(1.0f), glm::vec4(1.0f) };
+
+struct MeshTest
+{
+    Sogas::Renderer::BufferHandle position_buffer;
+    Sogas::Renderer::BufferHandle normal_buffer;
+    Sogas::Renderer::BufferHandle uvs_buffer;
+    Sogas::Renderer::BufferHandle color_buffer;
+};
+
+MeshTest mesh;
+
 struct ConstantsCamera
 {
     glm::mat4 camera_projection;
@@ -62,17 +80,17 @@ ForwardPipeline::ForwardPipeline(std::shared_ptr<Renderer::GPU_device> InRendere
 
     // Vertex input
     // TODO(marco): component format should be based on buffer view type
-    pipeline_creation.vertexInputState.AddVertexAttribute({0, 0, 0, VertexFormat::FLOAT3}); // position
-    pipeline_creation.vertexInputState.AddVertexStream({0, 12, VertexInputRate::PER_VERTEX});
+    pipeline_creation.vertexInputState.AddVertexAttribute({0, 0, offsetof(VertexLayout, position), VertexFormat::FLOAT3}); // position
+    pipeline_creation.vertexInputState.AddVertexStream({0, sizeof(glm::vec3), VertexInputRate::PER_VERTEX});
 
-    pipeline_creation.vertexInputState.AddVertexAttribute({1, 1, 0, VertexFormat::FLOAT3}); // normal
-    pipeline_creation.vertexInputState.AddVertexStream({1, 12, VertexInputRate::PER_VERTEX});
+    pipeline_creation.vertexInputState.AddVertexAttribute({1, 1, offsetof(VertexLayout, normal), VertexFormat::FLOAT3}); // normal
+    pipeline_creation.vertexInputState.AddVertexStream({1, sizeof(glm::vec3), VertexInputRate::PER_VERTEX});
 
-    pipeline_creation.vertexInputState.AddVertexAttribute({2, 2, 0, VertexFormat::FLOAT2}); // uvs
-    pipeline_creation.vertexInputState.AddVertexStream({2, 8, VertexInputRate::PER_VERTEX});
+    pipeline_creation.vertexInputState.AddVertexAttribute({2, 2, offsetof(VertexLayout, uvs), VertexFormat::FLOAT2}); // uvs
+    pipeline_creation.vertexInputState.AddVertexStream({2, sizeof(glm::vec2), VertexInputRate::PER_VERTEX});
 
-    pipeline_creation.vertexInputState.AddVertexAttribute({3, 3, 0, VertexFormat::FLOAT4}); // color
-    pipeline_creation.vertexInputState.AddVertexStream({3, 16, VertexInputRate::PER_VERTEX});
+    pipeline_creation.vertexInputState.AddVertexAttribute({3, 3, offsetof(VertexLayout, color), VertexFormat::FLOAT4}); // color
+    pipeline_creation.vertexInputState.AddVertexStream({3, sizeof(glm::vec4), VertexInputRate::PER_VERTEX});
 
     // Render pass
     pipeline_creation.render_pass = renderer->GetSwapchainOutput();
@@ -99,17 +117,17 @@ ForwardPipeline::ForwardPipeline(std::shared_ptr<Renderer::GPU_device> InRendere
     pipeline = renderer->CreatePipeline(pipeline_creation);
 
     BufferDescriptor ubo_desc;
-    ubo_desc.reset().set(BufferUsage::UNIFORM, BufferType::Dynamic, BufferBindingPoint::Uniform, sizeof(ConstantsCamera)).setName("UniformBufferObject");
+    ubo_desc.reset().set(BufferUsage::UNIFORM, BufferType::Static, BufferBindingPoint::Uniform, sizeof(ConstantsCamera)).setName("UniformBufferObject");
 
     camera_buffer = renderer->CreateBuffer(std::move(ubo_desc));
 
     BufferDescriptor mesh_desc;
-    mesh_desc.reset().set(BufferUsage::UNIFORM, BufferType::Dynamic, BufferBindingPoint::Uniform, sizeof(ConstantsMesh)).setName("MeshObject");
+    mesh_desc.reset().set(BufferUsage::UNIFORM, BufferType::Static, BufferBindingPoint::Uniform, sizeof(ConstantsMesh)).setName("MeshObject");
 
     mesh_buffer = renderer->CreateBuffer(std::move(mesh_desc));
 
     BufferDescriptor light_desc;
-    light_desc.reset().set(BufferUsage::UNIFORM, BufferType::Dynamic, BufferBindingPoint::Uniform, sizeof(Light)).setName("Lights");
+    light_desc.reset().set(BufferUsage::UNIFORM, BufferType::Static, BufferBindingPoint::Uniform, sizeof(Light) * 2).setName("Lights");
 
     light_buffer = renderer->CreateBuffer(std::move(light_desc));
 
@@ -117,6 +135,32 @@ ForwardPipeline::ForwardPipeline(std::shared_ptr<Renderer::GPU_device> InRendere
     descriptorSet_desc.SetLayout(descriptorLayout).Buffer(camera_buffer, 0).Buffer(mesh_buffer, 1).Buffer(light_buffer, 2);
 
     descriptorSet = renderer->CreateDescriptorSet(std::move(descriptorSet_desc));
+
+    BufferDescriptor quad_descriptor;
+    quad_descriptor.reset().set(BufferUsage::VERTEX, BufferType::Static, BufferBindingPoint::Vertex, static_cast<u32>(quad.size() * sizeof(VertexLayout))).setData(quad.data());
+
+    BufferDescriptor quad_positions_descriptor;
+    quad_positions_descriptor.reset().set(BufferUsage::VERTEX, BufferType::Static, BufferBindingPoint::Vertex, static_cast<u32>(quad_positions.size() * sizeof(glm::vec3))).setData(quad_positions.data());
+
+    BufferDescriptor quad_normals_descriptor;
+    quad_normals_descriptor.reset().set(BufferUsage::VERTEX, BufferType::Static, BufferBindingPoint::Vertex, static_cast<u32>(quad_normals.size() * sizeof(glm::vec3))).setData(quad_normals.data());
+
+    BufferDescriptor quad_uvs_descriptor;
+    quad_uvs_descriptor.reset().set(BufferUsage::VERTEX, BufferType::Static, BufferBindingPoint::Vertex, static_cast<u32>(quad_uvs.size() * sizeof(glm::vec2))).setData(quad_uvs.data());
+
+    BufferDescriptor quad_colors_descriptor;
+    quad_colors_descriptor.reset().set(BufferUsage::VERTEX, BufferType::Static, BufferBindingPoint::Vertex, static_cast<u32>(quad_colors.size() * sizeof(glm::vec2))).setData(quad_colors.data());
+
+    BufferDescriptor index_quad_descriptor;
+    index_quad_descriptor.reset().set(BufferUsage::INDEX, BufferType::Static, BufferBindingPoint::Index, static_cast<u32>(quadIdx.size() * sizeof(u32))).setData(quadIdx.data());
+
+    buffer_quad = renderer->CreateBuffer(std::move(quad_descriptor));
+
+    mesh.position_buffer = renderer->CreateBuffer(std::move(quad_positions_descriptor));
+    mesh.normal_buffer = renderer->CreateBuffer(std::move(quad_normals_descriptor));
+    mesh.uvs_buffer = renderer->CreateBuffer(std::move(quad_uvs_descriptor));
+    mesh.color_buffer = renderer->CreateBuffer(std::move(quad_colors_descriptor));
+    buffer_quad_index = renderer->CreateBuffer(std::move(index_quad_descriptor));
 }
 
 void ForwardPipeline::update_constants()
@@ -125,7 +169,6 @@ void ForwardPipeline::update_constants()
 
 void ForwardPipeline::render()
 {
-
     u32 i = 0;
     GetObjectManager<TCompPointLight>()->ForEach(
       [&](TCompPointLight* light)
@@ -166,7 +209,34 @@ void ForwardPipeline::render()
     memcpy(camera_data, &camera_ctes, sizeof(ConstantsCamera));
     renderer->UnmapBuffer(camera_buffer);
 
-    //cmd->draw(0, 3, 0, 1);
+    auto mesh_data = renderer->MapBuffer(mesh_buffer);
+
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 5.0f));
+    ConstantsMesh mesh_ctes;
+    mesh_ctes.model = model;
+    mesh_ctes.color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+
+    memcpy(mesh_data, &mesh_ctes, sizeof(ConstantsMesh));
+    renderer->UnmapBuffer(mesh_buffer);
+
+    auto light_data = renderer->MapBuffer(light_buffer);
+    Light l;
+    l.color = glm::vec4(1.0f);
+    l.position = glm::vec3(0.0f, 3.0f, -3.0f);
+    l.intensity = 100.0f;
+    l.radius = 100.0f;
+
+    memcpy(light_data, &lights, sizeof(Light));
+    renderer->UnmapBuffer(light_buffer);
+
+    cmd->bind_vertex_buffer(mesh.position_buffer, 0, 0);
+    cmd->bind_vertex_buffer(mesh.normal_buffer, 1, 0);
+    cmd->bind_vertex_buffer(mesh.uvs_buffer, 2, 0);
+    cmd->bind_vertex_buffer(mesh.color_buffer, 3, 0);
+    cmd->bind_index_buffer(buffer_quad_index, 0);
+    cmd->bind_descriptor_set(descriptorSet, nullptr, 0);
+
+    cmd->draw_indexed(6, 1, 0, 0, 0);
 
     renderer->QueueCommandBuffer(cmd);
 
@@ -180,6 +250,14 @@ void ForwardPipeline::render()
 
 void ForwardPipeline::destroy()
 {
+    renderer->DestroyBuffer(buffer_quad);
+    renderer->DestroyBuffer(buffer_quad_index);
+
+    renderer->DestroyBuffer(mesh.position_buffer);
+    renderer->DestroyBuffer(mesh.normal_buffer);
+    renderer->DestroyBuffer(mesh.uvs_buffer);
+    renderer->DestroyBuffer(mesh.color_buffer);
+
     renderer->DestroyBuffer(camera_buffer);
     renderer->DestroyBuffer(mesh_buffer);
     renderer->DestroyBuffer(light_buffer);

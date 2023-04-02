@@ -3,6 +3,7 @@
 #include "commandbuffer.h"
 #include "device_resources.h"
 #include <vulkan/vulkan.h>
+
 namespace Sogas
 {
 namespace Renderer
@@ -32,7 +33,12 @@ class VulkanCommandBuffer : public CommandBuffer
     void set_viewport() override;
     void set_scissors() override;
 
+    void bind_vertex_buffer(BufferHandle handle, u32 binding, u32 offset) override;
+    void bind_index_buffer(BufferHandle handle, u32 offset) override;
+    void bind_descriptor_set(DescriptorSetHandle handle, u32* offsets, u32 offsets_count) override;
+
     void draw(u32 first_vertex, u32 vertex_count, u32 first_instance, u32 instance_count) override;
+    void draw_indexed(u32 index_count, u32 instance_count, u32 first_index, i32 vertex_offset, u32 first_instance) override;
 
     void reset() override;
 

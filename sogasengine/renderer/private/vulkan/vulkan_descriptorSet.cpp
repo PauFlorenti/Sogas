@@ -257,7 +257,7 @@ DescriptorSetLayoutHandle VulkanDescriptorSet::Create(VulkanDevice* InDevice, co
 
         vulkan_binding.binding         = binding.start;
         vulkan_binding.descriptorType  = binding.type;
-        vulkan_binding.descriptorType  = input_binding.type == DescriptorType::UNIFORM_BUFFER ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : vulkan_binding.descriptorType;
+        vulkan_binding.descriptorType  = input_binding.type == DescriptorType::UNIFOR_BUFFER_DYNAMIC ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC : vulkan_binding.descriptorType;
         vulkan_binding.descriptorCount = 1;
 
         vulkan_binding.stageFlags         = VK_SHADER_STAGE_ALL;
