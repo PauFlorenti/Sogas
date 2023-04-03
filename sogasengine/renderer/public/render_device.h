@@ -70,7 +70,7 @@ class GPU_device
     virtual void BeginFrame() = 0;
     virtual void Present() = 0;
 
-    virtual void* MapBuffer(const BufferHandle& InHandle) = 0;
+    virtual void* MapBuffer(const BufferHandle& InHandle, u32 size, u32 offset = 0) = 0;
     virtual void UnmapBuffer(const BufferHandle& InHandle) = 0;
 
     virtual std::vector<i8> ReadShaderBinary(std::string InFilename) = 0; // TODO rename

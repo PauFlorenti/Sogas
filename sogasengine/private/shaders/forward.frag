@@ -32,7 +32,7 @@ const vec3 red = vec3(1.0, 0.0, 0.0);
 void main() 
 {
     vec3    N                   = normalize(InNormal);
-    vec3    diffuse_color       = white; //InColor.xyz * texture(diffuse, InUv).xyz;
+    vec3    diffuse_color       = InColor.xyz; // * texture(diffuse, InUv).xyz;
     vec3    normal_color        = white; //texture(normal, InUv).xyz;
     vec3    metallic_roughness  = white; //texture(metallic_roughness, InUv).xyz;
     vec3    emissive            = white; //texture(emissive, InUv).xyz;
@@ -50,5 +50,5 @@ void main()
     }
 
     //OutColor = vec4(diffuse_color * light, 1.0);
-    OutColor = vec4(red, 1.0);
+    OutColor = vec4(InColor.xyz, 1.0);
 }

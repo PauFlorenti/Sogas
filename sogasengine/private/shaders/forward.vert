@@ -24,13 +24,7 @@ layout ( binding = 1 ) uniform MeshObject
     vec4 color;
 } mesh;
 
-/*
-layout( push_constant ) uniform constants
-{
-    mat4 model;
-    vec4 color;
-} MeshConstants;
-*/
+const vec3 red = vec3(1.0, 0.0, 0.0);
 
 void main() 
 {

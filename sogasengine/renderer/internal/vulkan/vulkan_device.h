@@ -70,7 +70,7 @@ class VulkanDevice : public GPU_device
     void BeginFrame() override;
     void Present() override;
 
-    void* MapBuffer(const BufferHandle& InHandle) override;
+    void* MapBuffer(const BufferHandle& InHandle, u32 size, u32 offset = 0) override;
     void UnmapBuffer(const BufferHandle& InHandle) override;
 
     std::vector<i8> ReadShaderBinary(std::string InFilename) override;

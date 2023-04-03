@@ -528,14 +528,14 @@ void VulkanDevice::Present()
     }
 }
 
-void* VulkanDevice::MapBuffer(const BufferHandle& InHandle)
+void* VulkanDevice::MapBuffer(const BufferHandle& InHandle, u32 size, u32 offset)
 {
     auto buffer = GetBufferResource(InHandle);
 
     void* data = nullptr;
     if (buffer != nullptr)
     {
-        vkMapMemory(Handle, buffer->memory, 0, buffer->size, 0, &data);
+        vkMapMemory(Handle, buffer->memory, offset, size, 0, &data);
     }
 
     return data;

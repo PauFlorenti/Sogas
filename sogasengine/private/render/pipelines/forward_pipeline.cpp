@@ -21,9 +21,9 @@ Sogas::Renderer::BufferHandle buffer_quad;
 Sogas::Renderer::BufferHandle buffer_quad_index;
 
 std::vector<glm::vec3> quad_positions = { {1.0f, 1.0f, 0.0f}, {-1.0f, 1.0f, 0.0f}, {-1.0f, -1.0f, 0.0f}, {1.0f, -1.0f, 0.0f} };
-std::vector<glm::vec3> quad_normals = { glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f) };
+std::vector<glm::vec3> quad_normals = { {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f} };
 std::vector<glm::vec2> quad_uvs = { {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f, 0.0f} };
-std::vector<glm::vec4> quad_colors = { glm::vec4(1.0f), glm::vec4(1.0f), glm::vec4(1.0f), glm::vec4(1.0f) };
+std::vector<glm::vec4> quad_colors = { {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f} };
 
 struct MeshTest
 {
@@ -79,17 +79,16 @@ ForwardPipeline::ForwardPipeline(std::shared_ptr<Renderer::GPU_device> InRendere
     PipelineDescriptor pipeline_creation;
 
     // Vertex input
-    // TODO(marco): component format should be based on buffer view type
-    pipeline_creation.vertexInputState.AddVertexAttribute({0, 0, offsetof(VertexLayout, position), VertexFormat::FLOAT3}); // position
+    pipeline_creation.vertexInputState.AddVertexAttribute({0, 0, 0, VertexFormat::FLOAT3}); // position
     pipeline_creation.vertexInputState.AddVertexStream({0, sizeof(glm::vec3), VertexInputRate::PER_VERTEX});
 
-    pipeline_creation.vertexInputState.AddVertexAttribute({1, 1, offsetof(VertexLayout, normal), VertexFormat::FLOAT3}); // normal
+    pipeline_creation.vertexInputState.AddVertexAttribute({1, 1, 0, VertexFormat::FLOAT3}); // normal
     pipeline_creation.vertexInputState.AddVertexStream({1, sizeof(glm::vec3), VertexInputRate::PER_VERTEX});
 
-    pipeline_creation.vertexInputState.AddVertexAttribute({2, 2, offsetof(VertexLayout, uvs), VertexFormat::FLOAT2}); // uvs
+    pipeline_creation.vertexInputState.AddVertexAttribute({2, 2, 0, VertexFormat::FLOAT2}); // uvs
     pipeline_creation.vertexInputState.AddVertexStream({2, sizeof(glm::vec2), VertexInputRate::PER_VERTEX});
 
-    pipeline_creation.vertexInputState.AddVertexAttribute({3, 3, offsetof(VertexLayout, color), VertexFormat::FLOAT4}); // color
+    pipeline_creation.vertexInputState.AddVertexAttribute({3, 3, 0, VertexFormat::FLOAT4}); // color
     pipeline_creation.vertexInputState.AddVertexStream({3, sizeof(glm::vec4), VertexInputRate::PER_VERTEX});
 
     // Render pass
@@ -169,19 +168,6 @@ void ForwardPipeline::update_constants()
 
 void ForwardPipeline::render()
 {
-    u32 i = 0;
-    GetObjectManager<TCompPointLight>()->ForEach(
-      [&](TCompPointLight* light)
-      {
-          Light l;
-          l.color     = light->color;
-          l.position  = light->position;
-          l.intensity = light->intensity;
-          l.radius    = light->radius;
-
-          i++;
-      });
-
     renderer->BeginFrame();
 
     CommandBuffer* cmd = renderer->GetCommandBuffer(true);
@@ -199,7 +185,7 @@ void ForwardPipeline::render()
     TCompCamera* cCamera = eCamera->Get<TCompCamera>();
     SASSERT(cCamera);
 
-    auto camera_data = renderer->MapBuffer(camera_buffer);
+    auto camera_data = renderer->MapBuffer(camera_buffer, sizeof(ConstantsCamera));
     ConstantsCamera camera_ctes;
     camera_ctes.camera_view                    = cCamera->GetView();
     camera_ctes.camera_projection              = cCamera->GetProjection();
@@ -209,25 +195,33 @@ void ForwardPipeline::render()
     memcpy(camera_data, &camera_ctes, sizeof(ConstantsCamera));
     renderer->UnmapBuffer(camera_buffer);
 
-    auto mesh_data = renderer->MapBuffer(mesh_buffer);
+    auto mesh_data = renderer->MapBuffer(mesh_buffer, sizeof(ConstantsMesh));
 
     glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 5.0f));
     ConstantsMesh mesh_ctes;
     mesh_ctes.model = model;
-    mesh_ctes.color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+    mesh_ctes.color = glm::vec4(1.0f);
 
     memcpy(mesh_data, &mesh_ctes, sizeof(ConstantsMesh));
     renderer->UnmapBuffer(mesh_buffer);
 
-    auto light_data = renderer->MapBuffer(light_buffer);
-    Light l;
-    l.color = glm::vec4(1.0f);
-    l.position = glm::vec3(0.0f, 3.0f, -3.0f);
-    l.intensity = 100.0f;
-    l.radius = 100.0f;
+    u32 i = 0;
+    GetObjectManager<TCompPointLight>()->ForEach(
+        [&](TCompPointLight* light)
+        {
+            Light l;
+            l.color = light->color;
+            l.position = light->position;
+            l.intensity = light->intensity;
+            l.radius = light->radius;
 
-    memcpy(light_data, &lights, sizeof(Light));
-    renderer->UnmapBuffer(light_buffer);
+            auto light_data = renderer->MapBuffer(light_buffer, sizeof(Light), sizeof(Light) * i );
+
+            memcpy(light_data, &l, sizeof(Light));
+            renderer->UnmapBuffer(light_buffer);
+
+            ++i;
+        });
 
     cmd->bind_vertex_buffer(mesh.position_buffer, 0, 0);
     cmd->bind_vertex_buffer(mesh.normal_buffer, 1, 0);
