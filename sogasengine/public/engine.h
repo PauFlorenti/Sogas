@@ -10,8 +10,10 @@ namespace Sogas
     const std::string search_paths[] = {
         "../data/",
         "../data/shaders/",
+        "../data/shaders/bin/",
         "../../data/",
-        "../../data/shaders/"
+        "../../data/shaders/",
+        "../../data/shaders/bin/"
     };
 
     class CEngine

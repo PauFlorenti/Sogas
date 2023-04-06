@@ -96,14 +96,19 @@ ForwardPipeline::ForwardPipeline(std::shared_ptr<Renderer::GPU_device> InRendere
     // Depth
     pipeline_creation.depthStencilState.SetDepth(true, CompareOperation::LESS_OR_EQUAL);
 
-    auto forward_ps = renderer->ReadShaderBinary(std::move(CEngine::FindFile("forward.frag.spv")));
     auto forward_vs = renderer->ReadShaderBinary(std::move(CEngine::FindFile("forward.vert.spv")));
+    auto forward_ps = renderer->ReadShaderBinary(std::move(CEngine::FindFile("forward.frag.spv")));
+
+    //u32 forward_vs_size = 0;
+    //u32 forward_ps_size = 0;
+    //auto forward_vs = renderer->ReadShader(std::move(CEngine::FindFile("forward.vert")), forward_vs_size);
+    //auto forward_ps = renderer->ReadShader(std::move(CEngine::FindFile("forward.frag")), forward_ps_size);
 
     pipeline_creation.shaders
-      .SetName("Triangle")
-      .AddStage(reinterpret_cast<char*>(forward_vs.data()), static_cast<u32>(forward_vs.size()), ShaderStageType::VERTEX)
-      .AddStage(reinterpret_cast<char*>(forward_ps.data()), static_cast<u32>(forward_ps.size()), ShaderStageType::FRAGMENT)
-      .SetSpvInput(true);
+        .SetName("Forward")
+        .AddStage(reinterpret_cast<char*>(forward_vs.data()), static_cast<u32>(forward_vs.size()), ShaderStageType::VERTEX)
+        .AddStage(reinterpret_cast<char*>(forward_ps.data()), static_cast<u32>(forward_ps.size()), ShaderStageType::FRAGMENT)
+        .SetSpvInput(true);
 
     DescriptorSetLayoutDescriptor descLayoutDescriptor{};
     descLayoutDescriptor.AddBinding({DescriptorType::UNIFORM_BUFFER, 0, 1, "UniformBufferObject"});

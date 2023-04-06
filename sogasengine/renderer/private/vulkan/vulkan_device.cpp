@@ -553,7 +553,12 @@ void VulkanDevice::UnmapBuffer(const BufferHandle& InHandle)
 
 std::vector<i8> VulkanDevice::ReadShaderBinary(std::string InFilename)
 {
-    return VulkanShader::ReadShaderFile(InFilename);
+    return VulkanShader::ReadBinaryShaderFile(InFilename);
+}
+
+char* VulkanDevice::ReadShader(std::string InFilename, u32& OutSize)
+{
+    return VulkanShader::ReadShaderFile(InFilename, OutSize);
 }
 
 CommandBuffer* VulkanDevice::GetCommandBuffer(bool begin)

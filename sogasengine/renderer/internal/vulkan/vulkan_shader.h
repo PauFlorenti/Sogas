@@ -25,7 +25,8 @@ class VulkanShader
   public:
     VulkanShader()                                           = default;
 
-    static std::vector<i8> ReadShaderFile(const std::string& InFilename);
+    static std::vector<i8> ReadBinaryShaderFile(const std::string& InFilename);
+    static char* ReadShaderFile(const std::string& InFilename, u32& OutSize);
     static ShaderStateHandle Create(VulkanDevice* InDevice, const ShaderStateDescriptor& InDescriptor);
 };
 

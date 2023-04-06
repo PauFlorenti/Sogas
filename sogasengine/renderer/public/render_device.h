@@ -74,6 +74,7 @@ class GPU_device
     virtual void UnmapBuffer(const BufferHandle& InHandle) = 0;
 
     virtual std::vector<i8> ReadShaderBinary(std::string InFilename) = 0; // TODO rename
+    virtual char* ReadShader(std::string InFilename, u32& OutSize) = 0;
     virtual CommandBuffer* GetCommandBuffer(bool begin) = 0;
     virtual CommandBuffer* GetInstantCommandBuffer() = 0;
     virtual void QueueCommandBuffer(CommandBuffer* cmd) = 0;

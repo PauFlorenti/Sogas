@@ -9,7 +9,7 @@ namespace Renderer
 namespace Vk
 {
 
-std::vector<i8> VulkanShader::ReadShaderFile(const std::string& InFilename)
+std::vector<i8> VulkanShader::ReadBinaryShaderFile(const std::string& InFilename)
 {
     FILE* file;
     fopen_s(&file, InFilename.c_str(), "rb");
@@ -29,9 +29,72 @@ std::vector<i8> VulkanShader::ReadShaderFile(const std::string& InFilename)
     return buffer;
 }
 
+char* VulkanShader::ReadShaderFile(const std::string& InFilename, u32& OutSize)
+{
+    char* buffer = nullptr;
+    FILE* file;
+    fopen_s(&file, InFilename.c_str(), "r");
+    SASSERT_MSG(file != nullptr, "No file provided with name '%s'", InFilename.c_str());
+
+    if (file)
+    {
+        // Get file size
+        fseek(file, 0, SEEK_END);
+        size_t fileSize = ftell(file);
+        rewind(file);
+
+        buffer = static_cast<char*>(malloc(fileSize + 1));
+
+        auto read = fread(buffer, sizeof(i8), fileSize, file);
+        //SASSERT_MSG(read == fileSize, "fread did not read expected number of characters.");
+
+        buffer[read] = 0;
+
+        OutSize = read;
+       
+        fclose(file);
+        return buffer;
+    }
+
+    return nullptr;
+}
+
+static std::string add_shader_extension(VkShaderStageFlagBits stage)
+{
+    switch (stage)
+    {
+    case VK_SHADER_STAGE_VERTEX_BIT:
+        return ".vert";
+    case VK_SHADER_STAGE_FRAGMENT_BIT:
+        return ".frag";
+    case VK_SHADER_STAGE_COMPUTE_BIT:
+        return ".comp";
+    default:
+        return "";
+    }
+}
+
 VkShaderModuleCreateInfo CompileShader(const char* code, u32 size, VkShaderStageFlagBits stage, std::string name)
 {
     VkShaderModuleCreateInfo ShaderCreateInfo{VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
+
+    // Create dummy file
+    std::string temporal_shader_name = "temporal" + add_shader_extension(stage);
+    FILE* temporal_shader_file = fopen(temporal_shader_name.c_str(), "w");
+    fwrite( code, size, 1, temporal_shader_file);
+    fclose(temporal_shader_file);
+
+    std::string output_name = temporal_shader_name + ".spv";
+    std::string command = std::string("glslc.exe ") + temporal_shader_name + " -o " + output_name;
+
+    system(command.c_str());
+
+    auto binary_data = VulkanShader::ReadBinaryShaderFile(output_name);
+
+    ShaderCreateInfo.codeSize = static_cast<u32>(binary_data.size());
+    ShaderCreateInfo.pCode = reinterpret_cast<u32*>(binary_data.data());
+
+    i32 result = remove(temporal_shader_name.c_str());
 
     return ShaderCreateInfo;
 }
@@ -76,7 +139,7 @@ ShaderStateHandle VulkanShader::Create(VulkanDevice* InDevice, const ShaderState
         }
         else
         {
-            //ShaderModuleInfo = CompileShader(stage.code, stage.code_size, stage.type, InDescriptor.name);
+            ShaderModuleInfo = CompileShader(stage.code, stage.size, ConvertShaderStage(stage.type), InDescriptor.name);
         }
 
         VkPipelineShaderStageCreateInfo& ShaderStageInfo = ShaderState->ShaderStageInfo[CompiledShaders];
@@ -89,12 +152,6 @@ ShaderStateHandle VulkanShader::Create(VulkanDevice* InDevice, const ShaderState
         auto ok = vkCreateShaderModule(InDevice->Handle, &ShaderModuleInfo, nullptr, &module);
 
         ShaderState->ShaderStageInfo[CompiledShaders].module = module;
-
-        /*if (vkCreateShaderModule(InDevice->Handle, &ShaderModuleInfo, nullptr, &ShaderState->ShaderStageInfo[CompiledShaders].module) != VK_SUCCESS)
-        {
-            break;
-        }*/
-
         // TODO Set resource name.
     }
 

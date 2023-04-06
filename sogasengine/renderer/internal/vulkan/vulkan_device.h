@@ -74,6 +74,7 @@ class VulkanDevice : public GPU_device
     void UnmapBuffer(const BufferHandle& InHandle) override;
 
     std::vector<i8> ReadShaderBinary(std::string InFilename) override;
+    char* ReadShader(std::string InFilename, u32& OutSize) override;
     CommandBuffer*  GetCommandBuffer(bool begin) override;
     CommandBuffer*  GetInstantCommandBuffer() override;
     void            QueueCommandBuffer(CommandBuffer* cmd) override;
