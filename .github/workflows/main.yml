@@ -9,6 +9,6 @@ jobs:
       - name: EchoTest
         run: echo "This is a test"
       - name: GitStatusStep
-        run: git status
+        run: git status && git fetch origin main
       - name: GitDiffStep
         run: git diff origin/main
