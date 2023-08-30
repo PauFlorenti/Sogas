@@ -5,6 +5,7 @@ jobs:
   test_job:
     runs-on: windows-latest
     steps:
+      - uses: actions/checkout@v2
       - name: EchoTest
         run: echo "This is a test"
       - name: GitStatusStep
