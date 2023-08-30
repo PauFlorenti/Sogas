@@ -1,0 +1,13 @@
+name: git-test
+on:
+  push:
+jobs:
+  test_job:
+    runs-on: windows-latest
+    steps:
+      - name: EchoTest
+        run: echo "This is a test"
+      - name: GitStatusStep
+        run: git status
+      - name: GitDiffStep
+        run: git diff origin/main
